@@ -624,22 +624,22 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   SETTINGS PANEL — green guitar pedal / stomp box
-   Hammertone green with chrome/silver hardware
+   SETTINGS PANEL — red billiard cloth / wooden rail
    ══════════════════════════════════════════════════════════════ */
 .settings-panel {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: space-between;
   gap: 10px;
   padding: 14px 18px;
   background:
-    linear-gradient(170deg, #3a6a3a 0%, #2a5428 20%, #1e4420 50%, #1a3a1a 80%, #143014 100%);
-  border-top: 1px solid rgba(120, 200, 120, 0.1);
+    radial-gradient(120% 90% at 50% 40%, rgba(180, 40, 50, 0.28), transparent 60%),
+    linear-gradient(170deg, #4e1218 0%, #3d0f14 30%, #320c10 60%, #29090d 100%);
+  border-top: 1px solid rgba(255, 210, 140, 0.08);
   box-shadow:
-    inset 0 2px 8px rgba(0, 0, 0, 0.4),
-    inset 0 -1px 0 rgba(255,255,255,0.05),
-    inset 0 0 30px rgba(0, 0, 0, 0.15);
+    inset 0 2px 12px rgba(0, 0, 0, 0.45),
+    inset 0 -1px 0 rgba(255,255,255,0.04),
+    inset 0 0 40px rgba(0, 0, 0, 0.28);
   overflow: hidden;
 }
 
@@ -649,91 +649,77 @@ body {
   inset: 0;
 }
 
-/* Hammertone / stipple texture overlay */
+/* Felt texture */
 .settings-panel::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.12;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Ccircle cx='1' cy='1' r='0.6' fill='rgba(255,255,255,0.4)'/%3E%3Ccircle cx='3' cy='3' r='0.4' fill='rgba(0,0,0,0.3)'/%3E%3C/svg%3E");
+  opacity: 0.2;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Ccircle cx='1.5' cy='1.5' r='0.7' fill='rgba(255,255,255,0.18)'/%3E%3Ccircle cx='4.5' cy='3.5' r='0.8' fill='rgba(0,0,0,0.24)'/%3E%3Ccircle cx='2.5' cy='5' r='0.55' fill='rgba(255,255,255,0.1)'/%3E%3C/svg%3E");
   background-repeat: repeat;
 }
 
-/* Pedal brand label */
-.pedal-label {
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  text-align: center;
-  color: rgba(200, 220, 200, 0.35);
-  text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+.settings-felt-toprail,
+.settings-felt-botrail {
   position: relative;
   z-index: 1;
+  height: 14px;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, #5a3a1f 0%, #412811 55%, #2f1a09 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 230, 180, 0.22),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+    0 1px 3px rgba(0,0,0,0.35);
 }
 
 .settings-body {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   position: relative;
   z-index: 1;
+  padding: 4px 2px;
 }
 
-/* Pedal footer with screw holes */
-.pedal-footer {
+.settings-heading {
   display: flex;
-  justify-content: space-between;
-  padding: 0 6px;
-  position: relative;
-  z-index: 1;
+  flex-direction: column;
+  gap: 2px;
+  text-align: center;
 }
 
-.pedal-screwhole {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 40% 35%, #c0c0b8 0%, #909088 40%, #606058 70%, #404038 100%);
-  box-shadow:
-    inset 0 1px 1px rgba(255,255,255,0.3),
-    inset 0 -1px 1px rgba(0,0,0,0.4),
-    0 1px 2px rgba(0,0,0,0.5);
-  position: relative;
+.settings-heading-title {
+  font-size: 10px;
+  letter-spacing: 2.2px;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: rgba(250, 230, 205, 0.72);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
 
-.pedal-screwhole::after {
-  content: '+';
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 7px;
-  font-weight: 900;
-  color: rgba(0,0,0,0.3);
-  line-height: 1;
+.settings-heading-subtitle {
+  font-size: 9px;
+  color: rgba(220, 185, 165, 0.55);
+  letter-spacing: 0.3px;
 }
 
-/* ── Setting Row — chrome control strip ─────────────────── */
+/* ── Setting Row — velvet info lane with brass edge ─────── */
 .setting-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 10px 14px;
+  padding: 11px 14px;
   background:
-    linear-gradient(180deg,
-      rgba(200, 200, 190, 0.08) 0%,
-      rgba(0, 0, 0, 0.2) 100%
-    );
-  border: 1px solid rgba(255,255,255,0.06);
+    linear-gradient(180deg, rgba(85, 10, 20, 0.45) 0%, rgba(45, 6, 12, 0.7) 100%);
+  border: 1px solid rgba(210, 165, 110, 0.24);
   border-radius: 4px;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    inset 0 0 10px rgba(0,0,0,0.15),
-    0 1px 3px rgba(0,0,0,0.4);
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    inset 0 0 10px rgba(0,0,0,0.22),
+    0 1px 3px rgba(0,0,0,0.5);
 }
 
 .setting-info {
@@ -745,7 +731,7 @@ body {
 .setting-label {
   font-size: 11px;
   font-weight: 700;
-  color: #d0dcc8;
+  color: #f0dfcf;
   letter-spacing: 0.8px;
   text-transform: uppercase;
   text-shadow: 0 1px 2px rgba(0,0,0,0.5);
@@ -753,8 +739,25 @@ body {
 
 .setting-desc {
   font-size: 9px;
-  color: rgba(160, 190, 150, 0.5);
+  color: rgba(226, 185, 168, 0.58);
   letter-spacing: 0.3px;
+}
+
+.settings-felt-botrail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+}
+
+.rail-sight {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff1ce 0%, #c49a62 55%, #8a6230 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,0.35),
+    0 1px 2px rgba(0,0,0,0.45);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -971,6 +974,7 @@ body {
 /* ── Editor Row ────────────────────────────────────────────── */
 .editor-row {
   gap: 8px;
+  display: flex;
   align-items: stretch;
 }
 
@@ -987,7 +991,7 @@ body {
   color: var(--text-primary);
   font-size: 14px;
   resize: none;
-  height: 68px;
+  height: 100%;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   box-shadow:
@@ -1039,6 +1043,7 @@ body {
 .action-buttons {
   display: flex;
   gap: 6px;
+  flex-direction: column;
 }
 
 .btn {
