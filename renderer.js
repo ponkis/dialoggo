@@ -593,7 +593,10 @@ const elInput = document.getElementById('dialogue-input');
 const elBtnPlay = document.getElementById('btn-play');
 const elBtnPause = document.getElementById('btn-pause');
 const elBtnStop = document.getElementById('btn-stop');
+const elApp = document.querySelector('.app');
 const elPreviewArea = document.getElementById('preview-area');
+const elPanelWrapper = document.querySelector('.panel-wrapper');
+const elBottombar = document.querySelector('.bottombar');
 const elPlaceholder = document.getElementById('preview-placeholder');
 const elPlaceholderAnim = document.getElementById('placeholder-anim');
 const elDialogueContainer = document.getElementById('dialogue-container');
@@ -1251,24 +1254,113 @@ const elSleeveSettings = document.getElementById('sleeve-tab-settings');
 const elInputMirrored = document.getElementById('input-mirrored-dialogue');
 
 let activePanel = 'controls'; // 'controls' | 'settings'
+let panelTransitionLock = false;
 
-function showPanel(panel) {
-  if (panel === activePanel) return;
-  activePanel = panel;
+/** Height of preview strip (px) — sleeve tabs peek above the panel into this gap */
+const PREVIEW_STRIP_HEIGHT = 58;
+const PREVIEW_COLLAPSE_MS = 420;
+const FLIP_CARD_MS = 600;
+const PREVIEW_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 
-  if (panel === 'settings') {
-    elFlipCard.classList.add('flipped');
-    elSleeveSettings.classList.add('active');
-  } else {
-    elFlipCard.classList.remove('flipped');
-    elSleeveSettings.classList.remove('active');
+function computeExpandedPreviewHeight() {
+  if (!elApp || !elBottombar) return 280;
+  /* While settings are open the panel is flex-grown tall; use the height
+     captured before that so the expand animation matches the final layout. */
+  const stored = elPanelWrapper?.dataset?.naturalPanelHeight;
+  const panelH = stored
+    ? Number(stored)
+    : (elPanelWrapper?.offsetHeight ?? 200);
+  return Math.max(120, elApp.clientHeight - elBottombar.offsetHeight - panelH);
+}
+
+async function collapsePreviewThenSettings() {
+  const h = Math.round(elPreviewArea.getBoundingClientRect().height);
+  elPreviewArea.style.flex = '0 0 auto';
+  elPreviewArea.style.minHeight = '0';
+  elPreviewArea.style.height = `${h}px`;
+  elPreviewArea.style.overflow = 'hidden';
+  void elPreviewArea.offsetHeight;
+
+  elPreviewArea.style.transition =
+    `height ${PREVIEW_COLLAPSE_MS}ms ${PREVIEW_EASE}, filter ${PREVIEW_COLLAPSE_MS}ms ${PREVIEW_EASE}, background ${PREVIEW_COLLAPSE_MS}ms ${PREVIEW_EASE}`;
+
+  elPreviewArea.classList.add('preview-strip-collapsed', 'preview-bw-mode', 'preview-content-hidden');
+  stopPlaceholderAnim();
+
+  requestAnimationFrame(() => {
+    elPreviewArea.style.height = `${PREVIEW_STRIP_HEIGHT}px`;
+  });
+
+  await sleep(PREVIEW_COLLAPSE_MS + 40);
+}
+
+async function expandPreviewAfterControls() {
+  elPreviewArea.classList.remove('preview-bw-mode');
+
+  const target = computeExpandedPreviewHeight();
+  elPreviewArea.style.flex = '0 0 auto';
+  elPreviewArea.style.minHeight = '0';
+  elPreviewArea.style.height = `${PREVIEW_STRIP_HEIGHT}px`;
+  elPreviewArea.style.overflow = 'hidden';
+  void elPreviewArea.offsetHeight;
+
+  elPreviewArea.style.transition = `height ${PREVIEW_COLLAPSE_MS}ms ${PREVIEW_EASE}`;
+
+  requestAnimationFrame(() => {
+    elPreviewArea.style.height = `${target}px`;
+  });
+
+  await sleep(PREVIEW_COLLAPSE_MS + 50);
+
+  elPreviewArea.classList.remove('preview-strip-collapsed', 'preview-content-hidden');
+  elPreviewArea.style.height = '';
+  elPreviewArea.style.flex = '';
+  elPreviewArea.style.minHeight = '';
+  elPreviewArea.style.overflow = '';
+  elPreviewArea.style.transition = '';
+
+  elApp?.classList.remove('settings-panel-open');
+  if (elPanelWrapper) delete elPanelWrapper.dataset.naturalPanelHeight;
+
+  if (!elDialogueContainer.classList.contains('active')) {
+    startPlaceholderAnim();
   }
+}
+
+async function showPanel(panel) {
+  if (panelTransitionLock || panel === activePanel) return;
+  if (isPlaying) return;
+
+  panelTransitionLock = true;
   playMenuSound('click');
+
+  try {
+    if (panel === 'settings') {
+      if (elPanelWrapper) {
+        elPanelWrapper.dataset.naturalPanelHeight = String(
+          Math.round(elPanelWrapper.getBoundingClientRect().height)
+        );
+      }
+      elApp?.classList.add('settings-panel-open');
+      await collapsePreviewThenSettings();
+      elFlipCard.classList.add('flipped');
+      elSleeveSettings.classList.add('active');
+      activePanel = 'settings';
+    } else {
+      elFlipCard.classList.remove('flipped');
+      elSleeveSettings.classList.remove('active');
+      activePanel = 'controls';
+      await sleep(FLIP_CARD_MS);
+      await expandPreviewAfterControls();
+    }
+  } finally {
+    panelTransitionLock = false;
+  }
 }
 
 elSleeveSettings.addEventListener('click', () => {
   if (isPlaying) return;
-  showPanel(activePanel === 'settings' ? 'controls' : 'settings');
+  void showPanel(activePanel === 'settings' ? 'controls' : 'settings');
 });
 
 elSleeveCamera.addEventListener('click', () => {
