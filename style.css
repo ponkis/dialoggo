@@ -89,20 +89,20 @@ body {
 /* ══════════════════════════════════════════════════════════════
    TITLE BAR — Aqua stoplight buttons + seamless brand
    ══════════════════════════════════════════════════════════════ */
-   .titlebar {
-    display: flex;
-    align-items: center;
-    background:
+.titlebar {
+  display: flex;
+  align-items: center;
+  background:
     linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 40%, #1c1c1c 100%);
-    border-bottom: 2px solid #212121;
-    -webkit-app-region: drag;
-    flex-shrink: 0;
-    height: var(--bar-height);
-    position: relative;
-    z-index: 10;
-    /* box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
+  border-bottom: 2px solid #212121;
+  -webkit-app-region: drag;
+  flex-shrink: 0;
+  height: var(--bar-height);
+  position: relative;
+  z-index: 10;
+  /* box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
       0 1px 25px rgba(0, 0, 0, 0.2); */
-  }
+}
 
 /* Aqua stoplight buttons */
 .titlebar-controls {
@@ -303,8 +303,8 @@ body {
   pointer-events: none;
   will-change: background-position;
   animation: preview-checker-drift 10s linear infinite;
-  mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.65) 25%, rgba(0,0,0,0.2) 72%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.65) 25%, rgba(0,0,0,0.2) 72%, transparent 100%);
+  mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.65) 25%, rgba(0, 0, 0, 0.2) 72%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.65) 25%, rgba(0, 0, 0, 0.2) 72%, transparent 100%);
 }
 
 @keyframes preview-checker-drift {
@@ -427,13 +427,11 @@ body {
   z-index: 0;
   pointer-events: none;
   border-radius: 48px;
-  background: radial-gradient(
-    ellipse 100% 100% at 50% 50%,
-    rgba(0, 0, 0, 0.22) 0%,
-    rgba(0, 0, 0, 0.14) 70%,
-    rgba(0, 0, 0, 0.06) 92%,
-    transparent 100%
-  );
+  background: radial-gradient(ellipse 100% 100% at 50% 50%,
+      rgba(0, 0, 0, 0.22) 0%,
+      rgba(0, 0, 0, 0.14) 70%,
+      rgba(0, 0, 0, 0.06) 92%,
+      transparent 100%);
   filter: blur(5px);
   opacity: 1;
 }
@@ -568,7 +566,7 @@ body {
 .dialogue-text {
   font-family: "Andy Bold", 'Comic Sans MS', cursive;
   font-weight: bold;
-  font-size: 32px;
+  font-size: 30px;
   color: #ffffff;
   text-transform: uppercase;
   white-space: nowrap;
@@ -704,8 +702,8 @@ body {
   transition: transform 0.25s var(--ease-spring), box-shadow 0.2s ease;
   transform: translateY(6px);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.15),
-    0 -2px 6px rgba(0,0,0,0.4);
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    0 -2px 6px rgba(0, 0, 0, 0.4);
   -webkit-app-region: no-drag;
 }
 
@@ -713,7 +711,7 @@ body {
   content: '';
   position: absolute;
   inset: 2px 3px;
-  border: 1.5px dashed rgba(255,255,255,0.18);
+  border: 1.5px dashed rgba(255, 255, 255, 0.18);
   border-bottom: none;
   border-radius: 6px 6px 0 0;
   pointer-events: none;
@@ -737,8 +735,8 @@ body {
 .sleeve-tab.active {
   transform: translateY(0px);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.2),
-    0 -3px 8px rgba(0,0,0,0.5);
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 -3px 8px rgba(0, 0, 0, 0.5);
 }
 
 .sleeve-tab-icon {
@@ -746,7 +744,7 @@ body {
   height: 16px;
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.5));
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.5));
 }
 
 /* Blue sleeve — camera */
@@ -825,7 +823,7 @@ body {
   border-top: 1px solid rgba(255, 210, 140, 0.08);
   box-shadow:
     inset 0 2px 12px rgba(0, 0, 0, 0.45),
-    inset 0 -1px 0 rgba(255,255,255,0.04),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04),
     inset 0 0 40px rgba(0, 0, 0, 0.28);
   /* allow 3D switch to paint fully (was clipping to a sliver) */
   overflow: visible;
@@ -875,7 +873,7 @@ body {
   text-transform: uppercase;
   font-weight: 800;
   color: rgba(255, 245, 232, 0.92);
-  text-shadow: 0 1px 3px rgba(0,0,0,0.65);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
 }
 
 .settings-heading-subtitle {
@@ -925,11 +923,9 @@ body {
   right: 5%;
   top: calc(50% + 3px);
   height: 1px;
-  background: repeating-linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.12) 0 2px,
-    transparent 2px 8px
-  );
+  background: repeating-linear-gradient(90deg,
+      rgba(255, 255, 255, 0.12) 0 2px,
+      transparent 2px 8px);
   opacity: 0.55;
 }
 
@@ -984,9 +980,9 @@ body {
     linear-gradient(180deg, rgba(85, 10, 20, 0.45) 0%, rgba(45, 6, 12, 0.7) 100%);
   border: 1px solid rgba(210, 165, 110, 0.24);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.08),
-    inset 0 0 10px rgba(0,0,0,0.22),
-    0 1px 3px rgba(0,0,0,0.5);
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 10px rgba(0, 0, 0, 0.22),
+    0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .setting-row .uiverse-rocker-host {
@@ -1010,7 +1006,7 @@ body {
   color: #f0dfcf;
   letter-spacing: 0.8px;
   text-transform: uppercase;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .setting-desc {
@@ -1079,20 +1075,20 @@ body {
   background: transparent;
 }
 
-.uiverse-rocker-switch input:checked + .uiverse-switch-button {
+.uiverse-rocker-switch input:checked+.uiverse-switch-button {
   transform: translateZ(20px) rotateX(25deg);
   box-shadow: 0 -10px 20px #ff1818;
 }
 
-.uiverse-rocker-switch input:checked + .uiverse-switch-button .uiverse-light {
+.uiverse-rocker-switch input:checked+.uiverse-switch-button .uiverse-light {
   animation: uiverse-flicker 0.2s infinite 0.3s;
 }
 
-.uiverse-rocker-switch input:checked + .uiverse-switch-button .uiverse-shine {
+.uiverse-rocker-switch input:checked+.uiverse-switch-button .uiverse-shine {
   opacity: 1;
 }
 
-.uiverse-rocker-switch input:checked + .uiverse-switch-button .uiverse-shadow {
+.uiverse-rocker-switch input:checked+.uiverse-switch-button .uiverse-shadow {
   opacity: 0;
 }
 
@@ -1183,14 +1179,27 @@ body {
 }
 
 @keyframes uiverse-flicker {
-  0% { opacity: 1; }
-  80% { opacity: 0.8; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes uiverse-light-off {
-  0% { opacity: 1; }
-  80% { opacity: 0; }
+  0% {
+    opacity: 1;
+  }
+
+  80% {
+    opacity: 0;
+  }
 }
 
 /* ── Settings: wide viewports — fill space, larger type & rocker switches ── */
@@ -1660,13 +1669,11 @@ body {
   top: 50%;
   transform: translateY(-50%);
   height: 4px;
-  background: repeating-linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.05) 0px,
-    rgba(255, 255, 255, 0.05) 5px,
-    transparent 5px,
-    transparent 13px
-  );
+  background: repeating-linear-gradient(90deg,
+      rgba(255, 255, 255, 0.05) 0px,
+      rgba(255, 255, 255, 0.05) 5px,
+      transparent 5px,
+      transparent 13px);
   border-radius: 1px;
 }
 
@@ -1778,6 +1785,7 @@ body {
     opacity: 0;
     transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
