@@ -121,7 +121,7 @@ const N64_CANVAS_PIXEL_BLOCK = 6;
 /** 2 = subtle chunky edges (readable); 3–4 = more retro; 6+ gets hard to read */
 const N64_TEXT_PIXEL_BLOCK = 2;
 const N64_TEXT_LINE_HEIGHT = 33;
-const N64_TEXT_FONT = 'bold 32px "Andy Bold", "Comic Sans MS", cursive';
+const N64_TEXT_FONT = 'bold 30px "Andy Bold", "Comic Sans MS", cursive';
 
 const N64_MODE_STORAGE_KEY = 'dialoggo-n64-mode';
 
