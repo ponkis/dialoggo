@@ -605,6 +605,11 @@ const elVersionLabel = document.getElementById('version-label');
 const spriteRenderer = new SpriteRenderer(elSpriteCanvas);
 const cardAnimState = new Map(); // charId -> { timer, frameIndex, direction, mode, img, char }
 
+function setInputLocked(locked) {
+  elInput.readOnly = locked;
+  elInput.classList.toggle('is-locked', locked);
+}
+
 function stopCardAnim(charId) {
   const state = cardAnimState.get(charId);
   if (!state) return;
@@ -952,7 +957,7 @@ async function playDialogue() {
   elBtnPlay.disabled = true;
   elBtnPause.disabled = false;
   elBtnStop.disabled = false;
-  elInput.readOnly = false;
+  setInputLocked(true);
   document.querySelectorAll('.char-btn').forEach(btn => (btn.disabled = true));
   elStatusDot.classList.add('playing');
   elStatusDot.classList.remove('paused');
@@ -1125,7 +1130,7 @@ async function finishDialogue() {
   elBtnStop.disabled = true;
   elBtnPause.disabled = true;
   elBtnPlay.title = 'Play';
-  elInput.readOnly = false;
+  setInputLocked(false);
   elStatusDot.classList.remove('playing');
   elStatusDot.classList.remove('paused');
 
@@ -1155,7 +1160,7 @@ function stopDialogue() {
   spriteRenderer.showFrame(spriteRenderer.speakFrames, 0);
   // Schedule idle after delay like normal end
   spriteRenderer.startIdleAfterDelay(2000);
-  elInput.readOnly = false;
+  setInputLocked(false);
   elStatusDot.classList.remove('paused');
 }
 
@@ -1175,7 +1180,7 @@ function doPause() {
   elBtnPause.disabled = true;
   elStatusDot.classList.remove('playing');
   elStatusDot.classList.add('paused');
-  elInput.readOnly = true;
+  setInputLocked(true);
   setTimeout(() => { pauseTransitionLock = false; }, 140);
 }
 
@@ -1193,7 +1198,7 @@ function doResume() {
   elBtnPause.disabled = false;
   elStatusDot.classList.add('playing');
   elStatusDot.classList.remove('paused');
-  elInput.readOnly = false;
+  setInputLocked(true);
   setTimeout(() => { pauseTransitionLock = false; }, 140);
 }
 
