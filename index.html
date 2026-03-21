@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dialoggo — Dialogue Generator</title>
+  <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="shortcut icon" href="./favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-title" content="Dialoggo" />
+  <link rel="manifest" href="./site.webmanifest" />
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Title Bar -->
+  <div class="titlebar">
+    <div class="titlebar-title">
+      <img src="./favicon.svg" alt="Dialoggo Icon" style="width: 16px; height: 16px; border-radius: 2px;">
+      Dialoggo
+    </div>
+    <div class="titlebar-controls">
+      <button class="titlebar-btn" id="btn-minimize" title="Minimize">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+      </button>
+      <button class="titlebar-btn" id="btn-maximize" title="Maximize">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="5" y="5" width="14" height="14" rx="1"/>
+        </svg>
+      </button>
+      <button class="titlebar-btn close" id="btn-close" title="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="6" y1="6" x2="18" y2="18"/>
+          <line x1="6" y1="18" x2="18" y2="6"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div class="app">
+
+    <!-- Preview Area -->
+    <div class="preview-area" id="preview-area">
+      <div class="preview-placeholder" id="preview-placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+        <span>SELECT A CHARACTER & TYPE DIALOGUE</span>
+      </div>
+
+      <!-- Dialogue Box (hidden until playing) -->
+      <div class="dialogue-container" id="dialogue-container">
+        <div class="dialogue-box" id="dialogue-box">
+          <div class="sprite-container">
+            <canvas class="sprite-canvas" id="sprite-canvas" width="144" height="144"></canvas>
+          </div>
+          <div class="dialogue-text-area">
+            <div class="dialogue-text" id="dialogue-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div class="controls-panel">
+      <!-- Character Selector -->
+      <div>
+        <div class="section-label">Character</div>
+        <div class="character-grid" id="character-grid">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+      <!-- Editor + Buttons -->
+      <div class="editor-row">
+        <div class="text-input-wrapper">
+          <textarea
+            class="text-input"
+            id="dialogue-input"
+            placeholder="Type your dialogue here..."
+            spellcheck="false"
+          ></textarea>
+        </div>
+        <div class="action-buttons">
+          <button class="btn btn-play" id="btn-play" disabled>
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="6,3 20,12 6,21"/>
+            </svg>
+            Play
+          </button>
+          <button class="btn btn-stop" id="btn-stop" disabled>
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="6" width="12" height="12" rx="1"/>
+            </svg>
+            Stop
+          </button>
+        </div>
+      </div>
+
+      <!-- Bottom bar -->
+      <div class="bottom-bar">
+        <div class="controls-left">
+          <!-- Speed control removed -->
+        </div>
+        <div class="status" id="status">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Ready</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

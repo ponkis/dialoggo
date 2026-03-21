@@ -1,0 +1,16 @@
+{
+  "name": "dialoggo",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Banjo-Kazooie / Tooie dialogue generator",
+  "devDependencies": {
+    "electron": "^41.0.3"
+  }
+}
