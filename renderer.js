@@ -105,6 +105,7 @@ let selectedCharacter = null;
 let isPlaying = false;
 let isPaused = false;
 let stopRequested = false;
+let pauseTransitionLock = false;
 
 let audioCtx = null;
 
@@ -178,9 +179,29 @@ document.addEventListener('click', (e) => {
   playMenuSound('click');
 }, true);
 
-// Forbidden sound on disabled / not-allowed elements
+// Forbidden sound on disabled / not-allowed elements.
+// Use pointerdown because disabled controls often don't emit click events.
+document.addEventListener('pointerdown', (e) => {
+  const target = e.target instanceof Element ? e.target : null;
+  if (!target) return;
+
+  const el = target.closest('button:disabled, .char-btn.unavailable, [disabled], [aria-disabled="true"]');
+  if (el) {
+    playMenuSound('forbidden');
+    return;
+  }
+
+  const computed = window.getComputedStyle(target);
+  if (computed.cursor === 'not-allowed') {
+    playMenuSound('forbidden');
+  }
+}, true);
+
+// Fallback for regular clickables that resolve to forbidden style late.
 document.addEventListener('click', (e) => {
-  const el = e.target.closest('button:disabled, .char-btn.unavailable');
+  const target = e.target instanceof Element ? e.target : null;
+  if (!target) return;
+  const el = target.closest('button:disabled, .char-btn.unavailable');
   if (!el) return;
   playMenuSound('forbidden');
 }, true);
@@ -560,6 +581,65 @@ const elCharCount = document.getElementById('char-count');
 const elVersionLabel = document.getElementById('version-label');
 
 const spriteRenderer = new SpriteRenderer(elSpriteCanvas);
+const cardAnimState = new Map(); // charId -> { timer, frameIndex, direction, mode, img, char }
+
+function stopCardAnim(charId) {
+  const state = cardAnimState.get(charId);
+  if (!state) return;
+  if (state.timer) clearInterval(state.timer);
+  state.timer = null;
+}
+
+function setCardFrame(state, frames, index) {
+  const framePath = frames[index];
+  if (!framePath) return;
+  state.img.src = fileToSrc(framePath);
+}
+
+function startCardIdleAnim(charId) {
+  const state = cardAnimState.get(charId);
+  if (!state) return;
+  const frames = state.char.idleFrames;
+  if (!frames?.length) return;
+  stopCardAnim(charId);
+  state.mode = 'idle';
+  state.frameIndex = 0;
+  state.direction = 1;
+  setCardFrame(state, frames, state.frameIndex);
+  state.timer = setInterval(() => {
+    if (state.mode !== 'idle') return;
+    state.frameIndex += state.direction;
+    if (state.frameIndex >= frames.length - 1) state.direction = -1;
+    else if (state.frameIndex <= 0) state.direction = 1;
+    setCardFrame(state, frames, state.frameIndex);
+  }, 120);
+}
+
+function startCardSpeakThenIdle(charId) {
+  const state = cardAnimState.get(charId);
+  if (!state) return;
+  const speak = state.char.speakFrames;
+  if (!speak?.length) {
+    startCardIdleAnim(charId);
+    return;
+  }
+  stopCardAnim(charId);
+  state.mode = 'speak';
+  state.frameIndex = 0;
+  state.direction = 1;
+  setCardFrame(state, speak, state.frameIndex);
+  state.timer = setInterval(() => {
+    if (state.mode !== 'speak') return;
+    state.frameIndex += state.direction;
+    if (state.frameIndex >= speak.length - 1) state.direction = -1;
+    else if (state.frameIndex <= 0) {
+      // finish one smooth talk cycle, then transition to idle loop
+      startCardIdleAnim(charId);
+      return;
+    }
+    setCardFrame(state, speak, state.frameIndex);
+  }, 70);
+}
 
 // ── Bottom Bar Info ─────────────────────────────────────────
 elVersionLabel.textContent = `v${appVersion}`;
@@ -602,6 +682,7 @@ startPlaceholderAnim();
 // ── Build Character Grid ────────────────────────────────────
 function buildCharacterGrid() {
   elCharGrid.innerHTML = '';
+  cardAnimState.clear();
 
   for (const char of characters) {
     const btn = document.createElement('button');
@@ -637,7 +718,34 @@ function buildCharacterGrid() {
       btn.appendChild(badge);
     }
 
-    btn.addEventListener('click', () => selectCharacter(char));
+    cardAnimState.set(char.id, {
+      timer: null,
+      frameIndex: 0,
+      direction: 1,
+      mode: 'idle',
+      img: miniImg,
+      char,
+    });
+
+    btn.addEventListener('mouseenter', () => {
+      if (btn.disabled) return;
+      startCardIdleAnim(char.id);
+    });
+
+    btn.addEventListener('mouseleave', () => {
+      if (btn.disabled) return;
+      if (selectedCharacter?.id === char.id) {
+        startCardIdleAnim(char.id);
+      } else {
+        stopCardAnim(char.id);
+        if (previewPath) miniImg.src = fileToSrc(previewPath);
+      }
+    });
+
+    btn.addEventListener('click', () => {
+      if (!btn.disabled) startCardSpeakThenIdle(char.id);
+      selectCharacter(char);
+    });
 
     elCharGrid.appendChild(btn);
   }
@@ -655,6 +763,17 @@ function selectCharacter(char) {
 
   document.querySelectorAll('.char-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.id === char.id);
+    const btnCharId = btn.dataset.id;
+    if (!btnCharId) return;
+    const st = cardAnimState.get(btnCharId);
+    if (!st) return;
+    if (btnCharId === char.id) {
+      startCardIdleAnim(btnCharId);
+    } else {
+      stopCardAnim(btnCharId);
+      const preview = st.char.idleFrames[0] || st.char.speakFrames[0];
+      if (preview) st.img.src = fileToSrc(preview);
+    }
   });
 
   spriteRenderer.loadCharacter(char);
@@ -778,6 +897,7 @@ async function playDialogue() {
   isPlaying = true;
   isPaused = false;
   stopRequested = false;
+  pauseTransitionLock = false;
 
   const text = elInput.value.trim();
   if (!text) return;
@@ -856,6 +976,12 @@ async function playDialogue() {
   let totalLinesAdded = 0;
 
   speechLoop.start(char.sounds);
+  if (isPaused) {
+    speechLoop.pause();
+    speechLoop._killCurrentAudio();
+    await waitWhilePaused();
+    if (!stopRequested) speechLoop.resume();
+  }
 
   while (lineIndex < lines.length && !stopRequested) {
     const line = lines[lineIndex];
@@ -949,6 +1075,7 @@ async function finishDialogue() {
   isPlaying = false;
   isPaused = false;
   stopRequested = false;
+  pauseTransitionLock = false;
   elBtnStop.disabled = true;
   elBtnPause.disabled = true;
   elBtnPlay.title = 'Play';
@@ -965,6 +1092,7 @@ async function finishDialogue() {
 function stopDialogue() {
   stopRequested = true;
   isPaused = false;
+  pauseTransitionLock = false;
   if (pauseResolve) {
     const r = pauseResolve;
     pauseResolve = null;
@@ -982,11 +1110,13 @@ function stopDialogue() {
 }
 
 function doPause() {
-  if (!isPlaying || isPaused) return;
+  if (!isPlaying || isPaused || pauseTransitionLock) return;
+  pauseTransitionLock = true;
   isPaused = true;
-  // Fully stop the speech loop (kills audio + exits async loop)
-  speechLoop.stop();
-  // Stop all sprite timers, then smoothly close mouth
+  // Pause speech loop and kill any currently playing clip.
+  // Keeping loop instance alive avoids start/stop race conditions on rapid taps.
+  speechLoop.pause();
+  speechLoop._killCurrentAudio();
   spriteRenderer.stop();
   spriteRenderer.smoothCloseAndIdle();
   spriteRenderer.startIdleAfterDelay(2000);
@@ -994,23 +1124,23 @@ function doPause() {
   elBtnPlay.title = 'Resume';
   elBtnPause.disabled = true;
   elStatusDot.classList.remove('playing');
+  setTimeout(() => { pauseTransitionLock = false; }, 140);
 }
 
 function doResume() {
-  if (!isPlaying || !isPaused) return;
+  if (!isPlaying || !isPaused || pauseTransitionLock) return;
+  pauseTransitionLock = true;
   // Stop idle timers, show neutral s1
   spriteRenderer.stop();
   spriteRenderer.frameIndex = 0;
   spriteRenderer.showFrame(spriteRenderer.speakFrames, 0);
-  // Restart the speech loop fresh with same character sounds
-  if (selectedCharacter) {
-    speechLoop.start(selectedCharacter.sounds);
-  }
+  speechLoop.resume();
   resumeFromPause();
   elBtnPlay.disabled = true;
   elBtnPlay.title = 'Play';
   elBtnPause.disabled = false;
   elStatusDot.classList.add('playing');
+  setTimeout(() => { pauseTransitionLock = false; }, 140);
 }
 
 // ── Event Listeners ─────────────────────────────────────────

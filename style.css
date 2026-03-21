@@ -4,6 +4,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Over+the+Rainbow&display=swap');
 
 @font-face {
   font-family: "Andy Bold";
@@ -120,9 +121,10 @@ body {
 }
 
 .titlebar-brand span {
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 2.5px;
+  font-family: 'Over the Rainbow', cursive;
+  font-size: 20px;
+  font-weight: 400;
+  letter-spacing: 1.2px;
   color: #d0d0d0;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 }
@@ -295,7 +297,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  color: var(--text-muted);
+  color: lightgray;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 1.5px;
@@ -304,6 +306,14 @@ body {
   position: relative;
   z-index: 1;
   transition: opacity 0.35s ease;
+}
+
+.preview-placeholder span {
+  font-family: 'Over the Rainbow', cursive;
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.8px;
+  text-transform: none;
 }
 
 .preview-placeholder.fade-out {
