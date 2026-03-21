@@ -21,9 +21,6 @@
       <button class="stoplight stoplight-minimize" id="btn-minimize" title="Minimize"></button>
       <button class="stoplight stoplight-maximize" id="btn-maximize" title="Maximize"></button>
     </div>
-    <div class="titlebar-brand">
-      <span>Dialoggo</span>
-    </div>
   </div>
 
   <!-- App -->
@@ -121,7 +118,6 @@
 
         <!-- BACK — Settings Panel (red billiard cloth style) -->
         <div class="flip-face flip-back settings-panel" id="settings-panel">
-          <div class="settings-felt-toprail"></div>
           <div class="settings-body">
             <div class="settings-heading">
               <span class="settings-heading-title">Table Options</span>
@@ -133,22 +129,20 @@
                 <span class="setting-label">Dialogue Orientation</span>
                 <span class="setting-desc">Regular starts left. Mirrored starts right.</span>
               </div>
-              <div class="toggle-switch" id="switch-mirrored" title="Toggle mirrored dialogue">
-                <div class="toggle-switch-base">
-                  <div class="toggle-switch-slot">
-                    <span class="toggle-label-off">REG</span>
-                    <span class="toggle-label-on">MIR</span>
+              <!-- From Uiverse.io by Nawsome — adapted & scaled -->
+              <div class="mirrored-switch-host" title="Toggle mirrored dialogue">
+                <label class="mirrored-dialogue-switch" id="switch-mirrored">
+                  <input type="checkbox" id="input-mirrored-dialogue" aria-label="Mirrored dialogue">
+                  <div class="uiverse-switch-button">
+                    <div class="uiverse-light"></div>
+                    <div class="uiverse-dots"></div>
+                    <div class="uiverse-characters"></div>
+                    <div class="uiverse-shine"></div>
+                    <div class="uiverse-shadow"></div>
                   </div>
-                  <div class="toggle-switch-lever"></div>
-                </div>
-                <div class="toggle-led" id="led-mirrored"></div>
+                </label>
               </div>
             </div>
-          </div>
-          <div class="settings-felt-botrail">
-            <div class="rail-sight"></div>
-            <div class="rail-sight"></div>
-            <div class="rail-sight"></div>
           </div>
         </div>
       </div>

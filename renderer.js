@@ -177,7 +177,7 @@ document.addEventListener('click', (e) => {
   if (el.disabled) return;
   // Character buttons and arrows have their own dedicated sounds
   if (el.classList.contains('char-btn') || el.closest('.reel-arrow')) return;
-  if (el.classList.contains('sleeve-tab') || el.closest('.toggle-switch')) return;
+  if (el.classList.contains('sleeve-tab') || el.closest('.mirrored-dialogue-switch')) return;
   playMenuSound('click');
 }, true);
 
@@ -1248,7 +1248,7 @@ const elSettingsPanel = document.getElementById('settings-panel');
 const elFlipCard = document.getElementById('flip-card');
 const elSleeveCamera = document.getElementById('sleeve-tab-camera');
 const elSleeveSettings = document.getElementById('sleeve-tab-settings');
-const elSwitchMirrored = document.getElementById('switch-mirrored');
+const elInputMirrored = document.getElementById('input-mirrored-dialogue');
 
 let activePanel = 'controls'; // 'controls' | 'settings'
 
@@ -1275,15 +1275,15 @@ elSleeveCamera.addEventListener('click', () => {
   playMenuSound('forbidden');
 });
 
-// ── Mirrored Dialogue Toggle ─────────────────────────────────
+// ── Mirrored Dialogue Toggle (Uiverse 3D switch) ────────────
 function setMirrored(value) {
   dialogueMirrored = value;
-  elSwitchMirrored.classList.toggle('on', value);
+  if (elInputMirrored) elInputMirrored.checked = value;
   elDialogueBox.classList.toggle('mirrored', value);
 }
 
-elSwitchMirrored.addEventListener('click', () => {
-  setMirrored(!dialogueMirrored);
+elInputMirrored?.addEventListener('change', () => {
+  setMirrored(elInputMirrored.checked);
   playMenuSound('click');
 });
 
