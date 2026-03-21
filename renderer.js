@@ -153,10 +153,11 @@ async function playSoundFile(filePath) {
 // ── Menu Sound Effects ──────────────────────────────────────
 const MENU_SND_DIR = path.join(SND_DIR, 'menu');
 const menuSoundPaths = {
-  hover: path.join(MENU_SND_DIR, '1.wav'),
+  click: path.join(MENU_SND_DIR, '1.wav'),
   select: path.join(MENU_SND_DIR, '2.wav'),
   arrowRight: path.join(MENU_SND_DIR, '3.wav'),
   arrowLeft: path.join(MENU_SND_DIR, '4.wav'),
+  forbidden: path.join(MENU_SND_DIR, '5.wav'),
 };
 
 function playMenuSound(key) {
@@ -166,16 +167,22 @@ function playMenuSound(key) {
   }
 }
 
-// Debounced hover sound
-let lastHoverTime = 0;
-const HOVER_DEBOUNCE = 60;
-document.addEventListener('pointerover', (e) => {
-  const el = e.target.closest('button, .reel-arrow, a, .char-btn, .btn, .stoplight, .powered-link');
+// Click sound on any clickable element (replaces old hover sound)
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('button, .reel-arrow, a, .powered-link');
   if (!el) return;
-  const now = Date.now();
-  if (now - lastHoverTime < HOVER_DEBOUNCE) return;
-  lastHoverTime = now;
-  playMenuSound('hover');
+  // Skip if disabled — the forbidden handler covers that
+  if (el.disabled) return;
+  // Character buttons and arrows have their own dedicated sounds
+  if (el.classList.contains('char-btn') || el.closest('.reel-arrow')) return;
+  playMenuSound('click');
+}, true);
+
+// Forbidden sound on disabled / not-allowed elements
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('button:disabled, .char-btn.unavailable');
+  if (!el) return;
+  playMenuSound('forbidden');
 }, true);
 
 // ── Speech Sound Loop (Banjo-Kazooie style) ────────────────
@@ -212,17 +219,18 @@ class SpeechSoundLoop {
     this.running = false;
     this.paused = false;
     this._killCurrentAudio();
+    this._resolveWait();
     if (this._abortController) {
       this._abortController.abort();
       this._abortController = null;
     }
-    this.spriteRenderer.resetToIdle();
   }
 
   async gracefulStop() {
     this.running = false;
     this.paused = false;
     this._killCurrentAudio();
+    this._resolveWait();
     if (this._abortController) {
       this._abortController.abort();
       this._abortController = null;
@@ -248,10 +256,17 @@ class SpeechSoundLoop {
     }
   }
 
+  // Force-resolve the current clip wait so the loop exits immediately
+  _resolveWait() {
+    if (this._clipResolve) {
+      this._clipResolve();
+      this._clipResolve = null;
+    }
+  }
+
   async _loop() {
     while (this.running) {
       if (this.paused) {
-        this.spriteRenderer.resetToIdle();
         await sleep(50);
         continue;
       }
@@ -276,13 +291,18 @@ class SpeechSoundLoop {
         this.spriteRenderer.startSpeaking(durationMs);
 
         await new Promise((resolve) => {
+          this._clipResolve = resolve;
           source.onended = resolve;
           setTimeout(resolve, durationMs + 50);
         });
+        this._clipResolve = null;
+
+        if (!this.running) break;
 
         this.currentSource = null;
         this.currentGainNode = null;
       } catch (err) {
+        this._clipResolve = null;
         this.currentSource = null;
         this.currentGainNode = null;
         if (!this.running) break;
@@ -897,7 +917,7 @@ async function playDialogue() {
 
 async function finishDialogue() {
   speechLoop.stop();
-  spriteRenderer.stopSpeaking();
+  spriteRenderer.stop();
 
   elDialogueText.innerHTML = '';
   elDialogueText.classList.remove('centered');
@@ -931,6 +951,7 @@ async function finishDialogue() {
   stopRequested = false;
   elBtnStop.disabled = true;
   elBtnPause.disabled = true;
+  elBtnPlay.title = 'Play';
   elStatusDot.classList.remove('playing');
 
   document.querySelectorAll('.char-btn').forEach(btn => {
@@ -949,29 +970,45 @@ function stopDialogue() {
     pauseResolve = null;
     r();
   }
+  // Kill the speech loop first (stops audio + forces async loop exit)
   speechLoop.stop();
-  spriteRenderer.stopSpeaking();
+  // Stop ALL sprite timers (speaking, idle, delayed idle) to prevent fights
+  spriteRenderer.stop();
+  // Show s1 (neutral) immediately — clean static state
+  spriteRenderer.frameIndex = 0;
+  spriteRenderer.showFrame(spriteRenderer.speakFrames, 0);
+  // Schedule idle after delay like normal end
+  spriteRenderer.startIdleAfterDelay(2000);
 }
 
 function doPause() {
   if (!isPlaying || isPaused) return;
   isPaused = true;
-  speechLoop._killCurrentAudio();
+  // Fully stop the speech loop (kills audio + exits async loop)
+  speechLoop.stop();
+  // Stop all sprite timers, then smoothly close mouth
+  spriteRenderer.stop();
   spriteRenderer.smoothCloseAndIdle();
   spriteRenderer.startIdleAfterDelay(2000);
   elBtnPlay.disabled = false;
+  elBtnPlay.title = 'Resume';
   elBtnPause.disabled = true;
   elStatusDot.classList.remove('playing');
 }
 
 function doResume() {
   if (!isPlaying || !isPaused) return;
+  // Stop idle timers, show neutral s1
   spriteRenderer.stop();
   spriteRenderer.frameIndex = 0;
   spriteRenderer.showFrame(spriteRenderer.speakFrames, 0);
-  speechLoop.resume();
+  // Restart the speech loop fresh with same character sounds
+  if (selectedCharacter) {
+    speechLoop.start(selectedCharacter.sounds);
+  }
   resumeFromPause();
   elBtnPlay.disabled = true;
+  elBtnPlay.title = 'Play';
   elBtnPause.disabled = false;
   elStatusDot.classList.add('playing');
 }
