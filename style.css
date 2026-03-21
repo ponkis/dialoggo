@@ -408,48 +408,12 @@ body {
  * Dialogue text pixelation: canvas downsample in renderer.js (see pixelation_techniques_demo).
  */
 .dialogue-box.n64-mode {
-  background: transparent !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  box-shadow: none;
-  border: none;
-  overflow: visible;
+  overflow: hidden;
 }
 
-/* Soft feather — same “weight” as non-N64 glass, no stacked near-black */
-.dialogue-box.n64-mode::before {
-  content: '';
-  position: absolute;
-  left: -2%;
-  right: -2%;
-  top: -8%;
-  bottom: -8%;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: 48px;
-  background: radial-gradient(ellipse 100% 100% at 50% 50%,
-      rgba(0, 0, 0, 0.22) 0%,
-      rgba(0, 0, 0, 0.14) 70%,
-      rgba(0, 0, 0, 0.06) 92%,
-      transparent 100%);
-  filter: blur(5px);
-  opacity: 1;
-}
-
-/* Core fill — matches .dialogue-box default ~20% black (no extra ::after darkness) */
-.dialogue-box.n64-mode::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: 44px;
-  background: rgb(0 0 0 / 20%);
-  filter: blur(9px);
-  opacity: 1;
+.dialogue-box.n64-mode .dialogue-pixel-wrap {
+  position: relative;
+  z-index: 1;
 }
 
 .dialogue-box.n64-mode .dialogue-pixel-wrap {
@@ -536,7 +500,7 @@ body {
   flex: 1 1 0%;
   /* N64 canvas is out-of-flow; invisible DOM text can collapse width — keep a text column */
   min-width: 48px;
-  padding: 6px 0px 6px 14px;
+  padding: 6px 32px 6px 14px;
   overflow: hidden;
   position: relative;
   height: 74px;
@@ -1352,7 +1316,7 @@ body {
 }
 
 .dialogue-box.mirrored .dialogue-text-area {
-  padding: 6px 0px 6px 30px;
+  padding: 6px 14px 6px 32px;
 }
 
 .dialogue-box.mirrored.slide-in {

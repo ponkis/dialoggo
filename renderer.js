@@ -779,15 +779,16 @@ function renderN64DialogueTextCanvas() {
     const ctxHi = hi.getContext('2d');
     if (!ctxHi) return;
 
+    const padT = 6;
+    const padL = dialogueMirrored ? 32 : 14;
+
     ctxHi.clearRect(0, 0, W, H);
     ctxHi.save();
     ctxHi.beginPath();
-    ctxHi.rect(0, 0, W, H);
+    // Use a tighter clip to avoid drawing bits of lines scrolled into padding areas.
+    // Pixelation downsampling often samples the padding, making fragments visible at top/bottom.
+    ctxHi.rect(0, padT, W, 2 * N64_TEXT_LINE_HEIGHT);
     ctxHi.clip();
-
-    const padT = 6;
-    /* Match .dialogue-text-area padding; always LTR text like non-N64 mirrored (no right-align). */
-    const padL = dialogueMirrored ? 30 : 14;
 
     ctxHi.font = N64_TEXT_FONT;
     /* Avoid throws on older Electron: property may not exist or may reject value */
@@ -1142,7 +1143,7 @@ async function playOutroSounds() {
 }
 
 // ── Text Line Splitter ──────────────────────────────────────
-function splitTextIntoLines(text, maxCharsPerLine = 34) {
+function splitTextIntoLines(text, maxCharsPerLine = 32) {
   const lines = [];
   const manualLines = text.toUpperCase().split('\n');
 
