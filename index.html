@@ -34,9 +34,9 @@
         </svg>
       </button>
     </div>
-    <div class="titlebar-title">
-      <img src="./favicon.svg" alt="Dialoggo Icon" style="width: 18px; height: 18px;">
-      Dialoggo
+    <div class="titlebar-brand">
+      <img src="./favicon.svg" alt="Dialoggo Icon">
+      <span>Dialoggo</span>
     </div>
   </div>
 
@@ -74,40 +74,51 @@
           <textarea
             class="text-input"
             id="dialogue-input"
-            placeholder="Type your dialogue here..."
+            placeholder="Dialogue goes here..."
             spellcheck="false"
           ></textarea>
         </div>
         <div class="action-buttons">
-          <button class="btn btn-play" id="btn-play" disabled>
+          <button class="btn btn-play" id="btn-play" disabled title="Play">
             <svg viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="6,3 20,12 6,21"/>
+              <polygon points="7,4 20,12 7,20"/>
             </svg>
-            Play
           </button>
-          <button class="btn btn-stop" id="btn-stop" disabled>
+          <button class="btn btn-stop" id="btn-stop" disabled title="Stop">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <rect x="6" y="6" width="12" height="12" rx="1"/>
             </svg>
-            Stop
           </button>
         </div>
       </div>
 
-      <!-- Character Selector -->
+      <!-- Character Selector — film reel -->
       <div class="character-section">
         <div class="section-label">Character</div>
-        <div class="character-grid" id="character-grid">
-          <!-- populated by JS -->
+        <div class="reel-wrapper">
+          <div class="reel-arrow reel-arrow-left" id="reel-arrow-left">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7"/></svg>
+          </div>
+          <div class="film-reel">
+            <div class="reel-sprockets reel-sprockets-top"></div>
+            <div class="character-grid" id="character-grid">
+              <!-- populated by JS -->
+            </div>
+            <div class="reel-sprockets reel-sprockets-bottom"></div>
+          </div>
+          <div class="reel-arrow reel-arrow-right" id="reel-arrow-right">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7"/></svg>
+          </div>
         </div>
       </div>
 
-      <!-- Status bar -->
-      <div class="status-bar">
-        <div class="status" id="status">
-          <span class="status-dot" id="status-dot"></span>
-          <span id="status-text">Ready</span>
-        </div>
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="bottombar">
+      <div class="status" id="status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Ready</span>
       </div>
     </div>
 

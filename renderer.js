@@ -921,8 +921,29 @@ function stopDialogue() {
 elBtnPlay.addEventListener('click', playDialogue);
 elBtnStop.addEventListener('click', stopDialogue);
 
+// ── Reel Scroll Arrows ──────────────────────────────────────
+const elReelLeft = document.getElementById('reel-arrow-left');
+const elReelRight = document.getElementById('reel-arrow-right');
+
+function updateReelArrows() {
+  const grid = elCharGrid;
+  const atStart = grid.scrollLeft <= 2;
+  const atEnd = grid.scrollLeft + grid.clientWidth >= grid.scrollWidth - 2;
+  elReelLeft.classList.toggle('hidden', atStart);
+  elReelRight.classList.toggle('hidden', atEnd);
+}
+
+elReelLeft.addEventListener('click', () => {
+  elCharGrid.scrollBy({ left: -160, behavior: 'smooth' });
+});
+elReelRight.addEventListener('click', () => {
+  elCharGrid.scrollBy({ left: 160, behavior: 'smooth' });
+});
+elCharGrid.addEventListener('scroll', updateReelArrows);
+
 // ── Init ────────────────────────────────────────────────────
 buildCharacterGrid();
+requestAnimationFrame(updateReelArrows);
 
 // Auto-select first character if available
 if (characters.length > 0) {
