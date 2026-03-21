@@ -37,30 +37,41 @@ function discoverCharacters() {
     .map(d => d.name);
 
   for (const name of dirs) {
+    const imgDir = path.join(IMG_DIR, name);
+    const sndDir = path.join(SND_DIR, name);
+
+    // If sound folder is missing, do not show this character at all.
+    // (Requirement: if any character doesn't have image/sound folder don't show it.)
+    if (!fs.existsSync(imgDir) || !fs.existsSync(sndDir)) continue;
+
     // Check for individual sprite files: s1.png-s6.png, i1.png-i4.png
     const speakFrames = [];
     const idleFrames = [];
 
     for (let i = 1; i <= SPEAK_FRAME_COUNT; i++) {
-      const sp = path.join(IMG_DIR, name, `s${i}.png`);
+      const sp = path.join(imgDir, `s${i}.png`);
       if (fs.existsSync(sp)) speakFrames.push(sp);
     }
 
     for (let i = 1; i <= IDLE_FRAME_COUNT; i++) {
-      const ip = path.join(IMG_DIR, name, `i${i}.png`);
+      const ip = path.join(imgDir, `i${i}.png`);
       if (fs.existsSync(ip)) idleFrames.push(ip);
     }
 
-    // Need all required speaking and idle frames
-    if (speakFrames.length !== SPEAK_FRAME_COUNT || idleFrames.length !== IDLE_FRAME_COUNT) continue;
-
-    // Find sound files
-    const sndDir = path.join(SND_DIR, name);
+    // Find sound files (wav/mp3/ogg)
     const soundFiles = [];
-    if (fs.existsSync(sndDir)) {
+    const hasSoundDir = fs.existsSync(sndDir);
+    if (hasSoundDir) {
       const files = fs.readdirSync(sndDir).filter(f => /\.(wav|mp3|ogg)$/i.test(f));
       for (const f of files) soundFiles.push(path.join(sndDir, f));
     }
+
+    const hasAllSprites = speakFrames.length === SPEAK_FRAME_COUNT && idleFrames.length === IDLE_FRAME_COUNT;
+    const hasAnySound = soundFiles.length > 0;
+
+    // If sprites are missing to complete all 10 frames OR sound folder is empty,
+    // show the character with a warning and mark it unavailable.
+    const isAvailable = hasAllSprites && hasAnySound;
 
     characters.push({
       id: name,
@@ -68,6 +79,9 @@ function discoverCharacters() {
       speakFrames,
       idleFrames,
       sounds: soundFiles,
+      isAvailable,
+      hasAllSprites,
+      hasAnySound,
     });
   }
 
@@ -536,12 +550,17 @@ function buildCharacterGrid() {
     const btn = document.createElement('button');
     btn.className = 'char-btn';
     btn.dataset.id = char.id;
+    btn.disabled = !char.isAvailable;
+    if (!char.isAvailable) btn.classList.add('unavailable');
 
     // Mini sprite preview using i1 img
     const spriteWrap = document.createElement('div');
     spriteWrap.className = 'char-btn-sprite';
     const miniImg = document.createElement('img');
-    miniImg.src = fileToSrc(char.idleFrames[0]);
+
+    const previewPath = char.idleFrames[0] || char.speakFrames[0] || null;
+    if (previewPath) miniImg.src = fileToSrc(previewPath);
+    else miniImg.style.display = 'none';
     miniImg.alt = char.displayName;
     spriteWrap.appendChild(miniImg);
 
@@ -551,6 +570,17 @@ function buildCharacterGrid() {
     btn.appendChild(spriteWrap);
     btn.appendChild(label);
 
+    // Warning badge if unavailable (missing sprites and/or no sounds).
+    if (!char.isAvailable) {
+      const badge = document.createElement('span');
+      badge.className = 'warning-badge';
+      badge.textContent = '!';
+      badge.title = (!char.hasAllSprites && !char.hasAnySound)
+        ? 'Missing sprite frames and no sounds'
+        : (!char.hasAllSprites ? 'Missing sprite frames' : 'No sounds found');
+      btn.appendChild(badge);
+    }
+
     btn.addEventListener('click', () => selectCharacter(char));
 
     elCharGrid.appendChild(btn);
@@ -559,6 +589,9 @@ function buildCharacterGrid() {
 
 // ── Select Character ────────────────────────────────────────
 function selectCharacter(char) {
+  if (isPlaying) return;
+  if (!char?.isAvailable) return;
+
   selectedCharacter = char;
 
   // Update button states
@@ -672,6 +705,7 @@ async function playDialogue() {
   // Update UI
   elBtnPlay.disabled = true;
   elBtnStop.disabled = false;
+  document.querySelectorAll('.char-btn').forEach(btn => (btn.disabled = true));
   elStatusDot.classList.add('playing');
   elStatusText.textContent = 'Playing';
   elPlaceholder.style.display = 'none';
@@ -867,6 +901,13 @@ async function finishDialogue() {
   elBtnStop.disabled = true;
   elStatusDot.classList.remove('playing');
   elStatusText.textContent = 'Ready';
+
+  // Re-enable available character buttons after dialogue ends
+  document.querySelectorAll('.char-btn').forEach(btn => {
+    const id = btn.dataset.id;
+    const char = characters.find(c => c.id === id);
+    btn.disabled = !(char && char.isAvailable);
+  });
   updatePlayButton();
 }
 
@@ -885,7 +926,8 @@ buildCharacterGrid();
 
 // Auto-select first character if available
 if (characters.length > 0) {
-  selectCharacter(characters[0]);
+  const firstAvailable = characters.find(c => c.isAvailable);
+  if (firstAvailable) selectCharacter(firstAvailable);
 }
 
 console.log(`[Dialoggo] Loaded ${characters.length} characters, ${genericSounds.length} generic sounds`);
