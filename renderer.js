@@ -106,6 +106,7 @@ let isPlaying = false;
 let isPaused = false;
 let stopRequested = false;
 let pauseTransitionLock = false;
+let dialogueMirrored = false;
 
 let audioCtx = null;
 
@@ -176,6 +177,7 @@ document.addEventListener('click', (e) => {
   if (el.disabled) return;
   // Character buttons and arrows have their own dedicated sounds
   if (el.classList.contains('char-btn') || el.closest('.reel-arrow')) return;
+  if (el.classList.contains('sleeve-tab') || el.closest('.toggle-switch')) return;
   playMenuSound('click');
 }, true);
 
@@ -967,6 +969,7 @@ async function playDialogue() {
 
   elDialogueText.innerHTML = '';
   elDialogueBox.className = 'dialogue-box';
+  if (dialogueMirrored) elDialogueBox.classList.add('mirrored');
 
   elDialogueContainer.classList.add('active');
 
@@ -1099,7 +1102,7 @@ async function finishDialogue() {
   elDialogueText.innerHTML = '';
   elDialogueText.classList.remove('centered');
 
-  elDialogueBox.className = 'dialogue-box shrink';
+  elDialogueBox.className = 'dialogue-box shrink' + (dialogueMirrored ? ' mirrored' : '');
 
   await Promise.all([
     (async () => {
@@ -1120,6 +1123,7 @@ async function finishDialogue() {
 
   elDialogueContainer.classList.remove('active');
   elDialogueBox.className = 'dialogue-box';
+  if (dialogueMirrored) elDialogueBox.classList.add('mirrored');
   elDialogueText.innerHTML = '';
   elPlaceholder.classList.remove('fade-out');
 
@@ -1237,5 +1241,54 @@ if (characters.length > 0) {
   const firstAvailable = characters.find(c => c.isAvailable);
   if (firstAvailable) selectCharacter(firstAvailable);
 }
+
+// ── Sleeve Tabs & Settings Panel ─────────────────────────────
+const elControlsPanel = document.getElementById('controls-panel');
+const elSettingsPanel = document.getElementById('settings-panel');
+const elSleeveCamera = document.getElementById('sleeve-tab-camera');
+const elSleeveSettings = document.getElementById('sleeve-tab-settings');
+const elSwitchMirrored = document.getElementById('switch-mirrored');
+
+let activePanel = 'controls'; // 'controls' | 'settings'
+
+function showPanel(panel) {
+  if (panel === activePanel) return;
+
+  const fromHeight = (activePanel === 'controls' ? elControlsPanel : elSettingsPanel).offsetHeight;
+  activePanel = panel;
+
+  if (panel === 'settings') {
+    elSettingsPanel.style.minHeight = fromHeight + 'px';
+    elControlsPanel.classList.add('panel-hidden');
+    elSettingsPanel.classList.add('panel-visible');
+    elSleeveSettings.classList.add('active');
+  } else {
+    elControlsPanel.classList.remove('panel-hidden');
+    elSettingsPanel.classList.remove('panel-visible');
+    elSleeveSettings.classList.remove('active');
+  }
+  playMenuSound('click');
+}
+
+elSleeveSettings.addEventListener('click', () => {
+  if (isPlaying) return;
+  showPanel(activePanel === 'settings' ? 'controls' : 'settings');
+});
+
+elSleeveCamera.addEventListener('click', () => {
+  playMenuSound('forbidden');
+});
+
+// ── Mirrored Dialogue Toggle ─────────────────────────────────
+function setMirrored(value) {
+  dialogueMirrored = value;
+  elSwitchMirrored.classList.toggle('on', value);
+  elDialogueBox.classList.toggle('mirrored', value);
+}
+
+elSwitchMirrored.addEventListener('click', () => {
+  setMirrored(!dialogueMirrored);
+  playMenuSound('click');
+});
 
 console.log(`[Dialoggo] v${appVersion} — ${characters.length} characters, ${genericSounds.length} generic sounds`);

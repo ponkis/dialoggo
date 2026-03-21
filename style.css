@@ -73,6 +73,7 @@ body {
    ══════════════════════════════════════════════════════════════ */
 .preview-area::after,
 .controls-panel::after,
+.settings-panel::after,
 .titlebar::after,
 .bottombar::after {
   content: '';
@@ -463,6 +464,150 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   PANEL WRAPPER  (holds sleeve tabs + controls/settings)
+   3D flip container — iOS-style card rotation
+   ══════════════════════════════════════════════════════════════ */
+.panel-wrapper {
+  position: relative;
+  flex-shrink: 0;
+  perspective: 900px;
+}
+
+/* Both panels stacked; the active one is in-flow, the other is overlay */
+.panel-wrapper .controls-panel,
+.panel-wrapper .settings-panel {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-origin: center bottom;
+}
+
+.panel-wrapper .controls-panel {
+  transform: rotateX(0deg);
+  opacity: 1;
+  transition: transform 0.45s var(--ease-out), opacity 0.3s ease;
+}
+
+.panel-wrapper .controls-panel.panel-hidden {
+  transform: rotateX(-90deg);
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.panel-wrapper .settings-panel {
+  transform: rotateX(90deg);
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  transition: transform 0.45s var(--ease-out), opacity 0.3s ease;
+}
+
+.panel-wrapper .settings-panel.panel-visible {
+  transform: rotateX(0deg);
+  opacity: 1;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Sleeve Tabs ─────────────────────────────────────────── */
+.sleeve-tabs {
+  position: absolute;
+  top: -30px;
+  right: 20px;
+  display: flex;
+  gap: 4px;
+  pointer-events: auto;
+}
+
+.sleeve-tab {
+  width: 38px;
+  height: 34px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 5px;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  transition: transform 0.25s var(--ease-spring), box-shadow 0.2s ease;
+  transform: translateY(6px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.15),
+    0 -2px 6px rgba(0,0,0,0.4);
+  -webkit-app-region: no-drag;
+}
+
+.sleeve-tab::before {
+  content: '';
+  position: absolute;
+  inset: 2px 3px;
+  border: 1.5px dashed rgba(255,255,255,0.18);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  pointer-events: none;
+}
+
+.sleeve-tab::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 8px 8px 0 0;
+  pointer-events: none;
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='6'%3E%3Crect width='6' height='6' fill='none'/%3E%3Cpath d='M0 3h6M3 0v6' stroke='rgba(255,255,255,0.06)' stroke-width='0.5'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+.sleeve-tab:hover {
+  transform: translateY(0px);
+}
+
+.sleeve-tab.active {
+  transform: translateY(0px);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.2),
+    0 -3px 8px rgba(0,0,0,0.5);
+}
+
+.sleeve-tab-icon {
+  width: 16px;
+  height: 16px;
+  position: relative;
+  z-index: 1;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,0.5));
+}
+
+/* Blue sleeve — camera */
+.sleeve-tab-camera {
+  background:
+    linear-gradient(180deg, #4a7ab5 0%, #2e5a8a 40%, #1e3f65 100%);
+  color: rgba(180, 210, 240, 0.9);
+}
+
+.sleeve-tab-camera:hover {
+  background:
+    linear-gradient(180deg, #5a8ac5 0%, #3e6a9a 40%, #2e4f75 100%);
+}
+
+/* Red sleeve — settings */
+.sleeve-tab-settings {
+  background:
+    linear-gradient(180deg, #b54a4a 0%, #8a2e2e 40%, #651e1e 100%);
+  color: rgba(240, 180, 180, 0.9);
+}
+
+.sleeve-tab-settings:hover {
+  background:
+    linear-gradient(180deg, #c55a5a 0%, #9a3e3e 40%, #752e2e 100%);
+}
+
+/* ══════════════════════════════════════════════════════════════
    CONTROLS PANEL
    ══════════════════════════════════════════════════════════════ */
 .controls-panel {
@@ -475,6 +620,297 @@ body {
   flex-shrink: 0;
   position: relative;
   box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SETTINGS PANEL — guitar pedal / stomp box skeuomorphic
+   ══════════════════════════════════════════════════════════════ */
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0;
+  padding: 14px 18px;
+  background:
+    linear-gradient(170deg, #3a3530 0%, #2a2420 30%, #1e1810 60%, #141008 100%);
+  border-top: 1px solid rgba(255, 200, 100, 0.06);
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.5),
+    inset 0 -1px 0 rgba(255,255,255,0.03);
+  overflow: hidden;
+}
+
+/* Brushed-metal texture overlay */
+.settings-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.04;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      rgba(255,255,255,0.5) 1px,
+      transparent 2px,
+      transparent 4px
+    );
+}
+
+.settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Setting Row — pedal control strip ───────────────────── */
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 16px;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.3) 100%);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 5px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    inset 0 0 12px rgba(0,0,0,0.2),
+    0 1px 3px rgba(0,0,0,0.3);
+}
+
+.setting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.setting-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.setting-desc {
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TOGGLE SWITCH — physical flip lever (like a real ON/OFF)
+   ══════════════════════════════════════════════════════════════ */
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
+}
+
+.toggle-switch-base {
+  width: 44px;
+  height: 56px;
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, #484440 0%, #3a3632 40%, #2a2622 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    inset 0 -1px 0 rgba(0,0,0,0.4),
+    0 2px 6px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(0,0,0,0.4);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Recessed slot the lever sits in */
+.toggle-switch-slot {
+  width: 28px;
+  height: 44px;
+  border-radius: 3px;
+  background:
+    linear-gradient(180deg, #0a0a08 0%, #1a1810 50%, #0a0a08 100%);
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,0.8),
+    inset 0 -1px 3px rgba(0,0,0,0.5);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+}
+
+.toggle-label-off,
+.toggle-label-on {
+  font-size: 6px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  pointer-events: none;
+  user-select: none;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+  z-index: 1;
+}
+
+.toggle-label-on {
+  color: var(--text-muted);
+  opacity: 0.3;
+}
+
+.toggle-label-off {
+  color: var(--text-secondary);
+  opacity: 0.8;
+}
+
+.toggle-switch.on .toggle-label-on {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.toggle-switch.on .toggle-label-off {
+  color: var(--text-muted);
+  opacity: 0.3;
+}
+
+/* The lever itself */
+.toggle-switch-lever {
+  position: absolute;
+  width: 20px;
+  height: 26px;
+  border-radius: 3px;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  transform-origin: center bottom;
+  transition: top 0.2s var(--ease-spring), transform 0.2s var(--ease-spring);
+  z-index: 2;
+
+  background:
+    linear-gradient(180deg,
+      #e0d8c8 0%,
+      #c8c0b0 15%,
+      #b0a898 30%,
+      #a09888 50%,
+      #908878 70%,
+      #787068 100%
+    );
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.4),
+    inset 0 -1px 2px rgba(0,0,0,0.3),
+    inset -1px 0 1px rgba(0,0,0,0.1),
+    inset 1px 0 1px rgba(255,255,255,0.1),
+    0 2px 4px rgba(0,0,0,0.5),
+    0 4px 8px rgba(0,0,0,0.3);
+}
+
+/* Ridged grip lines on the lever */
+.toggle-switch-lever::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 5px;
+  right: 5px;
+  height: 14px;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      transparent 0px,
+      transparent 2px,
+      rgba(0,0,0,0.15) 2px,
+      rgba(0,0,0,0.15) 3px,
+      transparent 3px,
+      transparent 4px
+    );
+  border-radius: 1px;
+}
+
+/* Highlight shimmer */
+.toggle-switch-lever::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 3px;
+  right: 6px;
+  height: 6px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.2), transparent);
+  border-radius: 2px;
+}
+
+.toggle-switch.on .toggle-switch-lever {
+  top: 14px;
+}
+
+/* LED indicator */
+.toggle-led {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2a2520;
+  box-shadow:
+    inset 0 1px 2px rgba(0,0,0,0.6),
+    0 0 0 1.5px rgba(0,0,0,0.3),
+    0 0 0 2.5px rgba(40,35,30,0.4);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.toggle-switch.on .toggle-led {
+  background: #f5c842;
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,200,0.4),
+    0 0 4px rgba(245, 200, 66, 0.6),
+    0 0 10px rgba(245, 200, 66, 0.3),
+    0 0 0 1.5px rgba(245, 200, 66, 0.2);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MIRRORED DIALOGUE — anchored right, expands left
+   The dialogue-container is centered via left:50% + translateX(-50%).
+   For mirrored: the BOX itself uses margin-left:auto to hug the right
+   edge of the container, then width expands leftward naturally.
+   ══════════════════════════════════════════════════════════════ */
+.dialogue-box.mirrored {
+  flex-direction: row-reverse;
+  margin-left: auto;
+  transform: translateX(120px);
+}
+
+.dialogue-box.mirrored .sprite-container {
+  transform: scaleX(-1);
+}
+
+.dialogue-box.mirrored .dialogue-text-area {
+  padding: 6px 14px 6px 0;
+}
+
+.dialogue-box.mirrored.slide-in {
+  margin-left: auto;
+  transform: translateX(0);
+}
+
+.dialogue-box.mirrored.expand {
+  margin-left: auto;
+  transform: translateX(0);
+}
+
+.dialogue-box.mirrored.shrink {
+  margin-left: auto;
+  transform: translateX(0);
+}
+
+.dialogue-box.mirrored.slide-out {
+  margin-left: auto;
+  transform: translateX(120px);
 }
 
 /* ── Editor Row ────────────────────────────────────────────── */
