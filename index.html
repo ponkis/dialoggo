@@ -121,29 +121,92 @@
         <!-- BACK — Settings Panel (red billiard cloth style) -->
         <div class="flip-face flip-back settings-panel" id="settings-panel">
           <div class="settings-body">
-            <div class="settings-heading">
-              <span class="settings-heading-title">Table options</span>
-              <span class="settings-heading-subtitle">Cue up how dialogue appears on screen</span>
-            </div>
+            <header class="settings-heading">
+              <span class="settings-heading-title">Settings</span>
+              <span class="settings-heading-subtitle">Tweak the settings to your liking.</span>
+            </header>
 
-            <div class="setting-row">
-              <div class="setting-info">
-                <span class="setting-label">Dialogue Orientation</span>
-                <span class="setting-desc">Regular starts left. Mirrored starts right.</span>
-              </div>
-              <!-- From Uiverse.io by Nawsome — adapted & scaled -->
-              <div class="mirrored-switch-host" title="Toggle mirrored dialogue">
-                <label class="mirrored-dialogue-switch" id="switch-mirrored">
-                  <input type="checkbox" id="input-mirrored-dialogue" aria-label="Mirrored dialogue">
-                  <div class="uiverse-switch-button">
-                    <div class="uiverse-light"></div>
-                    <div class="uiverse-dots"></div>
-                    <div class="uiverse-characters"></div>
-                    <div class="uiverse-shine"></div>
-                    <div class="uiverse-shadow"></div>
+            <div class="settings-stitch settings-stitch--hero" aria-hidden="true"></div>
+
+            <div class="settings-columns">
+              <section class="settings-category" aria-labelledby="settings-cat-dialogue">
+                <div class="settings-category-head">
+                  <span id="settings-cat-dialogue" class="settings-category-title">Dialogue</span>
+                </div>
+                <div class="settings-stitch settings-stitch--under-title" aria-hidden="true"></div>
+
+                <div class="setting-row" role="group" aria-label="Dialogue orientation">
+                  <div class="setting-info">
+                    <span class="setting-label">Orientation</span>
+                    <span class="setting-desc">Regular starts left. Mirrored starts right.</span>
                   </div>
-                </label>
-              </div>
+                  <!-- Uiverse 3D rocker (shared style) -->
+                  <div class="uiverse-rocker-host" title="Toggle mirrored dialogue">
+                    <label class="uiverse-rocker-switch" id="switch-mirrored">
+                      <input type="checkbox" id="input-mirrored-dialogue" aria-label="Mirrored dialogue">
+                      <div class="uiverse-switch-button">
+                        <div class="uiverse-light"></div>
+                        <div class="uiverse-dots"></div>
+                        <div class="uiverse-characters"></div>
+                        <div class="uiverse-shine"></div>
+                        <div class="uiverse-shadow"></div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </section>
+
+              <section class="settings-category" aria-labelledby="settings-cat-graphics">
+                <div class="settings-category-head">
+                  <span id="settings-cat-graphics" class="settings-category-title">Graphics</span>
+                </div>
+                <div class="settings-stitch settings-stitch--under-title" aria-hidden="true"></div>
+
+                <div class="setting-row" role="group" aria-label="N64 mode">
+                  <div class="setting-info">
+                    <span class="setting-label">N64 mode</span>
+                    <span class="setting-desc">Makes dialogue low quality.</span>
+                  </div>
+                  <div class="uiverse-rocker-host" title="N64 mode">
+                    <label class="uiverse-rocker-switch" id="switch-n64-mode">
+                      <input type="checkbox" id="input-n64-mode" aria-label="N64 mode">
+                      <div class="uiverse-switch-button">
+                        <div class="uiverse-light"></div>
+                        <div class="uiverse-dots"></div>
+                        <div class="uiverse-characters"></div>
+                        <div class="uiverse-shine"></div>
+                        <div class="uiverse-shadow"></div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </section>
+
+              <section class="settings-category" aria-labelledby="settings-cat-misc">
+                <div class="settings-category-head">
+                  <span id="settings-cat-misc" class="settings-category-title">Misc</span>
+                </div>
+                <div class="settings-stitch settings-stitch--under-title" aria-hidden="true"></div>
+
+                <div class="setting-row" role="group" aria-label="Hide broken characters">
+                  <div class="setting-info">
+                    <span class="setting-label">Hide broken characters</span>
+                    <span class="setting-desc">Hides characters that are incomplete.</span>
+                  </div>
+                  <div class="uiverse-rocker-host" title="Hide broken characters">
+                    <label class="uiverse-rocker-switch" id="switch-hide-broken-chars">
+                      <input type="checkbox" id="input-hide-broken-chars" aria-label="Hide broken characters">
+                      <div class="uiverse-switch-button">
+                        <div class="uiverse-light"></div>
+                        <div class="uiverse-dots"></div>
+                        <div class="uiverse-characters"></div>
+                        <div class="uiverse-shine"></div>
+                        <div class="uiverse-shadow"></div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </section>
             </div>
           </div>
         </div>

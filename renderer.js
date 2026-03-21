@@ -177,7 +177,7 @@ document.addEventListener('click', (e) => {
   if (el.disabled) return;
   // Character buttons and arrows have their own dedicated sounds
   if (el.classList.contains('char-btn') || el.closest('.reel-arrow')) return;
-  if (el.classList.contains('sleeve-tab') || el.closest('.mirrored-dialogue-switch')) return;
+  if (el.classList.contains('sleeve-tab') || el.closest('.uiverse-rocker-switch')) return;
   playMenuSound('click');
 }, true);
 
@@ -954,7 +954,11 @@ async function playDialogue() {
   pauseTransitionLock = false;
 
   const text = elInput.value.trim();
-  if (!text) return;
+  if (!text) {
+    isPlaying = false;
+    updateSettingsSleeveBlockedState();
+    return;
+  }
 
   const charMsPerChar = 40;
   const char = selectedCharacter;
@@ -966,6 +970,7 @@ async function playDialogue() {
   document.querySelectorAll('.char-btn').forEach(btn => (btn.disabled = true));
   elStatusDot.classList.add('playing');
   elStatusDot.classList.remove('paused');
+  updateSettingsSleeveBlockedState();
 
   elPlaceholder.classList.add('fade-out');
   elDialogueContainer.classList.add('active');
@@ -1147,6 +1152,7 @@ async function finishDialogue() {
     btn.disabled = !(c && c.isAvailable);
   });
   updatePlayButton();
+  updateSettingsSleeveBlockedState();
 }
 
 function stopDialogue() {
@@ -1169,6 +1175,7 @@ function stopDialogue() {
   spriteRenderer.startIdleAfterDelay(2000);
   setInputLocked(false);
   elStatusDot.classList.remove('paused');
+  updateSettingsSleeveBlockedState();
 }
 
 function doPause() {
@@ -1189,6 +1196,7 @@ function doPause() {
   elStatusDot.classList.add('paused');
   setInputLocked(true);
   setTimeout(() => { pauseTransitionLock = false; }, 140);
+  updateSettingsSleeveBlockedState();
 }
 
 function doResume() {
@@ -1207,6 +1215,7 @@ function doResume() {
   elStatusDot.classList.remove('paused');
   setInputLocked(true);
   setTimeout(() => { pauseTransitionLock = false; }, 140);
+  updateSettingsSleeveBlockedState();
 }
 
 // ── Event Listeners ─────────────────────────────────────────
@@ -1282,9 +1291,9 @@ async function collapsePreviewThenSettings() {
   void elPreviewArea.offsetHeight;
 
   elPreviewArea.style.transition =
-    `height ${PREVIEW_COLLAPSE_MS}ms ${PREVIEW_EASE}, filter ${PREVIEW_COLLAPSE_MS}ms ${PREVIEW_EASE}, background ${PREVIEW_COLLAPSE_MS}ms ${PREVIEW_EASE}`;
+    `height ${PREVIEW_COLLAPSE_MS}ms ${PREVIEW_EASE}, filter ${PREVIEW_COLLAPSE_MS}ms ${PREVIEW_EASE}`;
 
-  elPreviewArea.classList.add('preview-strip-collapsed', 'preview-bw-mode', 'preview-content-hidden');
+  elPreviewArea.classList.add('preview-strip-collapsed', 'preview-settings-muted', 'preview-content-hidden');
   stopPlaceholderAnim();
 
   requestAnimationFrame(() => {
@@ -1295,7 +1304,7 @@ async function collapsePreviewThenSettings() {
 }
 
 async function expandPreviewAfterControls() {
-  elPreviewArea.classList.remove('preview-bw-mode');
+  elPreviewArea.classList.remove('preview-settings-muted');
 
   const target = computeExpandedPreviewHeight();
   elPreviewArea.style.flex = '0 0 auto';
@@ -1329,13 +1338,14 @@ async function expandPreviewAfterControls() {
 
 async function showPanel(panel) {
   if (panelTransitionLock || panel === activePanel) return;
-  if (isPlaying) return;
+  if (panel === 'settings' && (isPlaying || isPaused)) return;
 
   panelTransitionLock = true;
   playMenuSound('click');
 
   try {
     if (panel === 'settings') {
+      elSleeveSettings.classList.add('active');
       if (elPanelWrapper) {
         elPanelWrapper.dataset.naturalPanelHeight = String(
           Math.round(elPanelWrapper.getBoundingClientRect().height)
@@ -1344,7 +1354,6 @@ async function showPanel(panel) {
       elApp?.classList.add('settings-panel-open');
       await collapsePreviewThenSettings();
       elFlipCard.classList.add('flipped');
-      elSleeveSettings.classList.add('active');
       activePanel = 'settings';
     } else {
       elFlipCard.classList.remove('flipped');
@@ -1358,8 +1367,18 @@ async function showPanel(panel) {
   }
 }
 
+function updateSettingsSleeveBlockedState() {
+  if (!elSleeveSettings) return;
+  const blocked = isPlaying || isPaused;
+  elSleeveSettings.classList.toggle('sleeve-tab-blocked', blocked);
+  elSleeveSettings.setAttribute('aria-disabled', blocked ? 'true' : 'false');
+  elSleeveSettings.title = blocked
+    ? 'Settings (available when dialogue is idle)'
+    : 'Settings';
+}
+
 elSleeveSettings.addEventListener('click', () => {
-  if (isPlaying) return;
+  if (isPlaying || isPaused) return; /* forbidden sound: global pointerdown + aria-disabled */
   void showPanel(activePanel === 'settings' ? 'controls' : 'settings');
 });
 
@@ -1378,5 +1397,7 @@ elInputMirrored?.addEventListener('change', () => {
   setMirrored(elInputMirrored.checked);
   playMenuSound('click');
 });
+
+updateSettingsSleeveBlockedState();
 
 console.log(`[Dialoggo] v${appVersion} — ${characters.length} characters, ${genericSounds.length} generic sounds`);

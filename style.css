@@ -256,9 +256,7 @@ body {
   position: relative;
   overflow: hidden;
   min-height: 180px;
-  transition:
-    filter 0.42s var(--ease-out),
-    background 0.42s var(--ease-out);
+  transition: filter 0.42s var(--ease-out);
 }
 
 /* Inner stack: scales/fades while the strip collapses (settings transition) */
@@ -276,15 +274,9 @@ body {
     opacity 0.35s ease;
 }
 
-/* Black & white “dead” preview strip before the card flips */
-.preview-area.preview-bw-mode {
-  filter: grayscale(1) saturate(0) contrast(1.12) brightness(0.9);
-  background: linear-gradient(180deg, #2e2e2e 0%, #121212 55%, #0a0a0a 100%) !important;
-}
-
-.preview-area.preview-bw-mode::before {
-  opacity: 0;
-  transition: opacity 0.35s ease;
+/* Muted preview strip in settings flow — filter only so checkerboard stays visible */
+.preview-area.preview-settings-muted {
+  filter: grayscale(0.88) saturate(0.45) contrast(1.06) brightness(0.98);
 }
 
 /* Collapsed strip: panel stack grows upward; only a sliver of preview remains */
@@ -516,6 +508,8 @@ body {
   flex: 1;
   justify-content: center;
   min-height: 0;
+  align-self: center;
+  width: 100%;
 }
 
 /* Base tray that sits under both card faces */
@@ -651,6 +645,31 @@ body {
     linear-gradient(180deg, #c55a5a 0%, #9a3e3e 40%, #752e2e 100%);
 }
 
+/* Settings sleeve unavailable while dialogue is playing or paused */
+.sleeve-tab.sleeve-tab-blocked {
+  cursor: not-allowed;
+  filter: grayscale(0.85) brightness(0.72) saturate(0.4);
+  opacity: 0.72;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 -1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.sleeve-tab.sleeve-tab-blocked::before {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.sleeve-tab.sleeve-tab-blocked:hover {
+  transform: translateY(6px);
+}
+
+.sleeve-tab.sleeve-tab-blocked.active {
+  transform: translateY(6px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 -1px 4px rgba(0, 0, 0, 0.35);
+}
+
 /* ══════════════════════════════════════════════════════════════
    CONTROLS PANEL
    ══════════════════════════════════════════════════════════════ */
@@ -670,8 +689,6 @@ body {
    SETTINGS PANEL — red billiard cloth
    ══════════════════════════════════════════════════════════════ */
 .settings-panel {
-  display: flex;
-  flex-direction: column;
   gap: 10px;
   padding: 14px 18px;
   background:
@@ -706,11 +723,14 @@ body {
 .settings-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  align-items: center;
+  gap: 8px;
+  align-items: stretch;
   position: relative;
   z-index: 1;
-  padding: 4px 2px;
+  padding: 4px 8px 10px;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
 }
 
 .settings-heading {
@@ -718,6 +738,7 @@ body {
   flex-direction: column;
   gap: 2px;
   text-align: center;
+  width: 100%;
 }
 
 .settings-heading-title {
@@ -733,34 +754,126 @@ body {
   font-size: 9px;
   color: rgba(235, 200, 180, 0.62);
   letter-spacing: 0.35px;
-  max-width: 260px;
+  max-width: 320px;
+  margin: 0 auto;
   line-height: 1.35;
 }
 
-/* ── Setting Row — velvet info lane with brass edge ─────── */
-.setting-row {
+/* ── Stitched cloth separators (between hero, categories, table rows) ── */
+.settings-stitch {
+  position: relative;
+  height: 14px;
+  flex-shrink: 0;
+  pointer-events: none;
+  opacity: 0.9;
+}
+
+.settings-stitch--hero {
+  height: 18px;
+  margin-bottom: 2px;
+}
+
+.settings-stitch--under-title {
+  height: 12px;
+  margin: 4px -16px 8px;
+}
+
+.settings-stitch::before {
+  content: '';
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  top: 50%;
+  border-top: 1.5px dashed rgba(255, 222, 190, 0.3);
+  transform: translateY(-50%);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Second “thread” line — tighter stitch ticks */
+.settings-stitch::after {
+  content: '';
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  top: calc(50% + 3px);
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.12) 0 2px,
+    transparent 2px 8px
+  );
+  opacity: 0.55;
+}
+
+/* Multi-column categories (add more <section class="settings-category">) */
+.settings-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(268px, 1fr));
+  gap: 18px 24px;
+  width: 100%;
+  align-items: start;
+}
+
+.settings-category {
+  position: relative;
+  padding: 12px 14px 14px;
+  background:
+    linear-gradient(165deg, rgba(0, 0, 0, 0.2) 0%, rgba(18, 4, 8, 0.42) 100%);
+  border: 1px solid rgba(200, 150, 105, 0.24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -2px 12px rgba(0, 0, 0, 0.38),
+    0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.settings-category-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  justify-content: center;
+  gap: 8px;
+}
+
+.settings-category-title {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 2.4px;
+  text-transform: uppercase;
+  color: rgba(255, 228, 210, 0.78);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+/* ── Setting row: copy on the left, switch on the right (no “table” columns) ── */
+.setting-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px 18px;
+  flex-wrap: wrap;
   padding: 11px 14px;
   overflow: visible;
   background:
     linear-gradient(180deg, rgba(85, 10, 20, 0.45) 0%, rgba(45, 6, 12, 0.7) 100%);
   border: 1px solid rgba(210, 165, 110, 0.24);
-  border-radius: 4px;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.08),
     inset 0 0 10px rgba(0,0,0,0.22),
     0 1px 3px rgba(0,0,0,0.5);
 }
 
+.setting-row .uiverse-rocker-host {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .setting-info {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  flex: 1;
+  flex: 0 1 auto;
+  max-width: min(100%, 340px);
   min-width: 0;
+  text-align: left;
 }
 
 .setting-label {
@@ -779,10 +892,10 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   MIRRORED DIALOGUE — Uiverse 3D flip switch (scoped)
+   UIVERSE 3D ROCKER — shared by all settings toggles
    From Uiverse.io by Nawsome — adapted for Dialoggo
    ══════════════════════════════════════════════════════════════ */
-.mirrored-switch-host {
+.uiverse-rocker-host {
   /* Layout box matches *scaled* footprint so flex + overflow don’t clip a 150px-wide control */
   --uiverse-scale: 0.3;
   flex-shrink: 0;
@@ -795,7 +908,7 @@ body {
   -webkit-app-region: no-drag;
 }
 
-.mirrored-dialogue-switch {
+.uiverse-rocker-switch {
   /* Pre-scale shadow sizes by 1/scale so after transform: scale() the bezel
      stays ≥~1px on screen (tiny scales no longer wipe the gray #47434c ring). */
   --us: max(0.2, var(--uiverse-scale, 1));
@@ -815,28 +928,28 @@ body {
   transform-origin: center center;
 }
 
-.mirrored-dialogue-switch input {
+.uiverse-rocker-switch input {
   display: none;
 }
 
-.mirrored-dialogue-switch input:checked + .uiverse-switch-button {
+.uiverse-rocker-switch input:checked + .uiverse-switch-button {
   transform: translateZ(20px) rotateX(25deg);
   box-shadow: 0 -10px 20px #ff1818;
 }
 
-.mirrored-dialogue-switch input:checked + .uiverse-switch-button .uiverse-light {
+.uiverse-rocker-switch input:checked + .uiverse-switch-button .uiverse-light {
   animation: uiverse-flicker 0.2s infinite 0.3s;
 }
 
-.mirrored-dialogue-switch input:checked + .uiverse-switch-button .uiverse-shine {
+.uiverse-rocker-switch input:checked + .uiverse-switch-button .uiverse-shine {
   opacity: 1;
 }
 
-.mirrored-dialogue-switch input:checked + .uiverse-switch-button .uiverse-shadow {
+.uiverse-rocker-switch input:checked + .uiverse-switch-button .uiverse-shadow {
   opacity: 0;
 }
 
-.mirrored-dialogue-switch .uiverse-switch-button {
+.uiverse-rocker-switch .uiverse-switch-button {
   display: block;
   transition: all 0.3s cubic-bezier(1, 0, 1, 1);
   transform-origin: center center -20px;
@@ -849,7 +962,7 @@ body {
   background-repeat: no-repeat;
 }
 
-.mirrored-dialogue-switch .uiverse-switch-button::before {
+.uiverse-rocker-switch .uiverse-switch-button::before {
   content: "";
   background: linear-gradient(rgba(255, 255, 255, 0.8) 10%, rgba(255, 255, 255, 0.3) 30%, #650000 75%, #320000) 50% 50%/97% 97%, #b10000;
   background-repeat: no-repeat;
@@ -861,7 +974,7 @@ body {
   top: 0;
 }
 
-.mirrored-dialogue-switch .uiverse-switch-button::after {
+.uiverse-rocker-switch .uiverse-switch-button::after {
   content: "";
   background-image: linear-gradient(#650000, #320000);
   width: 100%;
@@ -873,7 +986,7 @@ body {
   box-shadow: 0 50px 8px 0 #0000008a, 0 80px 20px 0 rgb(0 0 0 / 0%);
 }
 
-.mirrored-dialogue-switch .uiverse-light {
+.uiverse-rocker-switch .uiverse-light {
   opacity: 0;
   animation: uiverse-light-off 1s;
   position: absolute;
@@ -882,7 +995,7 @@ body {
   background-image: radial-gradient(#ffc97e, #ff1818 40%, transparent 70%);
 }
 
-.mirrored-dialogue-switch .uiverse-dots {
+.uiverse-rocker-switch .uiverse-dots {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -890,7 +1003,7 @@ body {
   background-size: 10px 10px;
 }
 
-.mirrored-dialogue-switch .uiverse-characters {
+.uiverse-rocker-switch .uiverse-characters {
   position: absolute;
   width: 100%;
   height: 100%;
@@ -900,7 +1013,7 @@ body {
   background-repeat: no-repeat;
 }
 
-.mirrored-dialogue-switch .uiverse-shine {
+.uiverse-rocker-switch .uiverse-shine {
   transition: all 0.3s cubic-bezier(1, 0, 1, 1);
   opacity: 0.3;
   position: absolute;
@@ -912,7 +1025,7 @@ body {
   background-repeat: no-repeat;
 }
 
-.mirrored-dialogue-switch .uiverse-shadow {
+.uiverse-rocker-switch .uiverse-shadow {
   transition: all 0.3s cubic-bezier(1, 0, 1, 1);
   opacity: 1;
   position: absolute;
