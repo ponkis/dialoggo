@@ -786,8 +786,8 @@ function renderN64DialogueTextCanvas() {
     ctxHi.clip();
 
     const padT = 6;
-    const padL = dialogueMirrored ? 0 : 14;
-    const padR = dialogueMirrored ? 14 : 0;
+    /* Match .dialogue-text-area padding; always LTR text like non-N64 mirrored (no right-align). */
+    const padL = dialogueMirrored ? 30 : 14;
 
     ctxHi.font = N64_TEXT_FONT;
     /* Avoid throws on older Electron: property may not exist or may reject value */
@@ -817,13 +817,8 @@ function renderN64DialogueTextCanvas() {
       } else {
         y = padT + i * N64_TEXT_LINE_HEIGHT + scrollY;
       }
-      if (dialogueMirrored) {
-        ctxHi.textAlign = 'right';
-        ctxHi.fillText(text, W - padR, y);
-      } else {
-        ctxHi.textAlign = 'left';
-        ctxHi.fillText(text, padL, y);
-      }
+      ctxHi.textAlign = 'left';
+      ctxHi.fillText(text, padL, y);
     }
 
     ctxHi.restore();
