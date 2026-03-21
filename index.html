@@ -16,10 +16,6 @@
 
   <!-- Title Bar -->
   <div class="titlebar">
-    <div class="titlebar-title">
-      <img src="./favicon.svg" alt="Dialoggo Icon" style="width: 16px; height: 16px; border-radius: 2px;">
-      Dialoggo
-    </div>
     <div class="titlebar-controls">
       <button class="titlebar-btn" id="btn-minimize" title="Minimize">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -37,6 +33,10 @@
           <line x1="6" y1="18" x2="18" y2="6"/>
         </svg>
       </button>
+    </div>
+    <div class="titlebar-title">
+      <img src="./favicon.svg" alt="Dialoggo Icon" style="width: 18px; height: 18px;">
+      Dialoggo
     </div>
   </div>
 
@@ -67,15 +67,8 @@
 
     <!-- Controls Panel -->
     <div class="controls-panel">
-      <!-- Character Selector -->
-      <div>
-        <div class="section-label">Character</div>
-        <div class="character-grid" id="character-grid">
-          <!-- populated by JS -->
-        </div>
-      </div>
 
-      <!-- Editor + Buttons -->
+      <!-- Editor + Buttons row -->
       <div class="editor-row">
         <div class="text-input-wrapper">
           <textarea
@@ -101,11 +94,16 @@
         </div>
       </div>
 
-      <!-- Bottom bar -->
-      <div class="bottom-bar">
-        <div class="controls-left">
-          <!-- Speed control removed -->
+      <!-- Character Selector -->
+      <div class="character-section">
+        <div class="section-label">Character</div>
+        <div class="character-grid" id="character-grid">
+          <!-- populated by JS -->
         </div>
+      </div>
+
+      <!-- Status bar -->
+      <div class="status-bar">
         <div class="status" id="status">
           <span class="status-dot" id="status-dot"></span>
           <span id="status-text">Ready</span>
