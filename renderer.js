@@ -160,6 +160,9 @@ const menuSoundPaths = {
   arrowRight: path.join(MENU_SND_DIR, '3.wav'),
   arrowLeft: path.join(MENU_SND_DIR, '4.wav'),
   forbidden: path.join(MENU_SND_DIR, '5.wav'),
+  /** Settings sleeve: open / close (same files as arrow L/R — dedicated keys for clarity) */
+  settingsOpen: path.join(MENU_SND_DIR, '3.wav'),
+  settingsClose: path.join(MENU_SND_DIR, '4.wav'),
 };
 
 function playMenuSound(key) {
@@ -1341,7 +1344,11 @@ async function showPanel(panel) {
   if (panel === 'settings' && (isPlaying || isPaused)) return;
 
   panelTransitionLock = true;
-  playMenuSound('click');
+  if (panel === 'settings') {
+    playMenuSound('settingsOpen');
+  } else {
+    playMenuSound('settingsClose');
+  }
 
   try {
     if (panel === 'settings') {

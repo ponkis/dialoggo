@@ -290,7 +290,7 @@ body {
   pointer-events: none;
 }
 
-/* Checkerboard wireframe overlay */
+/* Checkerboard wireframe overlay — drifts diagonally (tile repeats every 28px) */
 .preview-area::before {
   content: '';
   position: absolute;
@@ -299,9 +299,24 @@ body {
     linear-gradient(rgba(40, 120, 200, 0.08) 1px, transparent 1px),
     linear-gradient(90deg, rgba(40, 120, 200, 0.08) 1px, transparent 1px);
   background-size: 28px 28px;
+  background-position: 0 0, 0 0;
   pointer-events: none;
+  will-change: background-position;
+  animation: preview-checker-drift 22s linear infinite;
   mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.6) 20%, rgba(0,0,0,0.15) 70%, transparent 100%);
   -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.6) 20%, rgba(0,0,0,0.15) 70%, transparent 100%);
+}
+
+@keyframes preview-checker-drift {
+  to {
+    background-position: 28px 28px, 28px 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview-area::before {
+    animation: none;
+  }
 }
 
 .preview-placeholder {
@@ -1044,6 +1059,135 @@ body {
 @keyframes uiverse-light-off {
   0% { opacity: 1; }
   80% { opacity: 0; }
+}
+
+/* ── Settings: wide viewports — fill space, larger type & rocker switches ── */
+@media (min-width: 1000px) {
+  .settings-body {
+    max-width: min(94vw, 1040px);
+    padding: 8px 16px 14px;
+    gap: 10px;
+  }
+
+  .settings-panel {
+    padding: 16px 22px 16px;
+  }
+
+  .settings-columns {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px 28px;
+  }
+
+  .settings-heading-title {
+    font-size: 12px;
+    letter-spacing: 3.2px;
+  }
+
+  .settings-heading-subtitle {
+    font-size: 10px;
+    max-width: 420px;
+  }
+
+  .settings-category {
+    padding: 14px 18px 18px;
+  }
+
+  .settings-category-title {
+    font-size: 10px;
+    letter-spacing: 2.8px;
+  }
+
+  .setting-label {
+    font-size: 12px;
+  }
+
+  .setting-desc {
+    font-size: 10px;
+  }
+
+  .setting-row {
+    padding: 13px 16px;
+    gap: 16px 22px;
+  }
+
+  .setting-info {
+    max-width: min(100%, 420px);
+  }
+
+  .uiverse-rocker-host {
+    --uiverse-scale: 0.36;
+  }
+}
+
+@media (min-width: 1280px) {
+  .settings-body {
+    max-width: min(92vw, 1260px);
+    padding: 10px 20px 18px;
+  }
+
+  .settings-panel {
+    padding: 18px 32px 22px;
+  }
+
+  .settings-columns {
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 24px 36px;
+  }
+
+  .settings-heading-title {
+    font-size: 13px;
+  }
+
+  .settings-heading-subtitle {
+    font-size: 10.5px;
+    max-width: 520px;
+  }
+
+  .settings-stitch--under-title {
+    margin: 4px -20px 10px;
+  }
+
+  .uiverse-rocker-host {
+    --uiverse-scale: 0.42;
+  }
+}
+
+@media (min-width: 1600px) {
+  .settings-body {
+    max-width: min(90vw, 1420px);
+    padding: 12px 24px 22px;
+  }
+
+  .settings-panel {
+    padding: 22px 40px 26px;
+  }
+
+  .settings-columns {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 28px 44px;
+  }
+
+  .settings-heading-title {
+    font-size: 14px;
+    letter-spacing: 3.2px;
+  }
+
+  .settings-heading-subtitle {
+    font-size: 11px;
+    max-width: 600px;
+  }
+
+  .setting-label {
+    font-size: 13px;
+  }
+
+  .setting-desc {
+    font-size: 10.5px;
+  }
+
+  .uiverse-rocker-host {
+    --uiverse-scale: 0.48;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════
