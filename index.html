@@ -68,80 +68,80 @@
         </button>
       </div>
 
-      <!-- Controls Panel -->
-      <div class="controls-panel" id="controls-panel">
-
-        <!-- Editor + Buttons row -->
-        <div class="editor-row">
-          <div class="text-input-wrapper">
-            <textarea
-              class="text-input"
-              id="dialogue-input"
-              placeholder="Dialogue goes here..."
-              spellcheck="false"
-            ></textarea>
-          </div>
-          <div class="action-buttons">
-            <button class="btn btn-play" id="btn-play" disabled title="Play">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <polygon points="7,4 20,12 7,20"/>
-              </svg>
-            </button>
-            <button class="btn btn-pause" id="btn-pause" disabled title="Pause">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="5" width="4" height="14" rx="1"/>
-                <rect x="14" y="5" width="4" height="14" rx="1"/>
-              </svg>
-            </button>
-            <button class="btn btn-stop" id="btn-stop" disabled title="Stop">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <rect x="6" y="6" width="12" height="12" rx="1"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Character Selector — film reel -->
-        <div class="character-section">
-          <img src="./img/menu/00001466.png" alt="Character" class="section-label-img">
-          <div class="reel-wrapper">
-            <div class="reel-arrow reel-arrow-left" id="reel-arrow-left">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7"/></svg>
+      <!-- Flip Card (both faces stacked in 3D space) -->
+      <div class="flip-card" id="flip-card">
+        <!-- FRONT — Controls Panel -->
+        <div class="flip-face flip-front controls-panel" id="controls-panel">
+          <div class="editor-row">
+            <div class="text-input-wrapper">
+              <textarea
+                class="text-input"
+                id="dialogue-input"
+                placeholder="Dialogue goes here..."
+                spellcheck="false"
+              ></textarea>
             </div>
-            <div class="film-reel">
-              <div class="reel-sprockets reel-sprockets-top"></div>
-              <div class="character-grid" id="character-grid">
-                <!-- populated by JS -->
+            <div class="action-buttons">
+              <button class="btn btn-play" id="btn-play" disabled title="Play">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="7,4 20,12 7,20"/>
+                </svg>
+              </button>
+              <button class="btn btn-pause" id="btn-pause" disabled title="Pause">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="5" width="4" height="14" rx="1"/>
+                  <rect x="14" y="5" width="4" height="14" rx="1"/>
+                </svg>
+              </button>
+              <button class="btn btn-stop" id="btn-stop" disabled title="Stop">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <rect x="6" y="6" width="12" height="12" rx="1"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="character-section">
+            <img src="./img/menu/00001466.png" alt="Character" class="section-label-img">
+            <div class="reel-wrapper">
+              <div class="reel-arrow reel-arrow-left" id="reel-arrow-left">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7"/></svg>
               </div>
-              <div class="reel-sprockets reel-sprockets-bottom"></div>
-              <div class="reel-arrow reel-arrow-right" id="reel-arrow-right">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7"/></svg>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Settings Panel (hidden by default, replaces controls via 3D flip) -->
-      <div class="settings-panel" id="settings-panel">
-        <div class="settings-body">
-          <!-- Dialogue Orientation Setting -->
-          <div class="setting-row">
-            <div class="setting-info">
-              <span class="setting-label">Dialogue Orientation</span>
-              <span class="setting-desc">Flip the dialogue to spawn from the right</span>
-            </div>
-            <div class="toggle-switch" id="switch-mirrored" title="Toggle mirrored dialogue">
-              <div class="toggle-switch-base">
-                <div class="toggle-switch-slot">
-                  <span class="toggle-label-off">REG</span>
-                  <span class="toggle-label-on">MIR</span>
+              <div class="film-reel">
+                <div class="reel-sprockets reel-sprockets-top"></div>
+                <div class="character-grid" id="character-grid"></div>
+                <div class="reel-sprockets reel-sprockets-bottom"></div>
+                <div class="reel-arrow reel-arrow-right" id="reel-arrow-right">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7"/></svg>
                 </div>
-                <div class="toggle-switch-lever"></div>
               </div>
-              <div class="toggle-led" id="led-mirrored"></div>
             </div>
+          </div>
+        </div>
+
+        <!-- BACK — Settings Panel (green guitar pedal) -->
+        <div class="flip-face flip-back settings-panel" id="settings-panel">
+          <div class="pedal-label">DIALOGGO</div>
+          <div class="settings-body">
+            <div class="setting-row">
+              <div class="setting-info">
+                <span class="setting-label">Dialogue Orientation</span>
+                <span class="setting-desc">Flip the dialogue to spawn from the right</span>
+              </div>
+              <div class="toggle-switch" id="switch-mirrored" title="Toggle mirrored dialogue">
+                <div class="toggle-switch-base">
+                  <div class="toggle-switch-slot">
+                    <span class="toggle-label-off">REG</span>
+                    <span class="toggle-label-on">MIR</span>
+                  </div>
+                  <div class="toggle-switch-lever"></div>
+                </div>
+                <div class="toggle-led" id="led-mirrored"></div>
+              </div>
+            </div>
+          </div>
+          <div class="pedal-footer">
+            <div class="pedal-screwhole"></div>
+            <div class="pedal-screwhole"></div>
           </div>
         </div>
       </div>

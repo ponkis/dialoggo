@@ -464,54 +464,35 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   PANEL WRAPPER  (holds sleeve tabs + controls/settings)
-   3D flip container — iOS-style card rotation
+   PANEL WRAPPER  +  3D FLIP CARD
+   True card-flip: both faces exist in shared 3D space, the card
+   rotates 180 deg on Y to reveal the back (settings panel).
    ══════════════════════════════════════════════════════════════ */
 .panel-wrapper {
   position: relative;
   flex-shrink: 0;
-  perspective: 900px;
+  perspective: 1000px;
 }
 
-/* Both panels stacked; the active one is in-flow, the other is overlay */
-.panel-wrapper .controls-panel,
-.panel-wrapper .settings-panel {
+.flip-card {
+  position: relative;
+  transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.flip-card.flipped {
+  transform: rotateY(180deg);
+}
+
+.flip-face {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  transform-origin: center bottom;
 }
 
-.panel-wrapper .controls-panel {
-  transform: rotateX(0deg);
-  opacity: 1;
-  transition: transform 0.45s var(--ease-out), opacity 0.3s ease;
-}
-
-.panel-wrapper .controls-panel.panel-hidden {
-  transform: rotateX(-90deg);
-  opacity: 0;
-  pointer-events: none;
+.flip-back {
   position: absolute;
   inset: 0;
-  z-index: 0;
-}
-
-.panel-wrapper .settings-panel {
-  transform: rotateX(90deg);
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  transition: transform 0.45s var(--ease-out), opacity 0.3s ease;
-}
-
-.panel-wrapper .settings-panel.panel-visible {
-  transform: rotateX(0deg);
-  opacity: 1;
-  pointer-events: auto;
-  position: relative;
-  z-index: 1;
+  transform: rotateY(180deg);
 }
 
 /* ── Sleeve Tabs ─────────────────────────────────────────── */
@@ -521,6 +502,7 @@ body {
   right: 20px;
   display: flex;
   gap: 4px;
+  z-index: 10;
   pointer-events: auto;
 }
 
@@ -623,38 +605,48 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   SETTINGS PANEL — guitar pedal / stomp box skeuomorphic
+   SETTINGS PANEL — green guitar pedal / stomp box
+   Hammertone green with chrome/silver hardware
    ══════════════════════════════════════════════════════════════ */
 .settings-panel {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 0;
+  gap: 10px;
   padding: 14px 18px;
   background:
-    linear-gradient(170deg, #3a3530 0%, #2a2420 30%, #1e1810 60%, #141008 100%);
-  border-top: 1px solid rgba(255, 200, 100, 0.06);
+    linear-gradient(170deg, #3a6a3a 0%, #2a5428 20%, #1e4420 50%, #1a3a1a 80%, #143014 100%);
+  border-top: 1px solid rgba(120, 200, 120, 0.1);
   box-shadow:
-    inset 0 2px 10px rgba(0, 0, 0, 0.5),
-    inset 0 -1px 0 rgba(255,255,255,0.03);
+    inset 0 2px 8px rgba(0, 0, 0, 0.4),
+    inset 0 -1px 0 rgba(255,255,255,0.05),
+    inset 0 0 30px rgba(0, 0, 0, 0.15);
   overflow: hidden;
+  position: relative;
 }
 
-/* Brushed-metal texture overlay */
+/* Hammertone / stipple texture overlay */
 .settings-panel::before {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.04;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      transparent 0px,
-      rgba(255,255,255,0.5) 1px,
-      transparent 2px,
-      transparent 4px
-    );
+  opacity: 0.12;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4'%3E%3Ccircle cx='1' cy='1' r='0.6' fill='rgba(255,255,255,0.4)'/%3E%3Ccircle cx='3' cy='3' r='0.4' fill='rgba(0,0,0,0.3)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/* Pedal brand label */
+.pedal-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-align: center;
+  color: rgba(200, 220, 200, 0.35);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+  position: relative;
+  z-index: 1;
 }
 
 .settings-body {
@@ -665,21 +657,59 @@ body {
   z-index: 1;
 }
 
-/* ── Setting Row — pedal control strip ───────────────────── */
+/* Pedal footer with screw holes */
+.pedal-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.pedal-screwhole {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 40% 35%, #c0c0b8 0%, #909088 40%, #606058 70%, #404038 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(255,255,255,0.3),
+    inset 0 -1px 1px rgba(0,0,0,0.4),
+    0 1px 2px rgba(0,0,0,0.5);
+  position: relative;
+}
+
+.pedal-screwhole::after {
+  content: '+';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  font-weight: 900;
+  color: rgba(0,0,0,0.3);
+  line-height: 1;
+}
+
+/* ── Setting Row — chrome control strip ─────────────────── */
 .setting-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 10px 16px;
+  padding: 10px 14px;
   background:
-    linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.3) 100%);
-  border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 5px;
+    linear-gradient(180deg,
+      rgba(200, 200, 190, 0.08) 0%,
+      rgba(0, 0, 0, 0.2) 100%
+    );
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 4px;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.04),
-    inset 0 0 12px rgba(0,0,0,0.2),
-    0 1px 3px rgba(0,0,0,0.3);
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    inset 0 0 10px rgba(0,0,0,0.15),
+    0 1px 3px rgba(0,0,0,0.4);
 }
 
 .setting-info {
@@ -691,14 +721,15 @@ body {
 .setting-label {
   font-size: 11px;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #d0dcc8;
   letter-spacing: 0.8px;
   text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 .setting-desc {
   font-size: 9px;
-  color: var(--text-muted);
+  color: rgba(160, 190, 150, 0.5);
   letter-spacing: 0.3px;
 }
 
@@ -719,9 +750,9 @@ body {
   height: 56px;
   border-radius: 5px;
   background:
-    linear-gradient(180deg, #484440 0%, #3a3632 40%, #2a2622 100%);
+    linear-gradient(180deg, #7a7872 0%, #5a5852 40%, #3a3832 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.15),
     inset 0 -1px 0 rgba(0,0,0,0.4),
     0 2px 6px rgba(0,0,0,0.6),
     0 0 0 1px rgba(0,0,0,0.4);
@@ -774,7 +805,7 @@ body {
 }
 
 .toggle-switch.on .toggle-label-on {
-  color: var(--accent);
+  color: #ff4040;
   opacity: 1;
 }
 
@@ -856,21 +887,21 @@ body {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #2a2520;
+  background: #2a3528;
   box-shadow:
     inset 0 1px 2px rgba(0,0,0,0.6),
     0 0 0 1.5px rgba(0,0,0,0.3),
-    0 0 0 2.5px rgba(40,35,30,0.4);
+    0 0 0 2.5px rgba(30,40,30,0.4);
   transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .toggle-switch.on .toggle-led {
-  background: #f5c842;
+  background: #ff3030;
   box-shadow:
-    inset 0 1px 1px rgba(255,255,200,0.4),
-    0 0 4px rgba(245, 200, 66, 0.6),
-    0 0 10px rgba(245, 200, 66, 0.3),
-    0 0 0 1.5px rgba(245, 200, 66, 0.2);
+    inset 0 1px 1px rgba(255,180,180,0.4),
+    0 0 5px rgba(255, 48, 48, 0.7),
+    0 0 12px rgba(255, 48, 48, 0.3),
+    0 0 0 1.5px rgba(255, 48, 48, 0.2);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1329,6 +1360,6 @@ body {
   }
 }
 
-.controls-panel {
+.panel-wrapper {
   animation: fadeIn 0.3s var(--ease-out) 0.05s both;
 }

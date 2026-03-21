@@ -1245,6 +1245,7 @@ if (characters.length > 0) {
 // ── Sleeve Tabs & Settings Panel ─────────────────────────────
 const elControlsPanel = document.getElementById('controls-panel');
 const elSettingsPanel = document.getElementById('settings-panel');
+const elFlipCard = document.getElementById('flip-card');
 const elSleeveCamera = document.getElementById('sleeve-tab-camera');
 const elSleeveSettings = document.getElementById('sleeve-tab-settings');
 const elSwitchMirrored = document.getElementById('switch-mirrored');
@@ -1253,18 +1254,13 @@ let activePanel = 'controls'; // 'controls' | 'settings'
 
 function showPanel(panel) {
   if (panel === activePanel) return;
-
-  const fromHeight = (activePanel === 'controls' ? elControlsPanel : elSettingsPanel).offsetHeight;
   activePanel = panel;
 
   if (panel === 'settings') {
-    elSettingsPanel.style.minHeight = fromHeight + 'px';
-    elControlsPanel.classList.add('panel-hidden');
-    elSettingsPanel.classList.add('panel-visible');
+    elFlipCard.classList.add('flipped');
     elSleeveSettings.classList.add('active');
   } else {
-    elControlsPanel.classList.remove('panel-hidden');
-    elSettingsPanel.classList.remove('panel-visible');
+    elFlipCard.classList.remove('flipped');
     elSleeveSettings.classList.remove('active');
   }
   playMenuSound('click');
