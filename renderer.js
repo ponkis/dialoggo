@@ -952,8 +952,10 @@ async function playDialogue() {
   elBtnPlay.disabled = true;
   elBtnPause.disabled = false;
   elBtnStop.disabled = false;
+  elInput.readOnly = false;
   document.querySelectorAll('.char-btn').forEach(btn => (btn.disabled = true));
   elStatusDot.classList.add('playing');
+  elStatusDot.classList.remove('paused');
 
   elPlaceholder.classList.add('fade-out');
   elDialogueContainer.classList.add('active');
@@ -1123,7 +1125,9 @@ async function finishDialogue() {
   elBtnStop.disabled = true;
   elBtnPause.disabled = true;
   elBtnPlay.title = 'Play';
+  elInput.readOnly = false;
   elStatusDot.classList.remove('playing');
+  elStatusDot.classList.remove('paused');
 
   document.querySelectorAll('.char-btn').forEach(btn => {
     const id = btn.dataset.id;
@@ -1151,6 +1155,8 @@ function stopDialogue() {
   spriteRenderer.showFrame(spriteRenderer.speakFrames, 0);
   // Schedule idle after delay like normal end
   spriteRenderer.startIdleAfterDelay(2000);
+  elInput.readOnly = false;
+  elStatusDot.classList.remove('paused');
 }
 
 function doPause() {
@@ -1168,6 +1174,8 @@ function doPause() {
   elBtnPlay.title = 'Resume';
   elBtnPause.disabled = true;
   elStatusDot.classList.remove('playing');
+  elStatusDot.classList.add('paused');
+  elInput.readOnly = true;
   setTimeout(() => { pauseTransitionLock = false; }, 140);
 }
 
@@ -1184,6 +1192,8 @@ function doResume() {
   elBtnPlay.title = 'Play';
   elBtnPause.disabled = false;
   elStatusDot.classList.add('playing');
+  elStatusDot.classList.remove('paused');
+  elInput.readOnly = false;
   setTimeout(() => { pauseTransitionLock = false; }, 140);
 }
 
