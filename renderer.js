@@ -118,7 +118,8 @@ const N64_CANVAS_PIXEL_BLOCK = 6;
  * Dialogue text pixelation — same technique as pixelation_techniques_demo.html.
  * Helpers are defined after DOM refs (see below).
  */
-const N64_TEXT_PIXEL_BLOCK = 4;
+/** 2 = subtle chunky edges (readable); 3–4 = more retro; 6+ gets hard to read */
+const N64_TEXT_PIXEL_BLOCK = 2;
 const N64_TEXT_LINE_HEIGHT = 33;
 const N64_TEXT_FONT = 'bold 32px "Andy Bold", "Comic Sans MS", cursive';
 
@@ -142,6 +143,12 @@ function dialogueBoxExtraClasses() {
 function syncN64ClassOnDialogueBox() {
   if (!elDialogueBox) return;
   elDialogueBox.classList.toggle('n64-mode', n64ModeEnabled);
+}
+
+/** Keep JS flag aligned with the real checkbox (fixes broken label↔input when input was display:none). */
+function syncN64ModeFromCheckbox() {
+  const el = document.getElementById('input-n64-mode');
+  if (el) n64ModeEnabled = el.checked;
 }
 
 function redrawSpriteForN64Toggle() {
@@ -706,6 +713,39 @@ function parseTranslateYpx(transformStr) {
   return m ? parseFloat(m[1], 10) : 0;
 }
 
+/**
+ * Live translateY while .dialogue-scroll CSS transition runs (style.transform is only the end value).
+ * matrix(a,b,c,d,tx,ty) → ty at index 5; matrix3d → ty at index 13.
+ */
+function getScrollWrapperTranslateYpx(scrollWrapper) {
+  if (!scrollWrapper) return 0;
+  const t = getComputedStyle(scrollWrapper).transform;
+  if (!t || t === 'none') {
+    return parseTranslateYpx(scrollWrapper.style.transform);
+  }
+  const mat = t.match(/^matrix\(([^)]+)\)$/);
+  if (mat) {
+    const v = mat[1].split(',').map((s) => parseFloat(s.trim()));
+    if (v.length >= 6 && Number.isFinite(v[5])) return v[5];
+  }
+  const mat3d = t.match(/^matrix3d\(([^)]+)\)$/);
+  if (mat3d) {
+    const v = mat3d[1].split(',').map((s) => parseFloat(s.trim()));
+    if (v.length >= 16 && Number.isFinite(v[13])) return v[13];
+  }
+  return parseTranslateYpx(scrollWrapper.style.transform);
+}
+
+/** Repaint N64 text canvas each frame so scroll matches the eased CSS transition on .dialogue-scroll */
+async function n64RepaintDuringScrollTransition(scrollWrapper, durationMs = 350) {
+  const t0 = performance.now();
+  while (performance.now() - t0 < durationMs) {
+    renderN64DialogueTextCanvas();
+    await new Promise((r) => requestAnimationFrame(r));
+  }
+  renderN64DialogueTextCanvas();
+}
+
 function clearN64DialogueTextCanvas() {
   const c = elDialogueTextN64Canvas;
   if (!c || !c.getContext) return;
@@ -727,17 +767,14 @@ function renderN64DialogueTextCanvas() {
       return;
     }
 
-    /* clientWidth can lag flex; offsetWidth of #dialogue-text tracks in-flow layout. Cap width for perf. */
-    const areaW = Math.floor(area.clientWidth);
-    const areaH = Math.floor(area.clientHeight);
-    const textW = Math.floor(elDialogueText.offsetWidth || 0);
-    const textH = Math.floor(elDialogueText.offsetHeight || 0);
-    const parentW = Math.floor(area.parentElement?.getBoundingClientRect().width || 0);
-    const maxW = Math.min(1200, Math.max(64, parentW > 0 ? parentW - 24 : areaW || 800));
-    let W = Math.max(48, areaW);
-    if (W < 64 && textW > W) W = Math.max(W, textW);
-    W = Math.min(W, maxW);
-    const H = Math.max(33, areaH || textH || 33);
+    /* Layout box from geometry — clientWidth can lie during flex; getBoundingClientRect matches paint. */
+    const rect = area.getBoundingClientRect();
+    let W = Math.round(rect.width);
+    let H = Math.round(rect.height);
+    if (W < 12) W = Math.max(48, Math.floor(area.clientWidth), Math.floor(elDialogueText.offsetWidth || 0));
+    if (H < 12) H = Math.max(33, Math.floor(area.clientHeight), Math.floor(elDialogueText.offsetHeight || 0));
+    W = Math.min(2048, Math.max(48, W));
+    H = Math.min(512, Math.max(33, H));
     const hi = getN64DialogueTextHiCanvas(W, H);
     const ctxHi = hi.getContext('2d');
     if (!ctxHi) return;
@@ -769,7 +806,7 @@ function renderN64DialogueTextCanvas() {
     ctxHi.shadowBlur = 0;
 
     const lineEls = scrollWrapper.querySelectorAll('.line');
-    const scrollY = parseTranslateYPx(scrollWrapper.style.transform);
+    const scrollY = getScrollWrapperTranslateYpx(scrollWrapper);
     const centered = elDialogueText.classList.contains('centered');
 
     for (let i = 0; i < lineEls.length; i++) {
@@ -797,6 +834,11 @@ function renderN64DialogueTextCanvas() {
     const sctx = small.getContext('2d');
     if (!sctx) return;
     sctx.imageSmoothingEnabled = false;
+    try {
+      sctx.mozImageSmoothingEnabled = false;
+    } catch {
+      /* ignore */
+    }
     sctx.clearRect(0, 0, sw, sh);
     sctx.drawImage(hi, 0, 0, sw, sh);
 
@@ -805,6 +847,11 @@ function renderN64DialogueTextCanvas() {
     const out = canvas.getContext('2d');
     if (!out) return;
     out.imageSmoothingEnabled = false;
+    try {
+      out.mozImageSmoothingEnabled = false;
+    } catch {
+      /* ignore */
+    }
     out.clearRect(0, 0, W, H);
     out.drawImage(small, 0, 0, W, H);
   } catch (err) {
@@ -1201,9 +1248,13 @@ async function playDialogue() {
   elPlaceholder.classList.add('fade-out');
   elDialogueContainer.classList.add('active');
 
+  syncN64ModeFromCheckbox();
+
   elDialogueText.innerHTML = '';
   clearN64DialogueTextCanvas();
   elDialogueBox.className = 'dialogue-box' + dialogueBoxExtraClasses();
+  elDialogueBox.classList.toggle('n64-mode', n64ModeEnabled);
+  elDialogueBox.classList.toggle('mirrored', dialogueMirrored);
 
   elDialogueContainer.classList.add('active');
 
@@ -1230,6 +1281,9 @@ async function playDialogue() {
 
   elDialogueBox.classList.remove('slide-in');
   elDialogueBox.classList.add('expand');
+  syncN64ModeFromCheckbox();
+  elDialogueBox.classList.toggle('n64-mode', n64ModeEnabled);
+  elDialogueBox.classList.toggle('mirrored', dialogueMirrored);
 
   await Promise.all([
     (async () => {
@@ -1287,8 +1341,14 @@ async function playDialogue() {
       if (totalLinesAdded >= 2) {
         const scrollY = (totalLinesAdded - 1) * LINE_HEIGHT;
         scrollWrapper.style.transform = `translateY(-${scrollY}px)`;
-        if (n64ModeEnabled) renderN64DialogueTextCanvas();
-        await sleep(350);
+        if (n64ModeEnabled) {
+          await Promise.all([
+            n64RepaintDuringScrollTransition(scrollWrapper, 350),
+            sleep(350),
+          ]);
+        } else {
+          await sleep(350);
+        }
       }
 
       const lineEl = document.createElement('span');

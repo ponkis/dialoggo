@@ -471,11 +471,12 @@ body {
 }
 
 /*
- * Hide layout text without opacity (opacity<1 can composite above the sibling canvas in Electron).
- * visibility:hidden keeps box geometry; canvas is a later sibling with higher z-index.
+ * Remove DOM glyph painting entirely (visibility:hidden still painted in some GPU paths).
+ * clip-path keeps layout box; canvas sibling draws the pixelated text.
  */
 .dialogue-box.n64-mode .dialogue-text {
-  visibility: hidden;
+  clip-path: inset(50% 50% 50% 50%);
+  -webkit-clip-path: inset(50% 50% 50% 50%);
   pointer-events: none;
   width: 100%;
   min-height: 1em;
@@ -557,6 +558,11 @@ body {
 
 .dialogue-box.n64-mode .dialogue-text-n64-canvas {
   display: block;
+  opacity: 1;
+  /* Reinforce NN upscale of the bitmap (Chromium respects this on canvas) */
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  -ms-interpolation-mode: nearest-neighbor;
 }
 
 .dialogue-text {
@@ -568,7 +574,6 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: clip;
-  letter-spacing: 0.5px;
   position: relative;
   text-shadow:
     1px 1px 0 rgba(0, 0, 0, 0.7),
@@ -1051,8 +1056,27 @@ body {
   transform-origin: center center;
 }
 
+/*
+ * Never use display:none on these checkboxes — label clicks often fail to toggle
+ * them in Chromium/Electron, so N64 / mirrored state can get out of sync.
+ * Full-size invisible input on top of the 3D button receives the click.
+ */
 .uiverse-rocker-switch input {
-  display: none;
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 30;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  background: transparent;
 }
 
 .uiverse-rocker-switch input:checked + .uiverse-switch-button {
@@ -1319,7 +1343,7 @@ body {
 }
 
 .dialogue-box.mirrored .dialogue-text-area {
-  padding: 6px 14px 6px 0;
+  padding: 6px 0px 6px 30px;
 }
 
 .dialogue-box.mirrored.slide-in {
