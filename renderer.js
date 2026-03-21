@@ -27,6 +27,15 @@ const IMG_DIR = path.join(APP_DIR, 'img');
 const SPEAK_FRAME_COUNT = 6;
 const IDLE_FRAME_COUNT = 4;
 
+// ── Version from package.json ───────────────────────────────
+const pkgPath = path.join(APP_DIR, 'package.json');
+const appVersion = (() => {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
+    return pkg.version || '0.0.0';
+  } catch { return '0.0.0'; }
+})();
+
 // ── Character Discovery ─────────────────────────────────────
 function discoverCharacters() {
   const characters = [];
@@ -40,11 +49,8 @@ function discoverCharacters() {
     const imgDir = path.join(IMG_DIR, name);
     const sndDir = path.join(SND_DIR, name);
 
-    // If sound folder is missing, do not show this character at all.
-    // (Requirement: if any character doesn't have image/sound folder don't show it.)
     if (!fs.existsSync(imgDir) || !fs.existsSync(sndDir)) continue;
 
-    // Check for individual sprite files: s1.png-s6.png, i1.png-i4.png
     const speakFrames = [];
     const idleFrames = [];
 
@@ -58,7 +64,6 @@ function discoverCharacters() {
       if (fs.existsSync(ip)) idleFrames.push(ip);
     }
 
-    // Find sound files (wav/mp3/ogg)
     const soundFiles = [];
     const hasSoundDir = fs.existsSync(sndDir);
     if (hasSoundDir) {
@@ -68,9 +73,6 @@ function discoverCharacters() {
 
     const hasAllSprites = speakFrames.length === SPEAK_FRAME_COUNT && idleFrames.length === IDLE_FRAME_COUNT;
     const hasAnySound = soundFiles.length > 0;
-
-    // If sprites are missing to complete all 10 frames OR sound folder is empty,
-    // show the character with a warning and mark it unavailable.
     const isAvailable = hasAllSprites && hasAnySound;
 
     characters.push({
@@ -88,7 +90,6 @@ function discoverCharacters() {
   return characters;
 }
 
-// Discover generic intro/outro sounds
 function discoverGenericSounds() {
   const genericDir = path.join(SND_DIR, 'generic');
   if (!fs.existsSync(genericDir)) return [];
@@ -102,9 +103,9 @@ const characters = discoverCharacters();
 const genericSounds = discoverGenericSounds();
 let selectedCharacter = null;
 let isPlaying = false;
+let isPaused = false;
 let stopRequested = false;
 
-// Audio context
 let audioCtx = null;
 
 function getAudioContext() {
@@ -140,20 +141,44 @@ function playAudioBuffer(audioBuffer) {
   return { source, gainNode, duration: audioBuffer.duration };
 }
 
-// Play a sound file, return promise that resolves with duration
 async function playSoundFile(filePath) {
   const buffer = await loadAudioBuffer(filePath);
   const { source, duration } = playAudioBuffer(buffer);
   return new Promise((resolve) => {
     source.onended = () => resolve(duration);
-    // Fallback timeout in case onended doesn't fire
     setTimeout(() => resolve(duration), duration * 1000 + 100);
   });
 }
 
+// ── Menu Sound Effects ──────────────────────────────────────
+const MENU_SND_DIR = path.join(SND_DIR, 'menu');
+const menuSoundPaths = {
+  hover: path.join(MENU_SND_DIR, '1.wav'),
+  select: path.join(MENU_SND_DIR, '2.wav'),
+  arrowRight: path.join(MENU_SND_DIR, '3.wav'),
+  arrowLeft: path.join(MENU_SND_DIR, '4.wav'),
+};
+
+function playMenuSound(key) {
+  const p = menuSoundPaths[key];
+  if (p && fs.existsSync(p)) {
+    loadAudioBuffer(p).then(buf => playAudioBuffer(buf)).catch(() => {});
+  }
+}
+
+// Debounced hover sound
+let lastHoverTime = 0;
+const HOVER_DEBOUNCE = 60;
+document.addEventListener('pointerover', (e) => {
+  const el = e.target.closest('button, .reel-arrow, a, .char-btn, .btn, .stoplight, .powered-link');
+  if (!el) return;
+  const now = Date.now();
+  if (now - lastHoverTime < HOVER_DEBOUNCE) return;
+  lastHoverTime = now;
+  playMenuSound('hover');
+}, true);
+
 // ── Speech Sound Loop (Banjo-Kazooie style) ────────────────
-// Plays random character audio clips back-to-back in a loop,
-// independent of text speed. Can be started/paused/stopped.
 class SpeechSoundLoop {
   constructor(spriteRenderer) {
     this.spriteRenderer = spriteRenderer;
@@ -166,9 +191,8 @@ class SpeechSoundLoop {
     this._abortController = null;
   }
 
-  // Start the loop with the given sound file list
   start(soundFiles) {
-    this.stop(); // ensure clean state
+    this.stop();
     this.sounds = soundFiles;
     this.running = true;
     this.paused = false;
@@ -176,17 +200,14 @@ class SpeechSoundLoop {
     this._loopPromise = this._loop();
   }
 
-  // Pause: stop playing new clips, let current one finish, go idle
   pause() {
     this.paused = true;
   }
 
-  // Resume playing clips
   resume() {
     this.paused = false;
   }
 
-  // Fully stop the loop and any playing sound
   stop() {
     this.running = false;
     this.paused = false;
@@ -198,8 +219,6 @@ class SpeechSoundLoop {
     this.spriteRenderer.resetToIdle();
   }
 
-  // Stop the loop gracefully: let the current clip's mouth animation
-  // finish closing before transitioning to idle (no abrupt snap).
   async gracefulStop() {
     this.running = false;
     this.paused = false;
@@ -208,7 +227,6 @@ class SpeechSoundLoop {
       this._abortController.abort();
       this._abortController = null;
     }
-    // Wait for any in-progress speak animation to close the mouth
     await this.spriteRenderer.smoothCloseAndIdle();
   }
 
@@ -232,7 +250,6 @@ class SpeechSoundLoop {
 
   async _loop() {
     while (this.running) {
-      // If paused, wait in idle until resumed or stopped
       if (this.paused) {
         this.spriteRenderer.resetToIdle();
         await sleep(50);
@@ -244,14 +261,11 @@ class SpeechSoundLoop {
         continue;
       }
 
-      // Pick a random sound
       const soundFile = pick(this.sounds);
 
       try {
         const buffer = await loadAudioBuffer(soundFile);
         if (!this.running) break;
-
-        // Check pause again right before playing
         if (this.paused) continue;
 
         const { source, gainNode, duration } = playAudioBuffer(buffer);
@@ -259,10 +273,8 @@ class SpeechSoundLoop {
         this.currentGainNode = gainNode;
         const durationMs = duration * 1000;
 
-        // Animate sprite mouth based on clip duration
         this.spriteRenderer.startSpeaking(durationMs);
 
-        // Wait for the clip to finish
         await new Promise((resolve) => {
           source.onended = resolve;
           setTimeout(resolve, durationMs + 50);
@@ -271,13 +283,11 @@ class SpeechSoundLoop {
         this.currentSource = null;
         this.currentGainNode = null;
       } catch (err) {
-        // If aborted or error, just continue
         this.currentSource = null;
         this.currentGainNode = null;
         if (!this.running) break;
       }
     }
-
   }
 }
 
@@ -315,19 +325,16 @@ class SpriteRenderer {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.frameIndex = 0;
-    this.mode = 'idle'; // 'idle' | 'speaking'
-    this.idleFrames = [];  // array of file paths
-    this.speakFrames = []; // array of file paths
-    // Preloaded Image objects keyed by path
+    this.mode = 'idle';
+    this.idleFrames = [];
+    this.speakFrames = [];
     this.frameImages = new Map();
 
-    // Idle animation
     this.idleTimer = null;
-    this.idleStartTimeout = null; // delayed start scheduler
+    this.idleStartTimeout = null;
     this.idleDirection = 1;
-    this.idleFrameDelay = 120; // ms per frame in idle
+    this.idleFrameDelay = 120;
 
-    // Speaking animation
     this.speakTimer = null;
   }
 
@@ -336,7 +343,6 @@ class SpriteRenderer {
     this.idleFrames = character.idleFrames;
     this.speakFrames = character.speakFrames;
 
-    // Preload all frames into Image objects
     const allFrames = [...this.idleFrames, ...this.speakFrames];
     const loaded = await Promise.all(allFrames.map(f => loadSpriteImage(f)));
     this.frameImages.clear();
@@ -356,10 +362,8 @@ class SpriteRenderer {
     const cw = this.canvas.width;
     const ch = this.canvas.height;
 
-    // Clear completely — prevents ghosting
     ctx.clearRect(0, 0, cw, ch);
 
-    // Scale to fit canvas while keeping aspect ratio
     const scale = Math.min(cw / img.width, ch / img.height);
     const dw = img.width * scale;
     const dh = img.height * scale;
@@ -388,7 +392,6 @@ class SpriteRenderer {
     }, this.idleFrameDelay);
   }
 
-  // Start idle animation after a delay, so the sprite can stay in s1 briefly.
   startIdleAfterDelay(delayMs) {
     this.clearIdleStartTimeout();
     this.idleStartTimeout = setTimeout(() => {
@@ -404,15 +407,12 @@ class SpriteRenderer {
     }
   }
 
-  // Speaking: open mouth proportional to audio duration
   startSpeaking(audioDurationMs) {
     this.stopSpeaking();
     
-    // If we were already speaking, keep the mouth position instead of snapping to 0
     let currentFrame = this.mode === 'speaking' ? this.frameIndex : 0;
     this.mode = 'speaking';
 
-    // Determine how many frames to reach based on duration
     let maxFrame;
     if (audioDurationMs < 80) {
       maxFrame = 1;
@@ -423,12 +423,11 @@ class SpriteRenderer {
     } else if (audioDurationMs < 400) {
       maxFrame = 4;
     } else {
-      maxFrame = 5; // full open (index 5 = 6th frame)
+      maxFrame = 5;
     }
 
     const totalFrames = maxFrame + 1;
     const openTime = Math.min(audioDurationMs * 0.6, audioDurationMs);
-    // Smooth out short clips by enforcing a minimum frame transition time
     const frameTime = Math.max(openTime / totalFrames, 35);
 
     let opening = currentFrame < maxFrame;
@@ -455,7 +454,6 @@ class SpriteRenderer {
     }, frameTime);
   }
 
-  // Smoothly close the mouth instead of snapping to 0 instantly
   resetToIdle() {
     this.stopSpeaking();
     this.mode = 'idle';
@@ -478,8 +476,6 @@ class SpriteRenderer {
     }
   }
 
-  // Smoothly close the mouth, then transition into the idle animation loop.
-  // Returns a promise that resolves once the mouth is fully closed.
   smoothCloseAndIdle() {
     this.stopSpeaking();
     this.mode = 'idle';
@@ -530,17 +526,58 @@ class SpriteRenderer {
 const elCharGrid = document.getElementById('character-grid');
 const elInput = document.getElementById('dialogue-input');
 const elBtnPlay = document.getElementById('btn-play');
+const elBtnPause = document.getElementById('btn-pause');
 const elBtnStop = document.getElementById('btn-stop');
 const elPreviewArea = document.getElementById('preview-area');
 const elPlaceholder = document.getElementById('preview-placeholder');
+const elPlaceholderAnim = document.getElementById('placeholder-anim');
 const elDialogueContainer = document.getElementById('dialogue-container');
 const elDialogueBox = document.getElementById('dialogue-box');
 const elDialogueText = document.getElementById('dialogue-text');
 const elSpriteCanvas = document.getElementById('sprite-canvas');
 const elStatusDot = document.getElementById('status-dot');
-const elStatusText = document.getElementById('status-text');
+const elCharCount = document.getElementById('char-count');
+const elVersionLabel = document.getElementById('version-label');
 
 const spriteRenderer = new SpriteRenderer(elSpriteCanvas);
+
+// ── Bottom Bar Info ─────────────────────────────────────────
+elVersionLabel.textContent = `v${appVersion}`;
+elCharCount.textContent = `${characters.length} chars`;
+
+// ── Animated Placeholder ────────────────────────────────────
+const PLACEHOLDER_FRAMES = [];
+for (let i = 1; i <= 22; i++) {
+  PLACEHOLDER_FRAMES.push(path.join(APP_DIR, 'img', 'menu', 'misc', `01 (${i}).png`));
+}
+let placeholderFrameIdx = 0;
+let placeholderTimer = null;
+
+function startPlaceholderAnim() {
+  if (placeholderTimer) return;
+  placeholderFrameIdx = 0;
+  showPlaceholderFrame();
+  placeholderTimer = setInterval(() => {
+    placeholderFrameIdx = (placeholderFrameIdx + 1) % PLACEHOLDER_FRAMES.length;
+    showPlaceholderFrame();
+  }, 90);
+}
+
+function showPlaceholderFrame() {
+  const fp = PLACEHOLDER_FRAMES[placeholderFrameIdx];
+  if (fp && fs.existsSync(fp)) {
+    elPlaceholderAnim.src = fileToSrc(fp);
+  }
+}
+
+function stopPlaceholderAnim() {
+  if (placeholderTimer) {
+    clearInterval(placeholderTimer);
+    placeholderTimer = null;
+  }
+}
+
+startPlaceholderAnim();
 
 // ── Build Character Grid ────────────────────────────────────
 function buildCharacterGrid() {
@@ -553,7 +590,6 @@ function buildCharacterGrid() {
     btn.disabled = !char.isAvailable;
     if (!char.isAvailable) btn.classList.add('unavailable');
 
-    // Mini sprite preview using i1 img
     const spriteWrap = document.createElement('div');
     spriteWrap.className = 'char-btn-sprite';
     const miniImg = document.createElement('img');
@@ -570,11 +606,11 @@ function buildCharacterGrid() {
     btn.appendChild(spriteWrap);
     btn.appendChild(label);
 
-    // Warning badge if unavailable (missing sprites and/or no sounds).
     if (!char.isAvailable) {
-      const badge = document.createElement('span');
+      const badge = document.createElement('img');
       badge.className = 'warning-badge';
-      badge.textContent = '!';
+      badge.src = fileToSrc(path.join(APP_DIR, 'img', 'menu', '00000826.png'));
+      badge.alt = 'Unavailable';
       badge.title = (!char.hasAllSprites && !char.hasAnySound)
         ? 'Missing sprite frames and no sounds'
         : (!char.hasAllSprites ? 'Missing sprite frames' : 'No sounds found');
@@ -592,15 +628,22 @@ function selectCharacter(char) {
   if (isPlaying) return;
   if (!char?.isAvailable) return;
 
+  const alreadyActive = selectedCharacter && selectedCharacter.id === char.id;
+  if (alreadyActive) return;
+
   selectedCharacter = char;
 
-  // Update button states
   document.querySelectorAll('.char-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.id === char.id);
   });
 
-  // Load sprite into main canvas
   spriteRenderer.loadCharacter(char);
+
+  playMenuSound('select');
+  if (char.sounds.length > 0) {
+    const randomClip = pick(char.sounds);
+    loadAudioBuffer(randomClip).then(buf => playAudioBuffer(buf)).catch(() => {});
+  }
 
   updatePlayButton();
 }
@@ -609,7 +652,7 @@ function selectCharacter(char) {
 function updatePlayButton() {
   const hasText = elInput.value.trim().length > 0;
   const hasChar = selectedCharacter !== null;
-  elBtnPlay.disabled = !hasText || !hasChar || isPlaying;
+  elBtnPlay.disabled = !hasText || !hasChar || (isPlaying && !isPaused);
 }
 
 elInput.addEventListener('input', updatePlayButton);
@@ -638,8 +681,6 @@ async function playOutroSounds() {
 }
 
 // ── Text Line Splitter ──────────────────────────────────────
-// Splits text into lines that fit the dialogue box width
-// Handles manual newlines (\n) and auto-breaks overly long words.
 function splitTextIntoLines(text, maxCharsPerLine = 34) {
   const lines = [];
   const manualLines = text.toUpperCase().split('\n');
@@ -656,7 +697,6 @@ function splitTextIntoLines(text, maxCharsPerLine = 34) {
     for (let word of words) {
       if (!word) continue;
 
-      // Handle words that are longer than the entire line width naturally
       while (word.length > maxCharsPerLine) {
         if (currentLine.length > 0) {
           lines.push(currentLine);
@@ -687,51 +727,65 @@ function splitTextIntoLines(text, maxCharsPerLine = 34) {
 // ── Speech Sound Loop Instance ──────────────────────────────
 const speechLoop = new SpeechSoundLoop(spriteRenderer);
 
-// Characters that trigger a pause in the sound loop
 const PAUSE_CHARS = new Set(['.', ',', '!', '?', ':', ';']);
+
+// ── Pause / Resume helpers ──────────────────────────────────
+let pauseResolve = null;
+
+function waitWhilePaused() {
+  if (!isPaused) return Promise.resolve();
+  return new Promise(resolve => { pauseResolve = resolve; });
+}
+
+function resumeFromPause() {
+  isPaused = false;
+  if (pauseResolve) {
+    const r = pauseResolve;
+    pauseResolve = null;
+    r();
+  }
+}
 
 // ── Main Dialogue Playback ─────────────────────────────────
 async function playDialogue() {
-  if (isPlaying || !selectedCharacter) return;
+  if (isPaused) {
+    doResume();
+    return;
+  }
+  if (isPlaying) return;
+  if (!selectedCharacter) return;
+
   isPlaying = true;
+  isPaused = false;
   stopRequested = false;
 
   const text = elInput.value.trim();
   if (!text) return;
 
-  const charMsPerChar = 40; // Fixed speed since UI slider was removed
+  const charMsPerChar = 40;
   const char = selectedCharacter;
 
-  // Update UI
   elBtnPlay.disabled = true;
+  elBtnPause.disabled = false;
   elBtnStop.disabled = false;
   document.querySelectorAll('.char-btn').forEach(btn => (btn.disabled = true));
   elStatusDot.classList.add('playing');
-  elStatusText.textContent = 'Playing';
-  elPlaceholder.style.display = 'none';
+
+  elPlaceholder.classList.add('fade-out');
   elDialogueContainer.classList.add('active');
 
-  // Reset dialogue text
   elDialogueText.innerHTML = '';
-
-  // Reset all animation classes
   elDialogueBox.className = 'dialogue-box';
 
-  // ── Phase 1a: Show container + slide in as circle ────
   elDialogueContainer.classList.add('active');
 
-  // Stop any running idle loop and show s1 (closed mouth / neutral) for the intro
   spriteRenderer.stop();
   spriteRenderer.frameIndex = 0;
   spriteRenderer.showFrame(spriteRenderer.speakFrames, 0);
 
-  // Force a reflow so the initial state (off-screen) is applied
   void elDialogueBox.offsetWidth;
-
-  // Slide circle in from left
   elDialogueBox.classList.add('slide-in');
 
-  // Play first intro sound during slide-in
   await Promise.all([
     (async () => {
       if (genericSounds.length > 0) await playSoundFile(pick(genericSounds));
@@ -746,11 +800,9 @@ async function playDialogue() {
     return;
   }
 
-  // ── Phase 1b: Expand circle to full rectangle ────────
   elDialogueBox.classList.remove('slide-in');
   elDialogueBox.classList.add('expand');
 
-  // Play second intro sound during expand
   await Promise.all([
     (async () => {
       if (genericSounds.length > 0) await playSoundFile(pick(genericSounds));
@@ -770,75 +822,63 @@ async function playDialogue() {
   const isMultiLine = lines.length > 1;
   let lineIndex = 0;
 
-  // Set up vertical alignment: centered if single line, top if multi-line
   if (!isMultiLine) {
     elDialogueText.classList.add('centered');
   } else {
     elDialogueText.classList.remove('centered');
   }
 
-  // Create scroll wrapper inside dialogue text
   const scrollWrapper = document.createElement('div');
   scrollWrapper.className = 'dialogue-scroll';
   elDialogueText.appendChild(scrollWrapper);
 
-  const LINE_HEIGHT = 33; // px, must match CSS .line height
+  const LINE_HEIGHT = 33;
   let totalLinesAdded = 0;
 
-  // Start the independent sound loop
   speechLoop.start(char.sounds);
 
   while (lineIndex < lines.length && !stopRequested) {
     const line = lines[lineIndex];
 
-    // Pause sound loop between lines (line change pause)
     speechLoop.pause();
     spriteRenderer.resetToIdle();
 
-    // If we have more than 2 lines, scroll the wrapper up
     if (totalLinesAdded >= 2) {
       const scrollY = (totalLinesAdded - 1) * LINE_HEIGHT;
       scrollWrapper.style.transform = `translateY(-${scrollY}px)`;
-      await sleep(350); // wait for scroll animation
+      await sleep(350);
     }
 
-    // Create new line element
     const lineEl = document.createElement('span');
     lineEl.className = 'line';
     lineEl.textContent = '';
     scrollWrapper.appendChild(lineEl);
     totalLinesAdded++;
 
-    // Brief pause before starting new line
     if (lineIndex > 0) await sleep(200);
 
-    // Resume sound loop for this line
     speechLoop.resume();
 
-    // Type out characters
     for (let i = 0; i < line.length; i++) {
+      if (stopRequested) break;
+
+      await waitWhilePaused();
       if (stopRequested) break;
 
       lineEl.textContent = line.substring(0, i + 1);
       const ch = line[i];
 
-      // Check if this is a punctuation pause character
       if (PAUSE_CHARS.has(ch)) {
-        // Pause the sound loop on full stops / punctuation
         speechLoop.pause();
         spriteRenderer.resetToIdle();
-        // Longer pause for periods/exclamation/question, shorter for commas
         const pauseDuration = (ch === '.' || ch === '!' || ch === '?') ? 400 : 200;
         await sleep(pauseDuration);
-        // Resume after pause (unless next char is also punctuation)
         if (i < line.length - 1 && !PAUSE_CHARS.has(line[i + 1])) {
           speechLoop.resume();
         }
       } else if (ch === ' ') {
-        // Spaces: slightly shorter delay, sound keeps playing
         await sleep(charMsPerChar * 0.6);
       } else {
-        // Normal character: standard typing delay
         await sleep(charMsPerChar);
       }
     }
@@ -847,30 +887,23 @@ async function playDialogue() {
   }
 
   // ── Phase 3: Stop sound, hold final text, then outro ──
-  // Gracefully close the mouth (let animation finish) instead of hard-cutting
   await speechLoop.gracefulStop();
-
-  // Keep the sprite in s1 for a bit after not talking.
   spriteRenderer.startIdleAfterDelay(2000);
 
-  if (!stopRequested) await sleep(500); // Hold final text
+  if (!stopRequested) await sleep(500);
 
   await finishDialogue();
 }
 
 async function finishDialogue() {
-  // Stop speech loop (but NOT the idle animation — let it keep looping)
   speechLoop.stop();
   spriteRenderer.stopSpeaking();
 
-  // Clear text and reset alignment
   elDialogueText.innerHTML = '';
   elDialogueText.classList.remove('centered');
 
-  // ── Outro Phase 1: Shrink to circle ──────────────────
   elDialogueBox.className = 'dialogue-box shrink';
 
-  // Play first outro sound during shrink
   await Promise.all([
     (async () => {
       if (genericSounds.length > 0) await playSoundFile(pick(genericSounds));
@@ -878,11 +911,9 @@ async function finishDialogue() {
     sleep(400),
   ]);
 
-  // ── Outro Phase 2: Slide out to left ─────────────────
   elDialogueBox.classList.remove('shrink');
   elDialogueBox.classList.add('slide-out');
 
-  // Play second outro sound during slide-out
   await Promise.all([
     (async () => {
       if (genericSounds.length > 0) await playSoundFile(pick(genericSounds));
@@ -890,35 +921,64 @@ async function finishDialogue() {
     sleep(350),
   ]);
 
-  // Reset dialogue box but keep sprite idle animation running
   elDialogueContainer.classList.remove('active');
   elDialogueBox.className = 'dialogue-box';
   elDialogueText.innerHTML = '';
-  elPlaceholder.style.display = '';
+  elPlaceholder.classList.remove('fade-out');
 
   isPlaying = false;
+  isPaused = false;
   stopRequested = false;
   elBtnStop.disabled = true;
+  elBtnPause.disabled = true;
   elStatusDot.classList.remove('playing');
-  elStatusText.textContent = 'Ready';
 
-  // Re-enable available character buttons after dialogue ends
   document.querySelectorAll('.char-btn').forEach(btn => {
     const id = btn.dataset.id;
-    const char = characters.find(c => c.id === id);
-    btn.disabled = !(char && char.isAvailable);
+    const c = characters.find(ch => ch.id === id);
+    btn.disabled = !(c && c.isAvailable);
   });
   updatePlayButton();
 }
 
 function stopDialogue() {
   stopRequested = true;
+  isPaused = false;
+  if (pauseResolve) {
+    const r = pauseResolve;
+    pauseResolve = null;
+    r();
+  }
   speechLoop.stop();
   spriteRenderer.stopSpeaking();
 }
 
+function doPause() {
+  if (!isPlaying || isPaused) return;
+  isPaused = true;
+  speechLoop._killCurrentAudio();
+  spriteRenderer.smoothCloseAndIdle();
+  spriteRenderer.startIdleAfterDelay(2000);
+  elBtnPlay.disabled = false;
+  elBtnPause.disabled = true;
+  elStatusDot.classList.remove('playing');
+}
+
+function doResume() {
+  if (!isPlaying || !isPaused) return;
+  spriteRenderer.stop();
+  spriteRenderer.frameIndex = 0;
+  spriteRenderer.showFrame(spriteRenderer.speakFrames, 0);
+  speechLoop.resume();
+  resumeFromPause();
+  elBtnPlay.disabled = true;
+  elBtnPause.disabled = false;
+  elStatusDot.classList.add('playing');
+}
+
 // ── Event Listeners ─────────────────────────────────────────
 elBtnPlay.addEventListener('click', playDialogue);
+elBtnPause.addEventListener('click', doPause);
 elBtnStop.addEventListener('click', stopDialogue);
 
 // ── Reel Scroll Arrows ──────────────────────────────────────
@@ -934,9 +994,11 @@ function updateReelArrows() {
 }
 
 elReelLeft.addEventListener('click', () => {
+  playMenuSound('arrowLeft');
   elCharGrid.scrollBy({ left: -160, behavior: 'smooth' });
 });
 elReelRight.addEventListener('click', () => {
+  playMenuSound('arrowRight');
   elCharGrid.scrollBy({ left: 160, behavior: 'smooth' });
 });
 elCharGrid.addEventListener('scroll', updateReelArrows);
@@ -945,10 +1007,9 @@ elCharGrid.addEventListener('scroll', updateReelArrows);
 buildCharacterGrid();
 requestAnimationFrame(updateReelArrows);
 
-// Auto-select first character if available
 if (characters.length > 0) {
   const firstAvailable = characters.find(c => c.isAvailable);
   if (firstAvailable) selectCharacter(firstAvailable);
 }
 
-console.log(`[Dialoggo] Loaded ${characters.length} characters, ${genericSounds.length} generic sounds`);
+console.log(`[Dialoggo] v${appVersion} — ${characters.length} characters, ${genericSounds.length} generic sounds`);

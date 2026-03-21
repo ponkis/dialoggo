@@ -68,8 +68,7 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   NOISE TEXTURE — reusable overlay via pseudo-elements
-   Uses an inline SVG data-URI for a subtle grain effect.
+   NOISE TEXTURE
    ══════════════════════════════════════════════════════════════ */
 .preview-area::after,
 .controls-panel::after,
@@ -86,12 +85,12 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   TITLE BAR — metallic bar with extruded brand tab
+   TITLE BAR — Aqua stoplight buttons + seamless brand
    ══════════════════════════════════════════════════════════════ */
 .titlebar {
   display: flex;
   justify-content: space-between;
-  align-items: stretch;
+  align-items: center;
   background:
     linear-gradient(180deg, #555045 0%, #3e3830 40%, #2e2820 100%);
   border-bottom: 2px solid #18120a;
@@ -105,21 +104,13 @@ body {
     0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
-/* Extruded brand tab — pops out below the titlebar */
 .titlebar-brand {
   display: flex;
   align-items: center;
   gap: 7px;
   padding: 0 14px;
-  background:
-    linear-gradient(180deg, #504430 0%, #3e3422 50%, #332a1a 100%);
-  border-radius: 0 0 0 10px;
   position: relative;
-  margin-bottom: -14px;
   z-index: 11;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    -2px 4px 8px rgba(0, 0, 0, 0.5);
 }
 
 .titlebar-brand img {
@@ -136,56 +127,132 @@ body {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 }
 
+/* Aqua stoplight buttons */
 .titlebar-controls {
   display: flex;
-  gap: 1px;
+  gap: 7px;
   -webkit-app-region: no-drag;
   align-items: center;
-  padding: 0 4px;
+  padding: 0 10px;
 }
 
-.titlebar-btn {
-  width: 30px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
+.stoplight {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.3);
   cursor: pointer;
-  transition: all 0.12s ease;
-  border-radius: 3px;
+  transition: filter 0.12s ease, transform 0.1s ease;
+  -webkit-app-region: no-drag;
+  padding: 0;
 }
 
-.titlebar-btn:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text-primary);
+.stoplight:active {
+  filter: brightness(0.8);
+  transform: scale(0.9);
 }
 
-.titlebar-btn.close:hover {
-  background: #c03030;
-  color: #fff;
+.stoplight-close {
+  background: radial-gradient(circle at 35% 30%, #ff8a8a, #e04545 55%, #b82020);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
-.titlebar-btn svg {
-  width: 12px;
-  height: 12px;
+.stoplight-minimize {
+  background: radial-gradient(circle at 35% 30%, #ffe066, #e0a820 55%, #b88810);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.stoplight-maximize {
+  background: radial-gradient(circle at 35% 30%, #7aee7a, #40c040 55%, #20a020);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.stoplight:hover {
+  filter: brightness(1.2);
 }
 
 /* ══════════════════════════════════════════════════════════════
-   BOTTOM BAR — matching metallic bar, placeholder
+   BOTTOM BAR
    ══════════════════════════════════════════════════════════════ */
 .bottombar {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   padding: 0 12px;
   height: var(--bar-height);
   background: linear-gradient(180deg, #1c1c1c 0%, #2a2a2a 60%, #3a3a3a 100%);
   border-top: 2px solid rgba(255, 255, 255, 0.04);
   flex-shrink: 0;
   position: relative;
+}
+
+.bottombar-left,
+.bottombar-center,
+.bottombar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bottombar-left,
+.bottombar-right {
+  flex: 1;
+}
+
+.bottombar-right {
+  justify-content: flex-end;
+}
+
+.bottombar-center {
+  justify-content: center;
+}
+
+.bottombar-info {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.bottombar-sep {
+  color: rgba(255, 255, 255, 0.08);
+  font-size: 9px;
+}
+
+.powered-link {
+  display: flex;
+  align-items: center;
+  -webkit-app-region: no-drag;
+}
+
+.powered-logo {
+  height: 14px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.powered-link:hover .powered-logo {
+  opacity: 1;
+}
+
+.status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.status-dot.playing {
+  background: #6abf6a;
+  box-shadow: 0 0 6px rgba(106, 191, 106, 0.4);
 }
 
 /* ── App Layout ─────────────────────────────────────────────── */
@@ -211,7 +278,6 @@ body {
   min-height: 180px;
 }
 
-/* Subtle vignette */
 .preview-area::before {
   content: '';
   position: absolute;
@@ -233,12 +299,20 @@ body {
   opacity: 0.45;
   position: relative;
   z-index: 1;
+  transition: opacity 0.35s ease;
 }
 
-.preview-placeholder svg {
-  width: 40px;
-  height: 40px;
-  opacity: 0.3;
+.preview-placeholder.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.placeholder-anim {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  opacity: 0.6;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -399,8 +473,7 @@ body {
 .text-input {
   width: 100%;
   padding: 10px 14px;
-  background:
-    linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
+  background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
   border: 2px solid #2a2a2a;
   color: var(--text-primary);
   font-size: 14px;
@@ -426,7 +499,7 @@ body {
 }
 
 /* ══════════════════════════════════════════════════════════════
-   PUSH BUTTONS — square machine buttons, icon only
+   PUSH BUTTONS — metallic machine buttons (green/yellow/red)
    ══════════════════════════════════════════════════════════════ */
 .action-buttons {
   display: flex;
@@ -446,6 +519,7 @@ body {
   cursor: pointer;
   transition: all 0.1s ease;
   position: relative;
+  border-radius: 3px;
 }
 
 .btn svg {
@@ -455,24 +529,51 @@ body {
   z-index: 1;
 }
 
-/* ── Play push-button ──────────────────────────────────────── */
+/* Play — green metallic */
 .btn-play {
-  background:
-    linear-gradient(180deg, #d4a832 0%, #a88020 60%, #8a6818 100%);
-  color: #2a1c08;
+  background: linear-gradient(180deg, #5ecc5e 0%, #38a038 50%, #2a8a2a 100%);
+  color: #0a2a0a;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.25),
-    inset 0 -2px 0 #705010,
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -2px 0 #1a6a1a,
     0 3px 6px rgba(0, 0, 0, 0.5);
-  border-bottom: 3px solid #604808;
+  border-bottom: 3px solid #145014;
 }
 
 .btn-play:hover:not(:disabled) {
-  background:
-    linear-gradient(180deg, #e8bc40 0%, #b89028 60%, #9a7820 100%);
+  background: linear-gradient(180deg, #70dd70 0%, #45b545 50%, #35a035 100%);
 }
 
 .btn-play:active:not(:disabled) {
+  border-bottom-width: 1px;
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.4),
+    0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.btn-play:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  filter: saturate(0.3) brightness(0.7);
+}
+
+/* Pause — yellow/amber metallic */
+.btn-pause {
+  background: linear-gradient(180deg, #e8c040 0%, #c49a20 50%, #a88018 100%);
+  color: #2a1c08;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -2px 0 #8a6810,
+    0 3px 6px rgba(0, 0, 0, 0.5);
+  border-bottom: 3px solid #705010;
+}
+
+.btn-pause:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ffd54a 0%, #d4aa30 50%, #b89020 100%);
+}
+
+.btn-pause:active:not(:disabled) {
   border-bottom-width: 1px;
   transform: translateY(2px);
   box-shadow:
@@ -480,28 +581,25 @@ body {
     0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
-.btn-play:disabled {
-  opacity: 0.3;
+.btn-pause:disabled {
+  opacity: 0.25;
   cursor: not-allowed;
-  filter: saturate(0.4);
+  filter: saturate(0.3) brightness(0.7);
 }
 
-/* ── Stop push-button ──────────────────────────────────────── */
+/* Stop — red metallic */
 .btn-stop {
-  background:
-    linear-gradient(180deg, #4a3e30 0%, #3a3024 60%, #2e2418 100%);
-  color: var(--text-secondary);
+  background: linear-gradient(180deg, #cc4848 0%, #a02828 50%, #8a1e1e 100%);
+  color: #1a0808;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    inset 0 -2px 0 #1e1810,
-    0 3px 6px rgba(0, 0, 0, 0.4);
-  border-bottom: 3px solid #1a1208;
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -2px 0 #6a1414,
+    0 3px 6px rgba(0, 0, 0, 0.5);
+  border-bottom: 3px solid #501010;
 }
 
 .btn-stop:hover:not(:disabled) {
-  background:
-    linear-gradient(180deg, #5a3a2e 0%, #4a2e22 60%, #3e241a 100%);
-  color: #d08080;
+  background: linear-gradient(180deg, #dd5858 0%, #b83535 50%, #a02828 100%);
 }
 
 .btn-stop:active:not(:disabled) {
@@ -515,6 +613,7 @@ body {
 .btn-stop:disabled {
   opacity: 0.2;
   cursor: not-allowed;
+  filter: saturate(0.3) brightness(0.7);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -527,13 +626,14 @@ body {
   align-items: center;
 }
 
-.section-label {
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 2.5px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  padding-left: 2px;
+.section-label-img {
+  height: 22px;
+  filter: invert(1);
+  opacity: 0.5;
+  margin-left: 15px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  flex-shrink: 0;
 }
 
 .reel-wrapper {
@@ -541,11 +641,12 @@ body {
   align-items: center;
   gap: 0;
   position: relative;
+  flex: 1;
+  min-width: 0;
 }
 
 /* Scroll arrows */
 .reel-arrow {
-  width: 22px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -574,6 +675,22 @@ body {
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+/* Left arrow outside */
+.reel-arrow-left {
+  width: 22px;
+}
+
+/* Right arrow inside the reel */
+.reel-arrow-right {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 28px;
+  background: linear-gradient(90deg, transparent, #181818 60%);
+  z-index: 3;
 }
 
 /* Film reel strip */
@@ -626,8 +743,8 @@ body {
   overflow-x: auto;
   align-items: flex-start;
   padding: 4px 8px;
-
-  /* Hide scrollbar */
+  padding-right: 30px;
+  scroll-behavior: smooth;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -644,38 +761,31 @@ body {
   gap: 6px;
   padding: 4px 4px 3px;
   min-width: 64px;
-  /* background:
-    linear-gradient(180deg, #38302a 0%, #2a2420 100%); */
   background: transparent;
   border: none;
   color: var(--text-secondary);
   font-family: 'Outfit', sans-serif;
   font-size: 8px;
-  /* font-weight: 700; */
   letter-spacing: 0.6px;
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.12s ease;
   position: relative;
-  /* box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 1px 3px rgba(0, 0, 0, 0.3); */
   flex-shrink: 0;
 }
 
-
-.char-btn:hover:not(:disabled) {
+.char-btn:hover:not(:disabled):not(.active) {
   color: var(--text-primary);
 }
 
-.char-btn.active {
+.char-btn.active,
+.char-btn.active:hover {
   color: var(--accent);
 }
 
 .char-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
-  box-shadow: none;
 }
 
 .char-btn.unavailable {
@@ -695,54 +805,20 @@ body {
   object-fit: contain;
 }
 
-/* ── Warning Badge ─────────────────────────────────────────── */
+/* ── Warning Badge (question mark image) ──────────────────── */
 .warning-badge {
   position: absolute;
   top: -4px;
   right: -4px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #c03030;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  font-weight: 900;
+  width: 18px;
+  height: 18px;
   pointer-events: none;
-  border: 2px solid #1a1410;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
 }
 
-/* ══════════════════════════════════════════════════════════════
-   STATUS
-   ══════════════════════════════════════════════════════════════ */
-.status {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.status-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--text-muted);
-  transition: background 0.3s ease, box-shadow 0.3s ease;
-}
-
-.status-dot.playing {
-  background: #6abf6a;
-  box-shadow: 0 0 6px rgba(106, 191, 106, 0.4);
-}
-
-/* ── Scrollbar (global, except character grid which hides it) ─ */
+/* ── Scrollbar (global, except character grid) ────────────── */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;

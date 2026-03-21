@@ -17,22 +17,9 @@
   <!-- Title Bar -->
   <div class="titlebar">
     <div class="titlebar-controls">
-      <button class="titlebar-btn" id="btn-minimize" title="Minimize">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-      </button>
-      <button class="titlebar-btn" id="btn-maximize" title="Maximize">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="5" y="5" width="14" height="14" rx="1"/>
-        </svg>
-      </button>
-      <button class="titlebar-btn close" id="btn-close" title="Close">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="6" y1="6" x2="18" y2="18"/>
-          <line x1="6" y1="18" x2="18" y2="6"/>
-        </svg>
-      </button>
+      <button class="stoplight stoplight-close" id="btn-close" title="Close"></button>
+      <button class="stoplight stoplight-minimize" id="btn-minimize" title="Minimize"></button>
+      <button class="stoplight stoplight-maximize" id="btn-maximize" title="Maximize"></button>
     </div>
     <div class="titlebar-brand">
       <img src="./favicon.svg" alt="Dialoggo Icon">
@@ -46,9 +33,7 @@
     <!-- Preview Area -->
     <div class="preview-area" id="preview-area">
       <div class="preview-placeholder" id="preview-placeholder">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-        </svg>
+        <img class="placeholder-anim" id="placeholder-anim" alt="">
         <span>SELECT A CHARACTER & TYPE DIALOGUE</span>
       </div>
 
@@ -84,6 +69,12 @@
               <polygon points="7,4 20,12 7,20"/>
             </svg>
           </button>
+          <button class="btn btn-pause" id="btn-pause" disabled title="Pause">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="5" width="4" height="14" rx="1"/>
+              <rect x="14" y="5" width="4" height="14" rx="1"/>
+            </svg>
+          </button>
           <button class="btn btn-stop" id="btn-stop" disabled title="Stop">
             <svg viewBox="0 0 24 24" fill="currentColor">
               <rect x="6" y="6" width="12" height="12" rx="1"/>
@@ -94,7 +85,7 @@
 
       <!-- Character Selector — film reel -->
       <div class="character-section">
-        <div class="section-label">Character</div>
+        <img src="./img/menu/00001466.png" alt="Character" class="section-label-img">
         <div class="reel-wrapper">
           <div class="reel-arrow reel-arrow-left" id="reel-arrow-left">
             <svg viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7"/></svg>
@@ -105,9 +96,9 @@
               <!-- populated by JS -->
             </div>
             <div class="reel-sprockets reel-sprockets-bottom"></div>
-          </div>
-          <div class="reel-arrow reel-arrow-right" id="reel-arrow-right">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7"/></svg>
+            <div class="reel-arrow reel-arrow-right" id="reel-arrow-right">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7"/></svg>
+            </div>
           </div>
         </div>
       </div>
@@ -116,9 +107,19 @@
 
     <!-- Bottom Bar -->
     <div class="bottombar">
-      <div class="status" id="status">
+      <div class="bottombar-left">
+        <span class="bottombar-info" id="char-count">0 chars</span>
+        <span class="bottombar-sep">|</span>
+        <span class="bottombar-info" id="version-label">v1.0.0</span>
+      </div>
+      <div class="bottombar-center">
         <span class="status-dot" id="status-dot"></span>
-        <span id="status-text">Ready</span>
+      </div>
+      <div class="bottombar-right">
+        <span class="bottombar-info">Powered by</span>
+        <a href="https://ponkis.xyz" target="_blank" rel="noopener noreferrer" class="powered-link">
+          <img src="https://ponkis.xyz/assets/img/global/logo.png" alt="Ponkis" class="powered-logo">
+        </a>
       </div>
     </div>
 
