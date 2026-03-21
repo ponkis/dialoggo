@@ -290,26 +290,26 @@ body {
   pointer-events: none;
 }
 
-/* Checkerboard wireframe overlay — drifts diagonally (tile repeats every 28px) */
+/* Checkerboard overlay — obvious diagonal drift (2 tiles / loop) */
 .preview-area::before {
   content: '';
   position: absolute;
   inset: 0;
   background-image:
-    linear-gradient(rgba(40, 120, 200, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(40, 120, 200, 0.08) 1px, transparent 1px);
-  background-size: 28px 28px;
+    linear-gradient(rgba(55, 140, 220, 0.12) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(55, 140, 220, 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
   background-position: 0 0, 0 0;
   pointer-events: none;
   will-change: background-position;
-  animation: preview-checker-drift 22s linear infinite;
-  mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.6) 20%, rgba(0,0,0,0.15) 70%, transparent 100%);
-  -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.6) 20%, rgba(0,0,0,0.15) 70%, transparent 100%);
+  animation: preview-checker-drift 10s linear infinite;
+  mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.65) 25%, rgba(0,0,0,0.2) 72%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse at center, rgba(0,0,0,0.65) 25%, rgba(0,0,0,0.2) 72%, transparent 100%);
 }
 
 @keyframes preview-checker-drift {
   to {
-    background-position: 28px 28px, 28px 28px;
+    background-position: 48px 48px, 48px 48px;
   }
 }
 
@@ -389,6 +389,97 @@ body {
   transform: translateX(-120px);
   opacity: 0;
   transition: none;
+  isolation: isolate;
+}
+
+/* Inner flex: sprite + text (mirrored order handled on this row) */
+.dialogue-pixel-wrap {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+/*
+ * N64 mode — plate ~as bright as default bar (rgb(0 0 0 / 20%) + blur), not extra black layers.
+ * Dialogue text pixelation: canvas downsample in renderer.js (see pixelation_techniques_demo).
+ */
+.dialogue-box.n64-mode {
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none;
+  border: none;
+  overflow: visible;
+}
+
+/* Soft feather — same “weight” as non-N64 glass, no stacked near-black */
+.dialogue-box.n64-mode::before {
+  content: '';
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  top: -8%;
+  bottom: -8%;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 48px;
+  background: radial-gradient(
+    ellipse 100% 100% at 50% 50%,
+    rgba(0, 0, 0, 0.22) 0%,
+    rgba(0, 0, 0, 0.14) 70%,
+    rgba(0, 0, 0, 0.06) 92%,
+    transparent 100%
+  );
+  filter: blur(8px);
+  opacity: 1;
+}
+
+/* Core fill — matches .dialogue-box default ~20% black (no extra ::after darkness) */
+.dialogue-box.n64-mode::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 44px;
+  background: rgb(0 0 0 / 20%);
+  filter: blur(14px);
+  opacity: 1;
+}
+
+.dialogue-box.n64-mode .dialogue-pixel-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+.dialogue-box.n64-mode .sprite-container,
+.dialogue-box.n64-mode .sprite-canvas {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.dialogue-text-n64-shell {
+  display: contents;
+  height: 100%;
+}
+
+/*
+ * Hide layout text without opacity (opacity<1 can composite above the sibling canvas in Electron).
+ * visibility:hidden keeps box geometry; canvas is a later sibling with higher z-index.
+ */
+.dialogue-box.n64-mode .dialogue-text {
+  visibility: hidden;
+  pointer-events: none;
+  width: 100%;
+  min-height: 1em;
+  box-sizing: border-box;
 }
 
 .dialogue-box.slide-in {
@@ -443,12 +534,29 @@ body {
 }
 
 .dialogue-text-area {
-  flex: 1;
+  flex: 1 1 0%;
+  /* N64 canvas is out-of-flow; invisible DOM text can collapse width — keep a text column */
+  min-width: 48px;
   padding: 6px 0px 6px 14px;
   overflow: hidden;
   position: relative;
   height: 74px;
-  min-width: 0;
+}
+
+.dialogue-text-n64-canvas {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.dialogue-box.n64-mode .dialogue-text-n64-canvas {
+  display: block;
 }
 
 .dialogue-text {
@@ -1197,9 +1305,13 @@ body {
    edge of the container, then width expands leftward naturally.
    ══════════════════════════════════════════════════════════════ */
 .dialogue-box.mirrored {
-  flex-direction: row-reverse;
+  flex-direction: row;
   margin-left: auto;
   transform: translateX(120px);
+}
+
+.dialogue-box.mirrored .dialogue-pixel-wrap {
+  flex-direction: row-reverse;
 }
 
 .dialogue-box.mirrored .sprite-container {

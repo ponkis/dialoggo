@@ -107,6 +107,52 @@ let isPaused = false;
 let stopRequested = false;
 let pauseTransitionLock = false;
 let dialogueMirrored = false;
+/** Low-res “N64” look: canvas downsample + chunky dialogue UI */
+let n64ModeEnabled = false;
+
+/** Canvas 2D downsample block size — larger = chunkier (was 4; too fine once scaled into 72px sprite) */
+/** ~24×24 blocks on 144 canvas — visible but not extreme */
+const N64_CANVAS_PIXEL_BLOCK = 6;
+
+/**
+ * Dialogue text pixelation — same technique as pixelation_techniques_demo.html.
+ * Helpers are defined after DOM refs (see below).
+ */
+const N64_TEXT_PIXEL_BLOCK = 4;
+const N64_TEXT_LINE_HEIGHT = 33;
+const N64_TEXT_FONT = 'bold 32px "Andy Bold", "Comic Sans MS", cursive';
+
+const N64_MODE_STORAGE_KEY = 'dialoggo-n64-mode';
+
+let _n64PixelScratch = null;
+
+function getN64PixelScratchCanvas(sw, sh) {
+  if (!_n64PixelScratch) _n64PixelScratch = document.createElement('canvas');
+  if (_n64PixelScratch.width !== sw || _n64PixelScratch.height !== sh) {
+    _n64PixelScratch.width = sw;
+    _n64PixelScratch.height = sh;
+  }
+  return _n64PixelScratch;
+}
+
+function dialogueBoxExtraClasses() {
+  return (dialogueMirrored ? ' mirrored' : '') + (n64ModeEnabled ? ' n64-mode' : '');
+}
+
+function syncN64ClassOnDialogueBox() {
+  if (!elDialogueBox) return;
+  elDialogueBox.classList.toggle('n64-mode', n64ModeEnabled);
+}
+
+function redrawSpriteForN64Toggle() {
+  const r = spriteRenderer;
+  if (!r.idleFrames?.length && !r.speakFrames?.length) return;
+  if (r.mode === 'speaking') {
+    r.showFrame(r.speakFrames, r.frameIndex);
+  } else if (r.mode === 'idle') {
+    r.showFrame(r.idleFrames, r.frameIndex);
+  }
+}
 
 let audioCtx = null;
 
@@ -385,6 +431,7 @@ class SpriteRenderer {
     this.idleBlinkFrameDelay = 75;
 
     this.speakTimer = null;
+    this._sourceCanvas = null;
   }
 
   async loadCharacter(character) {
@@ -411,7 +458,13 @@ class SpriteRenderer {
     const cw = this.canvas.width;
     const ch = this.canvas.height;
 
-    ctx.clearRect(0, 0, cw, ch);
+    if (!this._sourceCanvas) {
+      this._sourceCanvas = document.createElement('canvas');
+      this._sourceCanvas.width = cw;
+      this._sourceCanvas.height = ch;
+    }
+    const sctx = this._sourceCanvas.getContext('2d');
+    sctx.clearRect(0, 0, cw, ch);
 
     const scale = Math.min(cw / img.width, ch / img.height);
     const dw = img.width * scale;
@@ -419,8 +472,26 @@ class SpriteRenderer {
     const dx = (cw - dw) / 2;
     const dy = (ch - dh) / 2;
 
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(img, dx, dy, dw, dh);
+    sctx.imageSmoothingEnabled = false;
+    sctx.drawImage(img, dx, dy, dw, dh);
+
+    if (n64ModeEnabled) {
+      const px = N64_CANVAS_PIXEL_BLOCK;
+      const sw = Math.max(1, Math.floor(cw / px));
+      const sh = Math.max(1, Math.floor(ch / px));
+      const tmp = getN64PixelScratchCanvas(sw, sh);
+      const tctx = tmp.getContext('2d');
+      tctx.imageSmoothingEnabled = false;
+      tctx.clearRect(0, 0, sw, sh);
+      tctx.drawImage(this._sourceCanvas, 0, 0, sw, sh);
+      ctx.clearRect(0, 0, cw, ch);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(tmp, 0, 0, sw, sh, 0, 0, cw, ch);
+    } else {
+      ctx.clearRect(0, 0, cw, ch);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(this._sourceCanvas, 0, 0);
+    }
   }
 
   startIdle() {
@@ -604,7 +675,159 @@ const elPlaceholder = document.getElementById('preview-placeholder');
 const elPlaceholderAnim = document.getElementById('placeholder-anim');
 const elDialogueContainer = document.getElementById('dialogue-container');
 const elDialogueBox = document.getElementById('dialogue-box');
+const elDialogueTextArea = document.getElementById('dialogue-text-area');
 const elDialogueText = document.getElementById('dialogue-text');
+const elDialogueTextN64Canvas = document.getElementById('dialogue-text-n64-canvas');
+
+let _n64DialogueTextHi = null;
+let _n64DialogueTextSmall = null;
+
+function getN64DialogueTextHiCanvas(w, h) {
+  if (!_n64DialogueTextHi || _n64DialogueTextHi.width !== w || _n64DialogueTextHi.height !== h) {
+    _n64DialogueTextHi = document.createElement('canvas');
+    _n64DialogueTextHi.width = w;
+    _n64DialogueTextHi.height = h;
+  }
+  return _n64DialogueTextHi;
+}
+
+function getN64DialogueTextSmallCanvas(sw, sh) {
+  if (!_n64DialogueTextSmall || _n64DialogueTextSmall.width !== sw || _n64DialogueTextSmall.height !== sh) {
+    _n64DialogueTextSmall = document.createElement('canvas');
+    _n64DialogueTextSmall.width = sw;
+    _n64DialogueTextSmall.height = sh;
+  }
+  return _n64DialogueTextSmall;
+}
+
+function parseTranslateYpx(transformStr) {
+  if (!transformStr || transformStr === 'none') return 0;
+  const m = transformStr.match(/translateY\((-?[0-9.]+)px\)/);
+  return m ? parseFloat(m[1], 10) : 0;
+}
+
+function clearN64DialogueTextCanvas() {
+  const c = elDialogueTextN64Canvas;
+  if (!c || !c.getContext) return;
+  const ctx = c.getContext('2d');
+  if (!ctx) return;
+  if (c.width > 0 && c.height > 0) ctx.clearRect(0, 0, c.width, c.height);
+}
+
+/** Rasterize current #dialogue-text lines to the N64 overlay canvas. */
+function renderN64DialogueTextCanvas() {
+  try {
+    const canvas = elDialogueTextN64Canvas;
+    const area = elDialogueTextArea;
+    if (!n64ModeEnabled || !canvas || !area || !elDialogueText) return;
+
+    const scrollWrapper = elDialogueText.querySelector('.dialogue-scroll');
+    if (!scrollWrapper) {
+      clearN64DialogueTextCanvas();
+      return;
+    }
+
+    /* clientWidth can lag flex; offsetWidth of #dialogue-text tracks in-flow layout. Cap width for perf. */
+    const areaW = Math.floor(area.clientWidth);
+    const areaH = Math.floor(area.clientHeight);
+    const textW = Math.floor(elDialogueText.offsetWidth || 0);
+    const textH = Math.floor(elDialogueText.offsetHeight || 0);
+    const parentW = Math.floor(area.parentElement?.getBoundingClientRect().width || 0);
+    const maxW = Math.min(1200, Math.max(64, parentW > 0 ? parentW - 24 : areaW || 800));
+    let W = Math.max(48, areaW);
+    if (W < 64 && textW > W) W = Math.max(W, textW);
+    W = Math.min(W, maxW);
+    const H = Math.max(33, areaH || textH || 33);
+    const hi = getN64DialogueTextHiCanvas(W, H);
+    const ctxHi = hi.getContext('2d');
+    if (!ctxHi) return;
+
+    ctxHi.clearRect(0, 0, W, H);
+    ctxHi.save();
+    ctxHi.beginPath();
+    ctxHi.rect(0, 0, W, H);
+    ctxHi.clip();
+
+    const padT = 6;
+    const padL = dialogueMirrored ? 0 : 14;
+    const padR = dialogueMirrored ? 14 : 0;
+
+    ctxHi.font = N64_TEXT_FONT;
+    /* Avoid throws on older Electron: property may not exist or may reject value */
+    if ('letterSpacing' in ctxHi) {
+      try {
+        ctxHi.letterSpacing = '0.5px';
+      } catch {
+        /* ignore */
+      }
+    }
+    ctxHi.textBaseline = 'top';
+    ctxHi.fillStyle = '#ffffff';
+    ctxHi.shadowColor = 'rgba(0, 0, 0, 0.65)';
+    ctxHi.shadowOffsetX = 1;
+    ctxHi.shadowOffsetY = 1;
+    ctxHi.shadowBlur = 0;
+
+    const lineEls = scrollWrapper.querySelectorAll('.line');
+    const scrollY = parseTranslateYPx(scrollWrapper.style.transform);
+    const centered = elDialogueText.classList.contains('centered');
+
+    for (let i = 0; i < lineEls.length; i++) {
+      const text = lineEls[i].textContent || '';
+      let y;
+      if (centered && lineEls.length === 1) {
+        y = (H - N64_TEXT_LINE_HEIGHT) / 2;
+      } else {
+        y = padT + i * N64_TEXT_LINE_HEIGHT + scrollY;
+      }
+      if (dialogueMirrored) {
+        ctxHi.textAlign = 'right';
+        ctxHi.fillText(text, W - padR, y);
+      } else {
+        ctxHi.textAlign = 'left';
+        ctxHi.fillText(text, padL, y);
+      }
+    }
+
+    ctxHi.restore();
+
+    const sw = Math.max(1, Math.floor(W / N64_TEXT_PIXEL_BLOCK));
+    const sh = Math.max(1, Math.floor(H / N64_TEXT_PIXEL_BLOCK));
+    const small = getN64DialogueTextSmallCanvas(sw, sh);
+    const sctx = small.getContext('2d');
+    if (!sctx) return;
+    sctx.imageSmoothingEnabled = false;
+    sctx.clearRect(0, 0, sw, sh);
+    sctx.drawImage(hi, 0, 0, sw, sh);
+
+    canvas.width = W;
+    canvas.height = H;
+    const out = canvas.getContext('2d');
+    if (!out) return;
+    out.imageSmoothingEnabled = false;
+    out.clearRect(0, 0, W, H);
+    out.drawImage(small, 0, 0, W, H);
+  } catch (err) {
+    console.warn('[Dialoggo] N64 dialogue text canvas:', err);
+  }
+}
+
+/** Debounced resize redraw — avoids observer ↔ layout feedback */
+let _n64TextRoRaf = 0;
+function scheduleN64DialogueTextCanvasResize() {
+  if (!n64ModeEnabled || !elDialogueText?.querySelector('.dialogue-scroll')) return;
+  if (_n64TextRoRaf) cancelAnimationFrame(_n64TextRoRaf);
+  _n64TextRoRaf = requestAnimationFrame(() => {
+    _n64TextRoRaf = 0;
+    renderN64DialogueTextCanvas();
+  });
+}
+
+if (typeof ResizeObserver !== 'undefined' && elDialogueTextArea) {
+  new ResizeObserver(() => {
+    scheduleN64DialogueTextCanvasResize();
+  }).observe(elDialogueTextArea);
+}
 const elSpriteCanvas = document.getElementById('sprite-canvas');
 const elStatusDot = document.getElementById('status-dot');
 const elCharCount = document.getElementById('char-count');
@@ -979,8 +1202,8 @@ async function playDialogue() {
   elDialogueContainer.classList.add('active');
 
   elDialogueText.innerHTML = '';
-  elDialogueBox.className = 'dialogue-box';
-  if (dialogueMirrored) elDialogueBox.classList.add('mirrored');
+  clearN64DialogueTextCanvas();
+  elDialogueBox.className = 'dialogue-box' + dialogueBoxExtraClasses();
 
   elDialogueContainer.classList.add('active');
 
@@ -1040,6 +1263,12 @@ async function playDialogue() {
   const LINE_HEIGHT = 33;
   let totalLinesAdded = 0;
 
+  /* Let flex/layout settle so N64 canvas gets a real width (avoids 1px-wide bitmap). */
+  if (n64ModeEnabled) {
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+    renderN64DialogueTextCanvas();
+  }
+
   speechLoop.start(char.sounds);
   if (isPaused) {
     speechLoop.pause();
@@ -1048,60 +1277,70 @@ async function playDialogue() {
     if (!stopRequested) speechLoop.resume();
   }
 
-  while (lineIndex < lines.length && !stopRequested) {
-    const line = lines[lineIndex];
+  try {
+    while (lineIndex < lines.length && !stopRequested) {
+      const line = lines[lineIndex];
 
-    speechLoop.pause();
-    spriteRenderer.resetToIdle();
+      speechLoop.pause();
+      spriteRenderer.resetToIdle();
 
-    if (totalLinesAdded >= 2) {
-      const scrollY = (totalLinesAdded - 1) * LINE_HEIGHT;
-      scrollWrapper.style.transform = `translateY(-${scrollY}px)`;
-      await sleep(350);
-    }
-
-    const lineEl = document.createElement('span');
-    lineEl.className = 'line';
-    lineEl.textContent = '';
-    scrollWrapper.appendChild(lineEl);
-    totalLinesAdded++;
-
-    if (lineIndex > 0) await sleep(200);
-
-    speechLoop.resume();
-
-    for (let i = 0; i < line.length; i++) {
-      if (stopRequested) break;
-
-      await waitWhilePaused();
-      if (stopRequested) break;
-
-      lineEl.textContent = line.substring(0, i + 1);
-      const ch = line[i];
-
-      if (PAUSE_CHARS.has(ch)) {
-        speechLoop.pause();
-        spriteRenderer.resetToIdle();
-        const pauseDuration = (ch === '.' || ch === '!' || ch === '?') ? 400 : 200;
-        await sleep(pauseDuration);
-        if (i < line.length - 1 && !PAUSE_CHARS.has(line[i + 1])) {
-          speechLoop.resume();
-        }
-      } else if (ch === ' ') {
-        await sleep(charMsPerChar * 0.6);
-      } else {
-        await sleep(charMsPerChar);
+      if (totalLinesAdded >= 2) {
+        const scrollY = (totalLinesAdded - 1) * LINE_HEIGHT;
+        scrollWrapper.style.transform = `translateY(-${scrollY}px)`;
+        if (n64ModeEnabled) renderN64DialogueTextCanvas();
+        await sleep(350);
       }
+
+      const lineEl = document.createElement('span');
+      lineEl.className = 'line';
+      lineEl.textContent = '';
+      scrollWrapper.appendChild(lineEl);
+      totalLinesAdded++;
+
+      if (lineIndex > 0) await sleep(200);
+
+      speechLoop.resume();
+
+      for (let i = 0; i < line.length; i++) {
+        if (stopRequested) break;
+
+        await waitWhilePaused();
+        if (stopRequested) break;
+
+        lineEl.textContent = line.substring(0, i + 1);
+        if (n64ModeEnabled) renderN64DialogueTextCanvas();
+        const ch = line[i];
+
+        if (PAUSE_CHARS.has(ch)) {
+          speechLoop.pause();
+          spriteRenderer.resetToIdle();
+          const pauseDuration = (ch === '.' || ch === '!' || ch === '?') ? 400 : 200;
+          await sleep(pauseDuration);
+          if (i < line.length - 1 && !PAUSE_CHARS.has(line[i + 1])) {
+            speechLoop.resume();
+          }
+        } else if (ch === ' ') {
+          await sleep(charMsPerChar * 0.6);
+        } else {
+          await sleep(charMsPerChar);
+        }
+      }
+
+      lineIndex++;
     }
 
-    lineIndex++;
+    // ── Phase 3: Stop sound, hold final text, then outro ──
+    await speechLoop.gracefulStop();
+    spriteRenderer.startIdleAfterDelay(2000);
+
+    if (!stopRequested) await sleep(500);
+  } catch (err) {
+    /* Any throw here used to skip gracefulStop → speechLoop ran forever */
+    console.error('[Dialoggo] playDialogue playback error', err);
+    speechLoop.stop();
+    spriteRenderer.stop();
+    spriteRenderer.startIdleAfterDelay(2000);
   }
-
-  // ── Phase 3: Stop sound, hold final text, then outro ──
-  await speechLoop.gracefulStop();
-  spriteRenderer.startIdleAfterDelay(2000);
-
-  if (!stopRequested) await sleep(500);
 
   await finishDialogue();
 }
@@ -1112,8 +1351,9 @@ async function finishDialogue() {
 
   elDialogueText.innerHTML = '';
   elDialogueText.classList.remove('centered');
+  clearN64DialogueTextCanvas();
 
-  elDialogueBox.className = 'dialogue-box shrink' + (dialogueMirrored ? ' mirrored' : '');
+  elDialogueBox.className = 'dialogue-box shrink' + dialogueBoxExtraClasses();
 
   await Promise.all([
     (async () => {
@@ -1133,9 +1373,9 @@ async function finishDialogue() {
   ]);
 
   elDialogueContainer.classList.remove('active');
-  elDialogueBox.className = 'dialogue-box';
-  if (dialogueMirrored) elDialogueBox.classList.add('mirrored');
+  elDialogueBox.className = 'dialogue-box' + dialogueBoxExtraClasses();
   elDialogueText.innerHTML = '';
+  clearN64DialogueTextCanvas();
   elPlaceholder.classList.remove('fade-out');
 
   isPlaying = false;
@@ -1398,6 +1638,10 @@ function setMirrored(value) {
   dialogueMirrored = value;
   if (elInputMirrored) elInputMirrored.checked = value;
   elDialogueBox.classList.toggle('mirrored', value);
+  elDialogueBox.classList.toggle('n64-mode', n64ModeEnabled);
+  if (n64ModeEnabled && elDialogueText?.querySelector('.dialogue-scroll')) {
+    renderN64DialogueTextCanvas();
+  }
 }
 
 elInputMirrored?.addEventListener('change', () => {
@@ -1405,6 +1649,35 @@ elInputMirrored?.addEventListener('change', () => {
   playMenuSound('click');
 });
 
+const elInputN64 = document.getElementById('input-n64-mode');
+function initN64ModeFromDom() {
+  if (!elInputN64) return;
+  try {
+    const saved = localStorage.getItem(N64_MODE_STORAGE_KEY);
+    if (saved !== null) {
+      n64ModeEnabled = saved === 'true';
+      elInputN64.checked = n64ModeEnabled;
+    } else {
+      n64ModeEnabled = elInputN64.checked;
+    }
+  } catch {
+    n64ModeEnabled = elInputN64.checked;
+  }
+  syncN64ClassOnDialogueBox();
+}
+elInputN64?.addEventListener('change', () => {
+  n64ModeEnabled = elInputN64.checked;
+  try {
+    localStorage.setItem(N64_MODE_STORAGE_KEY, String(n64ModeEnabled));
+  } catch { /* ignore */ }
+  syncN64ClassOnDialogueBox();
+  redrawSpriteForN64Toggle();
+  if (n64ModeEnabled) renderN64DialogueTextCanvas();
+  else clearN64DialogueTextCanvas();
+  playMenuSound('click');
+});
+
 updateSettingsSleeveBlockedState();
+initN64ModeFromDom();
 
 console.log(`[Dialoggo] v${appVersion} — ${characters.length} characters, ${genericSounds.length} generic sounds`);
