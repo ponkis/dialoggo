@@ -375,6 +375,9 @@ class SpriteRenderer {
     this.idleStartTimeout = null;
     this.idleDirection = 1;
     this.idleFrameDelay = 120;
+    this.idleBlinkHoldMin = 1800;
+    this.idleBlinkHoldMax = 4200;
+    this.idleBlinkFrameDelay = 75;
 
     this.speakTimer = null;
   }
@@ -421,16 +424,35 @@ class SpriteRenderer {
     this.frameIndex = 0;
     this.idleDirection = 1;
     this.showFrame(this.idleFrames, 0);
+    if (!this.idleFrames.length) return;
+    const last = Math.max(0, this.idleFrames.length - 1);
 
-    this.idleTimer = setInterval(() => {
-      this.frameIndex += this.idleDirection;
-      if (this.frameIndex >= IDLE_FRAME_COUNT - 1) {
-        this.idleDirection = -1;
-      } else if (this.frameIndex <= 0) {
-        this.idleDirection = 1;
-      }
-      this.showFrame(this.idleFrames, this.frameIndex);
-    }, this.idleFrameDelay);
+    const playBlinkCycle = () => {
+      let idx = 1;
+      let dir = 1;
+      const step = () => {
+        if (!this.mode || this.mode !== 'idle') return;
+        this.frameIndex = idx;
+        this.showFrame(this.idleFrames, idx);
+        if (idx >= last) dir = -1;
+        idx += dir;
+        if (idx <= 0) {
+          this.frameIndex = 0;
+          this.showFrame(this.idleFrames, 0);
+          scheduleNextBlink();
+          return;
+        }
+        this.idleTimer = setTimeout(step, this.idleBlinkFrameDelay);
+      };
+      this.idleTimer = setTimeout(step, this.idleBlinkFrameDelay);
+    };
+
+    const scheduleNextBlink = () => {
+      const hold = this.idleBlinkHoldMin + Math.floor(Math.random() * (this.idleBlinkHoldMax - this.idleBlinkHoldMin + 1));
+      this.idleTimer = setTimeout(playBlinkCycle, hold);
+    };
+
+    scheduleNextBlink();
   }
 
   startIdleAfterDelay(delayMs) {
@@ -557,7 +579,7 @@ class SpriteRenderer {
     this.stopSpeaking();
     this.clearIdleStartTimeout();
     if (this.idleTimer) {
-      clearInterval(this.idleTimer);
+      clearTimeout(this.idleTimer);
       this.idleTimer = null;
     }
   }
@@ -606,13 +628,32 @@ function startCardIdleAnim(charId) {
   state.frameIndex = 0;
   state.direction = 1;
   setCardFrame(state, frames, state.frameIndex);
-  state.timer = setInterval(() => {
+  const last = Math.max(0, frames.length - 1);
+  const schedule = () => {
+    const hold = 1500 + Math.floor(Math.random() * 2200);
+    state.timer = setTimeout(playCycle, hold);
+  };
+  const playCycle = () => {
     if (state.mode !== 'idle') return;
-    state.frameIndex += state.direction;
-    if (state.frameIndex >= frames.length - 1) state.direction = -1;
-    else if (state.frameIndex <= 0) state.direction = 1;
-    setCardFrame(state, frames, state.frameIndex);
-  }, 120);
+    let idx = 1;
+    let dir = 1;
+    const step = () => {
+      if (state.mode !== 'idle') return;
+      state.frameIndex = idx;
+      setCardFrame(state, frames, state.frameIndex);
+      if (idx >= last) dir = -1;
+      idx += dir;
+      if (idx <= 0) {
+        state.frameIndex = 0;
+        setCardFrame(state, frames, 0);
+        schedule();
+        return;
+      }
+      state.timer = setTimeout(step, 80);
+    };
+    state.timer = setTimeout(step, 80);
+  };
+  schedule();
 }
 
 function startCardSpeakThenIdle(charId) {
@@ -743,8 +784,11 @@ function buildCharacterGrid() {
     });
 
     btn.addEventListener('click', () => {
-      if (!btn.disabled) startCardSpeakThenIdle(char.id);
+      if (btn.disabled) return;
+      const wasActive = selectedCharacter?.id === char.id;
       selectCharacter(char);
+      // Trigger speaking pose immediately on first selection click.
+      if (!wasActive) startCardSpeakThenIdle(char.id);
     });
 
     elCharGrid.appendChild(btn);

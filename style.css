@@ -121,11 +121,11 @@ body {
 }
 
 .titlebar-brand span {
-  font-family: 'Over the Rainbow', cursive;
-  font-size: 20px;
-  font-weight: 400;
-  letter-spacing: 1.2px;
-  color: #d0d0d0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 5px;
+  text-transform: uppercase;
+  color: var(--accent);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 }
 
