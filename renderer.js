@@ -819,7 +819,7 @@ async function playDialogue() {
   // Keep the sprite in s1 for a bit after not talking.
   spriteRenderer.startIdleAfterDelay(2000);
 
-  if (!stopRequested) await sleep(1200); // Hold final text
+  if (!stopRequested) await sleep(500); // Hold final text
 
   await finishDialogue();
 }
