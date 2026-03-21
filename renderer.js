@@ -176,9 +176,31 @@ class SpeechSoundLoop {
   stop() {
     this.running = false;
     this.paused = false;
+    this._killCurrentAudio();
+    if (this._abortController) {
+      this._abortController.abort();
+      this._abortController = null;
+    }
+    this.spriteRenderer.resetToIdle();
+  }
+
+  // Stop the loop gracefully: let the current clip's mouth animation
+  // finish closing before transitioning to idle (no abrupt snap).
+  async gracefulStop() {
+    this.running = false;
+    this.paused = false;
+    this._killCurrentAudio();
+    if (this._abortController) {
+      this._abortController.abort();
+      this._abortController = null;
+    }
+    // Wait for any in-progress speak animation to close the mouth
+    await this.spriteRenderer.smoothCloseAndIdle();
+  }
+
+  _killCurrentAudio() {
     if (this.currentSource) {
       if (this.currentGainNode && audioCtx) {
-        // Smoothly fade out the last clip over 50ms
         try {
           const gn = this.currentGainNode;
           gn.gain.setValueAtTime(gn.gain.value, audioCtx.currentTime);
@@ -192,11 +214,6 @@ class SpeechSoundLoop {
       this.currentSource = null;
       this.currentGainNode = null;
     }
-    if (this._abortController) {
-      this._abortController.abort();
-      this._abortController = null;
-    }
-    this.spriteRenderer.resetToIdle();
   }
 
   async _loop() {
@@ -247,8 +264,6 @@ class SpeechSoundLoop {
       }
     }
 
-    // Cleanup when loop exits
-    this.spriteRenderer.resetToIdle();
   }
 }
 
@@ -294,6 +309,7 @@ class SpriteRenderer {
 
     // Idle animation
     this.idleTimer = null;
+    this.idleStartTimeout = null; // delayed start scheduler
     this.idleDirection = 1;
     this.idleFrameDelay = 120; // ms per frame in idle
 
@@ -358,6 +374,22 @@ class SpriteRenderer {
     }, this.idleFrameDelay);
   }
 
+  // Start idle animation after a delay, so the sprite can stay in s1 briefly.
+  startIdleAfterDelay(delayMs) {
+    this.clearIdleStartTimeout();
+    this.idleStartTimeout = setTimeout(() => {
+      this.idleStartTimeout = null;
+      this.startIdle();
+    }, delayMs);
+  }
+
+  clearIdleStartTimeout() {
+    if (this.idleStartTimeout) {
+      clearTimeout(this.idleStartTimeout);
+      this.idleStartTimeout = null;
+    }
+  }
+
   // Speaking: open mouth proportional to audio duration
   startSpeaking(audioDurationMs) {
     this.stopSpeaking();
@@ -415,7 +447,6 @@ class SpriteRenderer {
     this.mode = 'idle';
 
     if (this.frameIndex > 0) {
-      // Fast animate closing
       let currentFrame = this.frameIndex;
       this.speakTimer = setInterval(() => {
         currentFrame--;
@@ -426,11 +457,42 @@ class SpriteRenderer {
         }
         this.frameIndex = currentFrame;
         this.showFrame(this.speakFrames.length ? this.speakFrames : this.idleFrames, currentFrame);
-      }, 30); // 30ms per frame down to 0
+      }, 30);
     } else {
       this.frameIndex = 0;
       this.showFrame(this.speakFrames.length ? this.speakFrames : this.idleFrames, 0);
     }
+  }
+
+  // Smoothly close the mouth, then transition into the idle animation loop.
+  // Returns a promise that resolves once the mouth is fully closed.
+  smoothCloseAndIdle() {
+    this.stopSpeaking();
+    this.mode = 'idle';
+
+    return new Promise((resolve) => {
+      if (this.frameIndex > 0) {
+        let currentFrame = this.frameIndex;
+        this.speakTimer = setInterval(() => {
+          currentFrame--;
+          if (currentFrame <= 0) {
+            currentFrame = 0;
+            clearInterval(this.speakTimer);
+            this.speakTimer = null;
+            this.frameIndex = 0;
+            this.showFrame(this.speakFrames.length ? this.speakFrames : this.idleFrames, 0);
+            resolve();
+          } else {
+            this.frameIndex = currentFrame;
+            this.showFrame(this.speakFrames.length ? this.speakFrames : this.idleFrames, currentFrame);
+          }
+        }, 30);
+      } else {
+        this.frameIndex = 0;
+        this.showFrame(this.speakFrames.length ? this.speakFrames : this.idleFrames, 0);
+        resolve();
+      }
+    });
   }
 
   stopSpeaking() {
@@ -442,6 +504,7 @@ class SpriteRenderer {
 
   stop() {
     this.stopSpeaking();
+    this.clearIdleStartTimeout();
     if (this.idleTimer) {
       clearInterval(this.idleTimer);
       this.idleTimer = null;
@@ -623,6 +686,11 @@ async function playDialogue() {
   // ── Phase 1a: Show container + slide in as circle ────
   elDialogueContainer.classList.add('active');
 
+  // Stop any running idle loop and show s1 (closed mouth / neutral) for the intro
+  spriteRenderer.stop();
+  spriteRenderer.frameIndex = 0;
+  spriteRenderer.showFrame(spriteRenderer.speakFrames, 0);
+
   // Force a reflow so the initial state (off-screen) is applied
   void elDialogueBox.offsetWidth;
 
@@ -637,7 +705,12 @@ async function playDialogue() {
     sleep(400),
   ]);
 
-  if (stopRequested) { speechLoop.stop(); await finishDialogue(); return; }
+  if (stopRequested) {
+    speechLoop.stop();
+    spriteRenderer.startIdleAfterDelay(2000);
+    await finishDialogue();
+    return;
+  }
 
   // ── Phase 1b: Expand circle to full rectangle ────────
   elDialogueBox.classList.remove('slide-in');
@@ -651,7 +724,12 @@ async function playDialogue() {
     sleep(450),
   ]);
 
-  if (stopRequested) { speechLoop.stop(); await finishDialogue(); return; }
+  if (stopRequested) {
+    speechLoop.stop();
+    spriteRenderer.startIdleAfterDelay(2000);
+    await finishDialogue();
+    return;
+  }
 
   // ── Phase 2: Text scrolling with speech ──────────────
   const lines = splitTextIntoLines(text);
@@ -735,21 +813,21 @@ async function playDialogue() {
   }
 
   // ── Phase 3: Stop sound, hold final text, then outro ──
-  speechLoop.stop();
-  spriteRenderer.resetToIdle();
+  // Gracefully close the mouth (let animation finish) instead of hard-cutting
+  await speechLoop.gracefulStop();
 
-  if (!stopRequested) {
-    spriteRenderer.startIdle();
-    await sleep(1200); // Hold final text
-  }
+  // Keep the sprite in s1 for a bit after not talking.
+  spriteRenderer.startIdleAfterDelay(2000);
+
+  if (!stopRequested) await sleep(1200); // Hold final text
 
   await finishDialogue();
 }
 
 async function finishDialogue() {
-  // Stop speech loop + sprite animation
+  // Stop speech loop (but NOT the idle animation — let it keep looping)
   speechLoop.stop();
-  spriteRenderer.stop();
+  spriteRenderer.stopSpeaking();
 
   // Clear text and reset alignment
   elDialogueText.innerHTML = '';
@@ -778,7 +856,7 @@ async function finishDialogue() {
     sleep(350),
   ]);
 
-  // Reset everything
+  // Reset dialogue box but keep sprite idle animation running
   elDialogueContainer.classList.remove('active');
   elDialogueBox.className = 'dialogue-box';
   elDialogueText.innerHTML = '';
@@ -795,6 +873,7 @@ async function finishDialogue() {
 function stopDialogue() {
   stopRequested = true;
   speechLoop.stop();
+  spriteRenderer.stopSpeaking();
 }
 
 // ── Event Listeners ─────────────────────────────────────────
