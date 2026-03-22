@@ -295,7 +295,7 @@ const menuSoundPaths = {
 function playMenuSound(key) {
   const p = menuSoundPaths[key];
   if (p && fs.existsSync(p)) {
-    loadAudioBuffer(p).then(buf => playAudioBuffer(buf, { volume: getMenuSoundVolumeGain() })).catch(() => {});
+    loadAudioBuffer(p).then(buf => playAudioBuffer(buf, { volume: getMenuSoundVolumeGain() })).catch(() => { });
   }
 }
 
@@ -381,7 +381,7 @@ class SpeechSoundLoop {
         audioCtx.currentTime,
         0.02
       );
-    } catch {}
+    } catch { }
   }
 
   stop() {
@@ -416,8 +416,8 @@ class SpeechSoundLoop {
           gn.gain.setValueAtTime(gn.gain.value, audioCtx.currentTime);
           gn.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
           const src = this.currentSource;
-          setTimeout(() => { try { src.stop(); } catch {} }, 60);
-        } catch {}
+          setTimeout(() => { try { src.stop(); } catch { } }, 60);
+        } catch { }
       } else {
         try { this.currentSource.stop(); } catch { }
       }
@@ -1097,7 +1097,7 @@ function updateFastForwardAvailability() {
   elBtnFastForward.classList.toggle('fast-forwarding', isFastForwarding);
   elBtnFastForward.title = enabled
     ? 'Hold to fast forward'
-    : 'Fast forward (available during playback)';
+    : 'Fast forward';
 }
 
 function normalizeCharacterSearch(value) {
@@ -1375,7 +1375,7 @@ function selectCharacter(char) {
     const randomClip = pick(char.sounds);
     const semitoneOffset = getCharacterPitchSemitoneOffset(char);
     const playbackRate = semitoneOffsetToRate(semitoneOffset);
-    loadAudioBuffer(randomClip).then(buf => playAudioBuffer(buf, { playbackRate })).catch(() => {});
+    loadAudioBuffer(randomClip).then(buf => playAudioBuffer(buf, { playbackRate })).catch(() => { });
   }
 
   updatePlayButton();
@@ -1448,7 +1448,7 @@ function splitTextIntoLines(text, maxCharsPerLine = 32) {
         currentLine = word;
       }
     }
-    
+
     if (currentLine.length > 0) {
       lines.push(currentLine);
     }
