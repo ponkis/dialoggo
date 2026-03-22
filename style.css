@@ -1012,6 +1012,13 @@ img {
     0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
+.settings-category-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
 .settings-category-head {
   display: flex;
   align-items: center;
@@ -1046,8 +1053,8 @@ img {
     0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
-.settings-category .setting-row+.setting-row {
-  margin-top: 12px;
+.settings-category-body .setting-row+.setting-row {
+  margin-top: 0;
 }
 
 .setting-row .uiverse-rocker-host {
@@ -2333,6 +2340,7 @@ body.maximized .preview-area.preview-settings-muted .preview-placeholder {
 
 /* Settings panel stays open enough for the rocker switch artwork and shadows */
 .settings-panel.settings-layout-maximized {
+  --maximized-setting-row-height: 118px;
   overflow: visible;
   padding: 12px 16px 16px;
   display: flex;
@@ -2381,23 +2389,53 @@ body.maximized .preview-area.preview-settings-muted .preview-placeholder {
 /* Each category card keeps its width so the strip scrolls instead of shrinking */
 .settings-panel.settings-layout-maximized .settings-category {
   flex: 0 0 var(--maximized-settings-card-width);
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   width: var(--maximized-settings-card-width);
   min-width: var(--maximized-settings-card-width);
   min-height: 0;
   padding: 12px 16px 18px;
+  gap: 12px;
 }
 
 /* Compact category header spacing */
 .settings-panel.settings-layout-maximized .settings-category-head {
-  margin-bottom: 10px;
+  grid-column: 1 / -1;
+  margin-bottom: 0;
   padding-bottom: 0;
+}
+
+.settings-panel.settings-layout-maximized .settings-stitch--under-title {
+  grid-column: 1 / -1;
+}
+
+.settings-panel.settings-layout-maximized .settings-category-body {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 14px;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 2px 6px 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.settings-panel.settings-layout-maximized .settings-category-body::-webkit-scrollbar {
+  display: none;
 }
 
 /* Keep the switch and copy on one line so the card stays readable and unclipped */
 .settings-panel.settings-layout-maximized .setting-row {
-  flex: 1 1 auto;
+  flex: 0 0 calc(var(--maximized-settings-card-width) - 36px);
+  width: calc(var(--maximized-settings-card-width) - 36px);
+  min-width: calc(var(--maximized-settings-card-width) - 36px);
+  min-height: var(--maximized-setting-row-height);
   grid-template-columns: minmax(0, 1fr) 84px;
   align-items: center;
   padding: 10px 12px;
@@ -2436,38 +2474,6 @@ body.maximized .preview-area.preview-settings-muted .preview-placeholder {
   --menu-knob-bound-width: 92px;
   --menu-knob-bound-height: 70px;
   margin-left: 0;
-}
-
-.settings-panel.settings-layout-maximized .settings-category:has(.setting-row + .setting-row) .setting-row {
-  grid-template-columns: minmax(0, 1fr) 66px;
-  gap: 8px 14px;
-  padding: 8px 12px;
-}
-
-.settings-panel.settings-layout-maximized .settings-category:has(.setting-row + .setting-row) .setting-row--menu-volume {
-  grid-template-columns: minmax(0, 1fr) 84px;
-}
-
-.settings-panel.settings-layout-maximized .settings-category:has(.setting-row + .setting-row) .setting-row .uiverse-rocker-host {
-  --uiverse-scale: 0.27;
-  width: calc((150px * var(--uiverse-scale)) + 12px);
-  min-width: calc((150px * var(--uiverse-scale)) + 12px);
-  height: calc((195px * var(--uiverse-scale)) + 12px);
-  justify-self: center;
-}
-
-.settings-panel.settings-layout-maximized .settings-category:has(.setting-row + .setting-row) .setting-row--menu-volume .menu-volume-knob-host {
-  --menu-knob-size: 30px;
-  --menu-knob-hit-size: 26px;
-  --menu-knob-hit-offset: 2px;
-  --menu-knob-dial-width: 12px;
-  --menu-knob-dial-height: 3px;
-  --menu-knob-notch-distance: 18px;
-  --menu-knob-label-font-size: 8px;
-  --menu-knob-label-offset: 4px;
-  --menu-knob-bound-width: 84px;
-  --menu-knob-bound-height: 64px;
-  justify-self: center;
 }
 
 /* ── Animations ─────────────────────────────────────────────── */
