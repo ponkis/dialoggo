@@ -1374,11 +1374,30 @@ function stopStartupRevealSound() {
     return;
   }
 
-  try {
-    startupRevealAudioHandle.source.stop();
-  } catch { }
-
+  const { source, gainNode } = startupRevealAudioHandle;
   startupRevealAudioHandle = null;
+
+  try {
+    const ctx = getAudioContext();
+    const now = ctx.currentTime;
+    const currentGain = Math.max(0.001, gainNode?.gain?.value ?? getMenuSoundVolumeGain());
+
+    if (gainNode) {
+      gainNode.gain.cancelScheduledValues(now);
+      gainNode.gain.setValueAtTime(currentGain, now);
+      gainNode.gain.linearRampToValueAtTime(0.001, now + 0.09);
+    }
+
+    setTimeout(() => {
+      try {
+        source.stop();
+      } catch { }
+    }, 95);
+  } catch {
+    try {
+      source.stop();
+    } catch { }
+  }
 }
 
 startPlaceholderAnim();
@@ -1412,7 +1431,7 @@ function resizeStartupIntroCanvas(canvas, ctx) {
 
 function drawStartupIntroFrame(ctx, jiggyPath, viewportWidth, viewportHeight, progress) {
   const initialScale = 0.12;
-  const finalScale = (Math.hypot(viewportWidth, viewportHeight) * 1.55) / STARTUP_JIGGY_SIZE;
+  const finalScale = (Math.hypot(viewportWidth, viewportHeight) * 1.80) / STARTUP_JIGGY_SIZE;
   const scale = initialScale + ((finalScale - initialScale) * progress);
   const rotationDeg = -18 + ((250 - (-18)) * progress);
 
@@ -2172,11 +2191,6 @@ normalizeDialogueInput();
 syncCharacterSearchClearButton();
 buildCharacterGrid();
 requestAnimationFrame(updateReelArrows);
-
-if (characters.length > 0) {
-  const firstAvailable = characters.find(c => c.isAvailable);
-  if (firstAvailable) selectCharacter(firstAvailable);
-}
 
 // ── Sleeve Tabs & Settings Panel ─────────────────────────────
 const elControlsPanel = document.getElementById('controls-panel');
