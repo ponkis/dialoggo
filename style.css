@@ -1090,6 +1090,7 @@ img {
 }
 
 .setting-row--menu-volume {
+  grid-template-columns: minmax(0, 1fr) 78px;
   align-items: center;
   gap: 12px 18px;
   padding: 11px 14px;
@@ -1109,9 +1110,9 @@ img {
   --menu-knob-notch-distance: 22px;
   --menu-knob-label-font-size: 10px;
   --menu-knob-label-offset: 7px;
-  --menu-knob-bound-width: 86px;
+  --menu-knob-bound-width: 78px;
   --menu-knob-bound-height: 72px;
-  --menu-knob-center-x: 63%;
+  --menu-knob-center-x: 70%;
   --menu-knob-center-y: 50%;
   margin-left: 0;
   flex: 0 0 auto;
@@ -1672,7 +1673,6 @@ img {
   bottom: 8px;
   z-index: 2;
   padding: 2px 6px;
-  border-radius: 999px;
   background: rgba(8, 8, 8, 0.68);
   border: 1px solid rgba(78, 78, 78, 0.5);
   color: rgba(214, 214, 214, 0.72);
