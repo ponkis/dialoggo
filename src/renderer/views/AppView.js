@@ -877,17 +877,35 @@ function createAppView(model, audioService) {
     }
   }
 
-  async function prewarmAppAssets() {
-    const imageExtensions = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg']);
-    const audioExtensions = new Set(['.wav', '.mp3', '.ogg']);
-
-    const imageFiles = collectFilesRecursive(env.imgDir, imageExtensions);
-    const audioFiles = collectFilesRecursive(env.sndDir, audioExtensions);
+  async function prewarmStartupAssets() {
+    const startupImageFiles = placeholderFrames.filter((filePath) => env.fs.existsSync(filePath));
+    const startupAudioFiles = env.fs.existsSync(env.startupRevealSoundPath) ? [env.startupRevealSoundPath] : [];
 
     await Promise.allSettled([
-      ...imageFiles.map((filePath) => loadSpriteImage(filePath).catch(() => null)),
-      ...audioFiles.map((filePath) => audioService.loadAudioBuffer(filePath).catch(() => null)),
+      ...startupImageFiles.map((filePath) => loadSpriteImage(filePath).catch(() => null)),
+      ...startupAudioFiles.map((filePath) => audioService.loadAudioBuffer(filePath).catch(() => null)),
     ]);
+  }
+
+  function scheduleBackgroundAssetWarmup() {
+    const deferredAudioFiles = [
+      env.path.join(env.sndDir, 'gui', '1.wav'),
+      env.path.join(env.sndDir, 'gui', '2.wav'),
+      env.path.join(env.sndDir, 'gui', '3.wav'),
+      env.path.join(env.sndDir, 'gui', '4.wav'),
+      env.path.join(env.sndDir, 'gui', '5.wav'),
+      env.startupRevealSoundPath,
+    ].filter((filePath, index, values) => (
+      values.indexOf(filePath) === index && env.fs.existsSync(filePath)
+    ));
+
+    setTimeout(() => {
+      deferredAudioFiles.forEach((filePath, index) => {
+        setTimeout(() => {
+          audioService.loadAudioBuffer(filePath).catch(() => null);
+        }, index * 40);
+      });
+    }, 0);
   }
 
   function resizeStartupIntroCanvas(canvas, ctx) {
@@ -986,16 +1004,26 @@ function createAppView(model, audioService) {
 
     try {
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-      await prewarmAppAssets();
+      await prewarmStartupAssets();
     } catch (error) {
       console.warn('[Dialoggo] startup prewarm failed', error);
     } finally {
       stopStartupLoadingAnim();
       document.body.classList.remove('startup-loading');
       document.body.classList.add('startup-intro-running');
-      await startStartupRevealSound();
-      await playStartupIntroAnimation();
-      stopStartupRevealSound();
+
+      try {
+        await startStartupRevealSound();
+        await Promise.race([
+          playStartupIntroAnimation(),
+          model.sleep(constants.STARTUP_INTRO_MS + 180),
+        ]);
+      } catch (error) {
+        console.warn('[Dialoggo] startup intro failed', error);
+      } finally {
+        stopStartupRevealSound();
+      }
+
       await model.sleep(120);
 
       document.body.classList.remove('startup-active', 'startup-intro-running');
@@ -1004,6 +1032,8 @@ function createAppView(model, audioService) {
       setTimeout(() => {
         refs.startupOverlay.remove();
       }, 320);
+
+      scheduleBackgroundAssetWarmup();
     }
   }
 

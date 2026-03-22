@@ -6,4 +6,4 @@ const {
 const publicDir = path.dirname(fileURLToPath(window.location.href));
 const rendererEntry = path.join(publicDir, '..', 'src', 'renderer', 'index.js');
 
-require(rendererEntry).startApp();
+require(rendererEntry);

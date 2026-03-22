@@ -4,6 +4,8 @@
   "main": "src/main/index.js",
   "scripts": {
     "start": "electron .",
+    "start:dist": "electron dist",
+    "build": "node scripts/build-dist.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -11,6 +13,8 @@
   "license": "ISC",
   "description": "Banjo-Kazooie / Tooie dialogue generator",
   "devDependencies": {
-    "electron": "^41.0.3"
+    "electron": "^41.0.3",
+    "webpack": "^5.105.4",
+    "webpack-obfuscator": "^3.6.0"
   }
 }

@@ -2,16 +2,18 @@ const {
   BrowserWindow,
   shell
 } = require('electron');
-const path = require('path');
+const { resolveAppPaths } = require('../paths/resolveAppPaths');
 
 function createMainWindow() {
+  const paths = resolveAppPaths();
+
   const window = new BrowserWindow({
     width: 800,
     height: 600,
     minWidth: 800,
     minHeight: 600,
     backgroundColor: '#0a0c16',
-    icon: path.join(__dirname, '..', '..', '..', 'public', 'favicon.ico'),
+    icon: paths.iconPath,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -22,7 +24,7 @@ function createMainWindow() {
     show: false,
   });
 
-  window.loadFile(path.join(__dirname, '..', '..', '..', 'public', 'index.html'));
+  window.loadFile(paths.indexHtmlPath);
 
   window.webContents.setWindowOpenHandler(({
     url
