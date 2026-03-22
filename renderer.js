@@ -674,6 +674,8 @@ class SpriteRenderer {
 
 // ── DOM References ──────────────────────────────────────────
 const elCharGrid = document.getElementById('character-grid');
+const elCharacterSearchInput = document.getElementById('character-search-input');
+const elCharacterSearchEmpty = document.getElementById('character-search-empty');
 const elInput = document.getElementById('dialogue-input');
 const elBtnPlay = document.getElementById('btn-play');
 const elBtnPause = document.getElementById('btn-pause');
@@ -888,6 +890,34 @@ function setInputLocked(locked) {
   elInput.classList.toggle('is-locked', locked);
 }
 
+function normalizeCharacterSearch(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+}
+
+function applyCharacterFilters({ resetScroll = false } = {}) {
+  const query = normalizeCharacterSearch(elCharacterSearchInput?.value);
+  let visibleCount = 0;
+
+  document.querySelectorAll('.char-btn').forEach(btn => {
+    const searchIndex = btn.dataset.searchIndex || '';
+    const matchesSearch = !query || searchIndex.includes(query);
+    btn.classList.toggle('search-hidden', !matchesSearch);
+
+    const visible = matchesSearch && !btn.classList.contains('hidden-broken');
+    if (visible) visibleCount++;
+  });
+
+  elCharacterSearchEmpty?.classList.toggle('visible', visibleCount === 0);
+
+  if (resetScroll && elCharGrid) {
+    elCharGrid.scrollLeft = 0;
+  }
+
+  requestAnimationFrame(updateReelArrows);
+}
+
 function stopCardAnim(charId) {
   const state = cardAnimState.get(charId);
   if (!state) return;
@@ -1012,6 +1042,7 @@ function buildCharacterGrid() {
     const btn = document.createElement('button');
     btn.className = 'char-btn';
     btn.dataset.id = char.id;
+    btn.dataset.searchIndex = normalizeCharacterSearch(`${char.displayName} ${char.id}`);
     btn.disabled = !char.isAvailable;
     if (!char.isAvailable) btn.classList.add('unavailable');
 
@@ -1082,6 +1113,8 @@ function buildCharacterGrid() {
 
     elCharGrid.appendChild(btn);
   }
+
+  applyCharacterFilters();
 }
 
 // ── Select Character ────────────────────────────────────────
@@ -1553,6 +1586,15 @@ elReelRight.addEventListener('click', () => {
   elCharGrid.scrollBy({ left: 160, behavior: 'smooth' });
 });
 elCharGrid.addEventListener('scroll', updateReelArrows);
+elCharacterSearchInput?.addEventListener('input', () => {
+  applyCharacterFilters({ resetScroll: true });
+});
+elCharacterSearchInput?.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape' || !elCharacterSearchInput.value) return;
+  e.preventDefault();
+  elCharacterSearchInput.value = '';
+  applyCharacterFilters({ resetScroll: true });
+});
 
 // ── Init ────────────────────────────────────────────────────
 buildCharacterGrid();
@@ -1836,7 +1878,7 @@ function applyHideBrokenChars() {
   document.querySelectorAll('.char-btn.unavailable').forEach(btn => {
     btn.classList.toggle('hidden-broken', hideBrokenChars);
   });
-  requestAnimationFrame(updateReelArrows);
+  applyCharacterFilters();
 }
 
 function initHideBrokenFromStorage() {
