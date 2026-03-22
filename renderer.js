@@ -1650,6 +1650,13 @@ function isLargeScreen() {
   return window.innerHeight >= 820;
 }
 
+function syncSettingsLayoutMode(panel = activePanel) {
+  if (!elSettingsPanel) return;
+  const useMaximizedLayout =
+    panel === 'settings' && document.body.classList.contains('maximized');
+  elSettingsPanel.classList.toggle('settings-layout-maximized', useMaximizedLayout);
+}
+
 /**
  * Instantly reset to controls panel with no animation — used on window state
  * changes (maximize / unmaximize) where the OS already provides visual feedback.
@@ -1675,6 +1682,7 @@ function flipToControlsInstant() {
   elPreviewArea.style.transition = '';
   elApp?.classList.remove('settings-panel-open');
   if (elPanelWrapper) delete elPanelWrapper.dataset.naturalPanelHeight;
+  syncSettingsLayoutMode('controls');
 
   if (!elDialogueContainer.classList.contains('active')) {
     startPlaceholderAnim();
@@ -1696,6 +1704,7 @@ async function showPanel(panel) {
 
   try {
     if (panel === 'settings') {
+      syncSettingsLayoutMode('settings');
       elSleeveSettings.classList.add('active');
       if (!large && elPanelWrapper) {
         elPanelWrapper.dataset.naturalPanelHeight = String(
@@ -1718,6 +1727,7 @@ async function showPanel(panel) {
       elSleeveSettings.classList.remove('active');
       activePanel = 'controls';
       await sleep(FLIP_CARD_MS);
+      syncSettingsLayoutMode('controls');
 
       // Only animate height if settings were opened on small screen (settings-panel-open set);
       // if opened on large/maximized screen, that class was never added — just clean up.
