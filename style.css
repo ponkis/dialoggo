@@ -655,6 +655,25 @@ img {
   width: 100%;
 }
 
+.settings-panel:not(.settings-layout-maximized) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.settings-panel:not(.settings-layout-maximized) .settings-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+}
+
+.app.settings-panel-open .settings-panel:not(.settings-layout-maximized) .settings-body {
+  justify-content: flex-start;
+  align-self: stretch;
+}
+
 /* Base tray that sits under both card faces */
 .panel-tray {
   position: absolute;
@@ -1012,12 +1031,10 @@ img {
 
 /* ── Setting row: copy on the left, switch on the right (no “table” columns) ── */
 .setting-row {
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: flex-start;
   gap: 14px 18px;
-  flex-wrap: wrap;
   padding: 11px 14px;
   overflow: visible;
   background:
@@ -1034,8 +1051,10 @@ img {
 }
 
 .setting-row .uiverse-rocker-host {
-  margin-left: auto;
+  margin-left: 0;
   flex-shrink: 0;
+  justify-self: end;
+  align-self: center;
 }
 
 .setting-info {
@@ -1064,28 +1083,47 @@ img {
 }
 
 .setting-row--menu-volume {
-  gap: 16px 24px;
   align-items: center;
-  padding: 14px 16px;
+  gap: 12px 18px;
+  padding: 11px 14px;
   min-height: 0;
 }
 
+.setting-row--menu-volume .setting-info {
+  max-width: none;
+}
+
 .menu-volume-knob-host {
-  margin-left: auto;
+  --menu-knob-size: 36px;
+  --menu-knob-hit-size: 30px;
+  --menu-knob-hit-offset: 3px;
+  --menu-knob-dial-width: 15px;
+  --menu-knob-dial-height: 3px;
+  --menu-knob-notch-distance: 22px;
+  --menu-knob-label-font-size: 10px;
+  --menu-knob-label-offset: 7px;
+  --menu-knob-bound-width: 86px;
+  --menu-knob-bound-height: 72px;
+  margin-left: 0;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;
+  justify-self: end;
   align-self: center;
-  padding: 0 12px 0 10px;
+  position: relative;
+  overflow: visible;
+  width: var(--menu-knob-bound-width);
+  min-width: var(--menu-knob-bound-width);
+  height: var(--menu-knob-bound-height);
 }
 
 .menu-volume-knob {
   display: flex;
   position: relative;
-  width: 60px;
-  height: 60px;
-  flex: 0 0 60px;
+  width: var(--menu-knob-size);
+  height: var(--menu-knob-size);
+  flex: 0 0 var(--menu-knob-size);
   --a: #0004, #fff4;
   --b: var(--a), var(--a), var(--a);
   --c: var(--b), var(--b), var(--b);
@@ -1101,6 +1139,8 @@ img {
   background-position: -4px -4px;
   border: 4px solid #0005;
   border-radius: 50%;
+  margin: auto;
+  overflow: visible;
 }
 
 .menu-volume-knob input {
@@ -1110,20 +1150,20 @@ img {
 
 .menu-volume-knob-hit {
   position: absolute;
-  width: 48px;
-  height: 48px;
+  width: var(--menu-knob-hit-size);
+  height: var(--menu-knob-hit-size);
   cursor: pointer;
-  top: 6px;
-  left: 6px;
+  top: var(--menu-knob-hit-offset);
+  left: var(--menu-knob-hit-offset);
 }
 
 .menu-volume-knob-dial {
   position: absolute;
-  width: 26px;
-  height: 5px;
+  width: var(--menu-knob-dial-width);
+  height: var(--menu-knob-dial-height);
   border-radius: 999px;
   background-color: #000b;
-  top: calc(50% - 2px);
+  top: calc(50% - (var(--menu-knob-dial-height) / 2));
   left: calc(50% - 2px);
   transform-origin: 2px 50%;
   transition: 0.15s;
@@ -1142,7 +1182,7 @@ img {
   width: 8px;
   height: 1px;
   background-color: #fffc;
-  transform: translate(-50%) rotate(calc((var(--n) - 1) * 60deg)) translateX(38px);
+  transform: translate(-50%) rotate(calc((var(--n) - 1) * 60deg)) translateX(var(--menu-knob-notch-distance));
   counter-reset: section;
 }
 
@@ -1151,8 +1191,8 @@ img {
   position: absolute;
   counter-set: section var(--n);
   color: #fffc;
-  transform: translate(12px, -50%) rotate(calc((var(--n) - 1) * -60deg));
-  font-size: 12px;
+  transform: translate(var(--menu-knob-label-offset), -50%) rotate(calc((var(--n) - 1) * -60deg));
+  font-size: var(--menu-knob-label-font-size);
   line-height: 1;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
@@ -2347,28 +2387,39 @@ body.maximized .preview-area.preview-settings-muted .preview-placeholder {
 .settings-panel.settings-layout-maximized .setting-row {
   flex: 1 1 auto;
   align-items: center;
-  flex-wrap: nowrap;
   min-height: 0;
-  padding: 12px 14px;
-  gap: 12px 18px;
+  padding: 10px 12px;
+  gap: 10px 14px;
 }
 
 .settings-panel.settings-layout-maximized .setting-row--menu-volume {
-  padding: 14px 16px;
+  gap: 10px 12px;
+  padding: 10px 12px;
 }
 
 .settings-panel.settings-layout-maximized .setting-info {
   flex: 1 1 auto;
   max-width: none;
+  min-width: 0;
 }
 
 .settings-panel.settings-layout-maximized .setting-row .uiverse-rocker-host {
-  --uiverse-scale: 0.42;
-  margin-left: 18px;
+  --uiverse-scale: 0.34;
+  margin-left: 0;
 }
 
 .settings-panel.settings-layout-maximized .setting-row--menu-volume .menu-volume-knob-host {
-  padding: 0 16px 0 10px;
+  --menu-knob-size: 30px;
+  --menu-knob-hit-size: 24px;
+  --menu-knob-hit-offset: 3px;
+  --menu-knob-dial-width: 13px;
+  --menu-knob-dial-height: 3px;
+  --menu-knob-notch-distance: 18px;
+  --menu-knob-label-font-size: 8.5px;
+  --menu-knob-label-offset: 5px;
+  --menu-knob-bound-width: 72px;
+  --menu-knob-bound-height: 60px;
+  margin-left: 0;
 }
 
 /* ── Animations ─────────────────────────────────────────────── */
