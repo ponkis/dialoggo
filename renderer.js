@@ -911,6 +911,21 @@ function applyCharacterFilters({ resetScroll = false } = {}) {
 
   elCharacterSearchEmpty?.classList.toggle('visible', visibleCount === 0);
 
+  if (elCharGrid) {
+    if (visibleCount > 0) {
+      elCharGrid.style.minHeight = '';
+      requestAnimationFrame(() => {
+        const height = Math.ceil(elCharGrid.getBoundingClientRect().height);
+        if (height > 0) {
+          elCharGrid.dataset.emptyHeight = String(height);
+        }
+      });
+    } else {
+      const storedHeight = Number(elCharGrid.dataset.emptyHeight || 0);
+      elCharGrid.style.minHeight = storedHeight > 0 ? `${storedHeight}px` : '';
+    }
+  }
+
   if (resetScroll && elCharGrid) {
     elCharGrid.scrollLeft = 0;
   }
@@ -1096,7 +1111,8 @@ function buildCharacterGrid() {
     btn.addEventListener('mouseleave', () => {
       if (btn.disabled) return;
       if (selectedCharacter?.id === char.id) {
-        startCardIdleAnim(char.id);
+        const state = cardAnimState.get(char.id);
+        if (state?.mode !== 'speak') startCardIdleAnim(char.id);
       } else {
         stopCardAnim(char.id);
         if (previewPath) miniImg.src = fileToSrc(previewPath);
@@ -1610,6 +1626,7 @@ const elControlsPanel = document.getElementById('controls-panel');
 const elSettingsPanel = document.getElementById('settings-panel');
 const elFlipCard = document.getElementById('flip-card');
 const elSleeveCamera = document.getElementById('sleeve-tab-camera');
+const elSleeveGuide = document.getElementById('sleeve-tab-guide');
 const elSleeveSettings = document.getElementById('sleeve-tab-settings');
 const elInputMirrored = document.getElementById('input-mirrored-dialogue');
 
@@ -1809,6 +1826,10 @@ elSleeveSettings.addEventListener('click', () => {
 });
 
 elSleeveCamera.addEventListener('click', () => {
+  playMenuSound('forbidden');
+});
+
+elSleeveGuide?.addEventListener('click', () => {
   playMenuSound('forbidden');
 });
 

@@ -70,6 +70,14 @@
             <circle cx="12" cy="13" r="4" />
           </svg>
         </button>
+        <button class="sleeve-tab sleeve-tab-guide" id="sleeve-tab-guide" title="Guide">
+          <svg class="sleeve-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 10v6" />
+            <circle cx="12" cy="7" r="1" fill="currentColor" stroke="none" />
+          </svg>
+        </button>
         <button class="sleeve-tab sleeve-tab-settings" id="sleeve-tab-settings" title="Settings">
           <svg class="sleeve-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
             stroke-linecap="round" stroke-linejoin="round">
@@ -119,6 +127,12 @@
               <input class="character-search-input" id="character-search-input" type="search"
                 placeholder="Search characters..." spellcheck="false" autocomplete="off" aria-label="Search characters">
             </div>
+            <button class="btn btn-fastforward" id="btn-fastforward" type="button" title="Fast forward" disabled>
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <polygon points="4,5 12,12 4,19"></polygon>
+                <polygon points="12,5 20,12 12,19"></polygon>
+              </svg>
+            </button>
           </div>
           <div class="character-section">
             <button class="btn btn-upload" id="btn-upload" title="Upload">
@@ -139,8 +153,7 @@
               <div class="film-reel">
                 <div class="reel-sprockets reel-sprockets-top"></div>
                 <div class="character-grid" id="character-grid"></div>
-                <div class="character-search-empty" id="character-search-empty">Insert generic "Not Found" message here.
-                </div>
+                <div class="character-search-empty" id="character-search-empty">No characters found.</div>
                 <div class="reel-sprockets reel-sprockets-bottom"></div>
                 <div class="reel-arrow reel-arrow-right" id="reel-arrow-right">
                   <svg viewBox="0 0 24 24" fill="none">
