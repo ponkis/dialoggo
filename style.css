@@ -1944,13 +1944,27 @@ img {
   cursor: not-allowed;
 }
 
+.btn[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 .btn:disabled .button-top,
 .btn:disabled .button-bottom,
 .btn:disabled .button-base {
   filter: grayscale(0.56) saturate(0.26) brightness(0.74);
 }
 
+.btn[aria-disabled="true"] .button-top,
+.btn[aria-disabled="true"] .button-bottom,
+.btn[aria-disabled="true"] .button-base {
+  filter: grayscale(0.56) saturate(0.26) brightness(0.74);
+}
+
 .btn:disabled .button-top {
+  color: rgba(247, 244, 236, 0.56);
+}
+
+.btn[aria-disabled="true"] .button-top {
   color: rgba(247, 244, 236, 0.56);
 }
 

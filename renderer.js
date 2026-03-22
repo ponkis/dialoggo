@@ -305,7 +305,7 @@ document.addEventListener('click', (e) => {
   const el = e.target.closest('button, .reel-arrow, a, .powered-link');
   if (!el) return;
   // Skip if disabled — the forbidden handler covers that
-  if (el.disabled) return;
+  if (el.disabled || el.getAttribute('aria-disabled') === 'true') return;
   // Character buttons and arrows have their own dedicated sounds
   if (el.classList.contains('char-btn') || el.closest('.reel-arrow')) return;
   if (el.classList.contains('sleeve-tab') || el.closest('.uiverse-rocker-switch')) return;
@@ -869,6 +869,15 @@ const elDialogueTextN64Canvas = document.getElementById('dialogue-text-n64-canva
 let _n64DialogueTextHi = null;
 let _n64DialogueTextSmall = null;
 
+function setActionButtonBlocked(el, blocked) {
+  if (!el) return;
+  el.setAttribute('aria-disabled', blocked ? 'true' : 'false');
+}
+
+function isActionButtonBlocked(el) {
+  return !!el && el.getAttribute('aria-disabled') === 'true';
+}
+
 function getN64DialogueTextHiCanvas(w, h) {
   if (!_n64DialogueTextHi || _n64DialogueTextHi.width !== w || _n64DialogueTextHi.height !== h) {
     _n64DialogueTextHi = document.createElement('canvas');
@@ -1126,7 +1135,7 @@ function updateFastForwardAvailability() {
   if (!elBtnFastForward) return;
 
   const enabled = canFastForward();
-  elBtnFastForward.disabled = !enabled;
+  setActionButtonBlocked(elBtnFastForward, !enabled);
   elBtnFastForward.classList.toggle('fast-forwarding', isFastForwarding);
   elBtnFastForward.title = enabled
     ? 'Hold to fast forward'
@@ -1418,7 +1427,7 @@ function selectCharacter(char) {
 function updatePlayButton() {
   const hasText = elInput.value.trim().length > 0;
   const hasChar = selectedCharacter !== null;
-  elBtnPlay.disabled = !hasText || !hasChar || (isPlaying && !isPaused);
+  setActionButtonBlocked(elBtnPlay, !hasText || !hasChar || (isPlaying && !isPaused));
 }
 
 function handleDialogueInputChange() {
@@ -1561,9 +1570,9 @@ async function playDialogue() {
   const charMsPerChar = 40;
   const char = selectedCharacter;
 
-  elBtnPlay.disabled = true;
-  elBtnPause.disabled = false;
-  elBtnStop.disabled = false;
+  setActionButtonBlocked(elBtnPlay, true);
+  setActionButtonBlocked(elBtnPause, false);
+  setActionButtonBlocked(elBtnStop, false);
   setInputLocked(true);
   document.querySelectorAll('.char-btn').forEach(btn => (btn.disabled = true));
   elStatusDot.classList.add('playing');
@@ -1768,8 +1777,8 @@ async function finishDialogue() {
   stopRequested = false;
   pauseTransitionLock = false;
   resetFastForwardState();
-  elBtnStop.disabled = true;
-  elBtnPause.disabled = true;
+  setActionButtonBlocked(elBtnStop, true);
+  setActionButtonBlocked(elBtnPause, true);
   elBtnPlay.title = 'Play';
   setInputLocked(false);
   elStatusDot.classList.remove('playing');
@@ -1820,9 +1829,9 @@ function doPause() {
   spriteRenderer.stop();
   spriteRenderer.smoothCloseAndIdle();
   spriteRenderer.startIdleAfterDelay(2000);
-  elBtnPlay.disabled = false;
+  setActionButtonBlocked(elBtnPlay, false);
   elBtnPlay.title = 'Resume';
-  elBtnPause.disabled = true;
+  setActionButtonBlocked(elBtnPause, true);
   elStatusDot.classList.remove('playing');
   elStatusDot.classList.add('paused');
   setInputLocked(true);
@@ -1840,9 +1849,9 @@ function doResume() {
   spriteRenderer.showFrame(spriteRenderer.speakFrames, 0);
   speechLoop.resume();
   resumeFromPause();
-  elBtnPlay.disabled = true;
+  setActionButtonBlocked(elBtnPlay, true);
   elBtnPlay.title = 'Play';
-  elBtnPause.disabled = false;
+  setActionButtonBlocked(elBtnPause, false);
   elStatusDot.classList.add('playing');
   elStatusDot.classList.remove('paused');
   setInputLocked(true);
@@ -1851,11 +1860,29 @@ function doResume() {
 }
 
 // ── Event Listeners ─────────────────────────────────────────
-elBtnPlay.addEventListener('click', playDialogue);
-elBtnPause.addEventListener('click', doPause);
-elBtnStop.addEventListener('click', stopDialogue);
+elBtnPlay.addEventListener('click', (e) => {
+  if (isActionButtonBlocked(elBtnPlay)) {
+    e.preventDefault();
+    return;
+  }
+  void playDialogue();
+});
+elBtnPause.addEventListener('click', (e) => {
+  if (isActionButtonBlocked(elBtnPause)) {
+    e.preventDefault();
+    return;
+  }
+  doPause();
+});
+elBtnStop.addEventListener('click', (e) => {
+  if (isActionButtonBlocked(elBtnStop)) {
+    e.preventDefault();
+    return;
+  }
+  stopDialogue();
+});
 elBtnFastForward?.addEventListener('pointerdown', (e) => {
-  if (!canFastForward()) return;
+  if (isActionButtonBlocked(elBtnFastForward) || !canFastForward()) return;
   e.preventDefault();
   fastForwardButtonHeld = true;
   syncFastForwardState();
