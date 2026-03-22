@@ -349,6 +349,11 @@ img {
   transition: opacity 0.35s ease;
 }
 
+.preview-area.preview-placeholder-suppressed .preview-placeholder {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .preview-placeholder span {
   font-family: 'Over the Rainbow', cursive;
   font-size: 26px;
@@ -2455,13 +2460,6 @@ img {
 /* ══════════════════════════════════════════════════════════════
    MAXIMIZED MODE
    ══════════════════════════════════════════════════════════════ */
-
-/* Fade preview placeholder ONLY when settings panel is open while maximized */
-body.maximized .preview-area.preview-settings-muted .preview-placeholder {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s ease;
-}
 
 /* ── Maximized Settings: large horizontal coverflow ───────── */
 

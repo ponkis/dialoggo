@@ -1972,6 +1972,10 @@ function computeExpandedPreviewHeight() {
   return Math.max(120, elApp.clientHeight - elBottombar.offsetHeight - panelH);
 }
 
+function setPreviewPlaceholderSuppressed(suppressed) {
+  elPreviewArea?.classList.toggle('preview-placeholder-suppressed', suppressed);
+}
+
 async function collapsePreviewThenSettings() {
   const h = Math.round(elPreviewArea.getBoundingClientRect().height);
   elPreviewArea.style.flex = '0 0 auto';
@@ -1984,6 +1988,7 @@ async function collapsePreviewThenSettings() {
     `height ${PREVIEW_COLLAPSE_MS}ms ${PREVIEW_EASE}, filter ${PREVIEW_COLLAPSE_MS}ms ${PREVIEW_EASE}`;
 
   elPreviewArea.classList.add('preview-strip-collapsed', 'preview-settings-muted', 'preview-content-hidden');
+  setPreviewPlaceholderSuppressed(true);
   stopPlaceholderAnim();
 
   requestAnimationFrame(() => {
@@ -1994,8 +1999,6 @@ async function collapsePreviewThenSettings() {
 }
 
 async function expandPreviewAfterControls() {
-  elPreviewArea.classList.remove('preview-settings-muted');
-
   const target = computeExpandedPreviewHeight();
   elPreviewArea.style.flex = '0 0 auto';
   elPreviewArea.style.minHeight = '0';
@@ -2003,10 +2006,15 @@ async function expandPreviewAfterControls() {
   elPreviewArea.style.overflow = 'hidden';
   void elPreviewArea.offsetHeight;
 
-  elPreviewArea.style.transition = `height ${PREVIEW_COLLAPSE_MS}ms ${PREVIEW_EASE}`;
+  elPreviewArea.style.transition =
+    `height ${PREVIEW_COLLAPSE_MS}ms ${PREVIEW_EASE}, filter ${PREVIEW_COLLAPSE_MS}ms ${PREVIEW_EASE}`;
 
   requestAnimationFrame(() => {
     elPreviewArea.style.height = `${target}px`;
+    elPreviewArea.classList.remove('preview-settings-muted', 'preview-placeholder-suppressed');
+    if (!elDialogueContainer.classList.contains('active')) {
+      startPlaceholderAnim();
+    }
   });
 
   await sleep(PREVIEW_COLLAPSE_MS + 50);
@@ -2020,10 +2028,6 @@ async function expandPreviewAfterControls() {
 
   elApp?.classList.remove('settings-panel-open');
   if (elPanelWrapper) delete elPanelWrapper.dataset.naturalPanelHeight;
-
-  if (!elDialogueContainer.classList.contains('active')) {
-    startPlaceholderAnim();
-  }
 }
 
 /** Skip the preview collapse/expand animation on tall viewports (both panels fit) */
@@ -2056,6 +2060,7 @@ function flipToControlsInstant() {
 
   // Clean up any preview collapse state left from small-screen settings path
   elPreviewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
+  setPreviewPlaceholderSuppressed(false);
   elPreviewArea.style.height = '';
   elPreviewArea.style.flex = '';
   elPreviewArea.style.minHeight = '';
@@ -2090,6 +2095,7 @@ async function showPanel(panel) {
       if (large) {
         // Large screen: just mute preview + flip — no height animation
         elPreviewArea.classList.add('preview-settings-muted');
+        setPreviewPlaceholderSuppressed(true);
         stopPlaceholderAnim();
       } else {
         elApp?.classList.add('settings-panel-open');
@@ -2101,10 +2107,13 @@ async function showPanel(panel) {
       activePanel = 'settings';
     } else {
       if (large) {
-        elPreviewArea.classList.remove('preview-settings-muted');
-        if (!elDialogueContainer.classList.contains('active')) {
-          startPlaceholderAnim();
-        }
+        requestAnimationFrame(() => {
+          elPreviewArea.classList.remove('preview-settings-muted');
+          setPreviewPlaceholderSuppressed(false);
+          if (!elDialogueContainer.classList.contains('active')) {
+            startPlaceholderAnim();
+          }
+        });
       }
       playMenuSound('settingsClose');
       elFlipCard.classList.remove('flipped');
@@ -2120,6 +2129,7 @@ async function showPanel(panel) {
       } else {
         if (!large) {
           elPreviewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
+          setPreviewPlaceholderSuppressed(false);
         }
         elPreviewArea.style.height = '';
         elPreviewArea.style.flex = '';
