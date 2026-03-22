@@ -2520,9 +2520,8 @@ img {
 /* Each category card keeps its width so the strip scrolls instead of shrinking */
 .settings-panel.settings-layout-maximized .settings-category {
   flex: 0 0 var(--maximized-settings-card-width);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   width: var(--maximized-settings-card-width);
   min-width: var(--maximized-settings-card-width);
   min-height: 0;
@@ -2540,17 +2539,17 @@ img {
 
 /* Compact category header spacing */
 .settings-panel.settings-layout-maximized .settings-category-head {
-  grid-column: 1 / -1;
+  flex: 0 0 auto;
   margin-bottom: 0;
   padding-bottom: 0;
 }
 
 .settings-panel.settings-layout-maximized .settings-stitch--under-title {
-  grid-column: 1 / -1;
+  flex: 0 0 auto;
 }
 
 .settings-panel.settings-layout-maximized .settings-category-body {
-  grid-column: 1 / -1;
+  flex: 1 1 auto;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(calc(var(--maximized-settings-card-width) - 36px), 1fr));
   grid-auto-rows: minmax(0, auto);
