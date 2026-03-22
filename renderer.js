@@ -65,10 +65,20 @@ function discoverCharacters() {
     }
 
     const soundFiles = [];
+    let soundConfig = {};
     const hasSoundDir = fs.existsSync(sndDir);
     if (hasSoundDir) {
       const files = fs.readdirSync(sndDir).filter(f => /\.(wav|mp3|ogg)$/i.test(f));
       for (const f of files) soundFiles.push(path.join(sndDir, f));
+
+      const soundConfigPath = path.join(sndDir, 'sound.json');
+      if (fs.existsSync(soundConfigPath)) {
+        try {
+          soundConfig = JSON.parse(fs.readFileSync(soundConfigPath, 'utf-8')) || {};
+        } catch {
+          soundConfig = {};
+        }
+      }
     }
 
     const hasAllSprites = speakFrames.length === SPEAK_FRAME_COUNT && idleFrames.length === IDLE_FRAME_COUNT;
@@ -81,6 +91,7 @@ function discoverCharacters() {
       speakFrames,
       idleFrames,
       sounds: soundFiles,
+      hasSingleClip: soundConfig?.hasSingleClip === true && soundFiles.length === 1,
       isAvailable,
       hasAllSprites,
       hasAnySound,
@@ -197,6 +208,8 @@ function playAudioBuffer(audioBuffer, options = {}) {
     playbackRate = 1,
     offset = 0,
     duration = Math.max(0, audioBuffer.duration - offset),
+    fadeInMs = 0,
+    fadeOutMs = 0,
   } = options;
   const ctx = getAudioContext();
   const source = ctx.createBufferSource();
@@ -212,12 +225,31 @@ function playAudioBuffer(audioBuffer, options = {}) {
   const safeOffset = Math.max(0, Math.min(offset, Math.max(0, audioBuffer.duration - 0.001)));
   const remaining = Math.max(0.001, audioBuffer.duration - safeOffset);
   const sliceDuration = Math.max(0.001, Math.min(duration, remaining));
+  const now = ctx.currentTime;
+  const actualDuration = sliceDuration / playbackRate;
+  const fadeInSec = Math.max(0, Math.min(fadeInMs / 1000, actualDuration * 0.4));
+  const fadeOutSec = Math.max(0, Math.min(fadeOutMs / 1000, actualDuration * 0.45));
+
+  if (fadeInSec > 0 || fadeOutSec > 0) {
+    gainNode.gain.setValueAtTime(0.001, now);
+    if (fadeInSec > 0) {
+      gainNode.gain.linearRampToValueAtTime(1, now + fadeInSec);
+    } else {
+      gainNode.gain.setValueAtTime(1, now);
+    }
+
+    const fadeOutStart = Math.max(now + fadeInSec, now + actualDuration - fadeOutSec);
+    gainNode.gain.setValueAtTime(1, fadeOutStart);
+    if (fadeOutSec > 0) {
+      gainNode.gain.linearRampToValueAtTime(0.001, now + actualDuration);
+    }
+  }
 
   source.start(0, safeOffset, sliceDuration);
   return {
     source,
     gainNode,
-    duration: sliceDuration / playbackRate,
+    duration: actualDuration,
   };
 }
 
@@ -294,18 +326,21 @@ class SpeechSoundLoop {
   constructor(spriteRenderer) {
     this.spriteRenderer = spriteRenderer;
     this.sounds = [];
+    this.character = null;
     this.running = false;
     this.paused = false;
     this.fastForward = false;
+    this.currentBasePlaybackRate = 1;
     this.currentSource = null;
     this.currentGainNode = null;
     this._loopPromise = null;
     this._abortController = null;
   }
 
-  start(soundFiles) {
+  start(soundFiles, character = null) {
     this.stop();
     this.sounds = soundFiles;
+    this.character = character;
     this.running = true;
     this.paused = false;
     this._abortController = new AbortController();
@@ -325,7 +360,7 @@ class SpeechSoundLoop {
     if (!this.currentSource || !audioCtx) return;
     try {
       this.currentSource.playbackRate.setTargetAtTime(
-        getFastForwardAudioRate(),
+        this.currentBasePlaybackRate * getFastForwardAudioRate(),
         audioCtx.currentTime,
         0.02
       );
@@ -335,6 +370,7 @@ class SpeechSoundLoop {
   stop() {
     this.running = false;
     this.paused = false;
+    this.currentBasePlaybackRate = 1;
     this._killCurrentAudio();
     this._resolveWait();
     if (this._abortController) {
@@ -400,17 +436,19 @@ class SpeechSoundLoop {
         if (!this.running) break;
         if (this.paused) continue;
 
-        const baseSliceRatioMin = this.fastForward ? 0.3 : 0.48;
-        const sliceRatioMax = this.fastForward ? 0.72 : 0.92;
+        const baseSliceRatioMin = this.fastForward ? 0.62 : 0.78;
+        const sliceRatioMax = this.fastForward ? 0.88 : 0.98;
         const sliceRatio = baseSliceRatioMin + Math.random() * (sliceRatioMax - baseSliceRatioMin);
         const sliceDuration = Math.max(0.055, buffer.duration * sliceRatio);
-        const maxOffset = Math.max(0, buffer.duration - sliceDuration);
-        const offset = maxOffset > 0 ? Math.random() * Math.min(maxOffset, buffer.duration * 0.2) : 0;
+        const basePlaybackRate = getSingleClipPitchRate(this.character);
+        this.currentBasePlaybackRate = basePlaybackRate;
 
         const { source, gainNode, duration } = playAudioBuffer(buffer, {
-          playbackRate: getFastForwardAudioRate(),
-          offset,
+          playbackRate: basePlaybackRate * getFastForwardAudioRate(),
+          offset: 0,
           duration: sliceDuration,
+          fadeInMs: 8,
+          fadeOutMs: this.fastForward ? 26 : 34,
         });
         this.currentSource = source;
         this.currentGainNode = gainNode;
@@ -429,10 +467,12 @@ class SpeechSoundLoop {
 
         this.currentSource = null;
         this.currentGainNode = null;
+        this.currentBasePlaybackRate = 1;
       } catch (err) {
         this._clipResolve = null;
         this.currentSource = null;
         this.currentGainNode = null;
+        this.currentBasePlaybackRate = 1;
         if (!this.running) break;
       }
     }
@@ -442,6 +482,12 @@ class SpeechSoundLoop {
 // ── Random helper ───────────────────────────────────────────
 function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function getSingleClipPitchRate(character) {
+  if (!character?.hasSingleClip) return 1;
+  const semitoneOffset = -2 + Math.random() * 4;
+  return Math.pow(2, semitoneOffset / 12);
 }
 
 // ── Sprite Loader ───────────────────────────────────────────
@@ -1257,7 +1303,8 @@ function selectCharacter(char) {
   playMenuSound('select');
   if (char.sounds.length > 0) {
     const randomClip = pick(char.sounds);
-    loadAudioBuffer(randomClip).then(buf => playAudioBuffer(buf)).catch(() => {});
+    const playbackRate = getSingleClipPitchRate(char);
+    loadAudioBuffer(randomClip).then(buf => playAudioBuffer(buf, { playbackRate })).catch(() => {});
   }
 
   updatePlayButton();
@@ -1491,7 +1538,7 @@ async function playDialogue() {
     renderN64DialogueTextCanvas();
   }
 
-  speechLoop.start(char.sounds);
+  speechLoop.start(char.sounds, char);
   if (isPaused) {
     speechLoop.pause();
     speechLoop._killCurrentAudio();
@@ -1906,11 +1953,6 @@ async function showPanel(panel) {
   if (panel === 'settings' && (isPlaying || isPaused)) return;
 
   panelTransitionLock = true;
-  if (panel === 'settings') {
-    playMenuSound('settingsOpen');
-  } else {
-    playMenuSound('settingsClose');
-  }
 
   const large = isLargeScreen();
 
@@ -1932,9 +1974,11 @@ async function showPanel(panel) {
         await collapsePreviewThenSettings();
       }
 
+      playMenuSound('settingsOpen');
       elFlipCard.classList.add('flipped');
       activePanel = 'settings';
     } else {
+      playMenuSound('settingsClose');
       elFlipCard.classList.remove('flipped');
       elSleeveSettings.classList.remove('active');
       activePanel = 'controls';
