@@ -1,0 +1,313 @@
+function createAudioService(model) {
+  const {
+    env,
+    state,
+    constants
+  } = model;
+  const audioBufferCache = new Map();
+  let audioCtx = null;
+
+  const menuSoundPaths = {
+    click: env.path.join(env.sndDir, 'gui', '1.wav'),
+    select: env.path.join(env.sndDir, 'gui', '2.wav'),
+    arrowRight: env.path.join(env.sndDir, 'gui', '3.wav'),
+    arrowLeft: env.path.join(env.sndDir, 'gui', '4.wav'),
+    forbidden: env.path.join(env.sndDir, 'gui', '5.wav'),
+    settingsOpen: env.path.join(env.sndDir, 'gui', '3.wav'),
+    settingsClose: env.path.join(env.sndDir, 'gui', '4.wav'),
+  };
+
+  function getAudioContext() {
+    if (!audioCtx) audioCtx = new AudioContext();
+    return audioCtx;
+  }
+
+  async function loadAudioBuffer(filePath) {
+    if (audioBufferCache.has(filePath)) return audioBufferCache.get(filePath);
+
+    const ctx = getAudioContext();
+    const data = env.fs.readFileSync(filePath);
+    const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+
+    audioBufferCache.set(filePath, audioBuffer);
+    return audioBuffer;
+  }
+
+  function playAudioBuffer(audioBuffer, options = {}) {
+    const {
+      playbackRate = 1,
+      offset = 0,
+      duration = Math.max(0, audioBuffer.duration - offset),
+      volume = 1,
+      fadeInMs = 0,
+      fadeOutMs = 0,
+    } = options;
+
+    const ctx = getAudioContext();
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.playbackRate.value = playbackRate;
+
+    const gainNode = ctx.createGain();
+    const targetGain = Math.max(0, volume);
+    gainNode.gain.value = targetGain;
+
+    source.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    const safeOffset = Math.max(0, Math.min(offset, Math.max(0, audioBuffer.duration - 0.001)));
+    const remaining = Math.max(0.001, audioBuffer.duration - safeOffset);
+    const sliceDuration = Math.max(0.001, Math.min(duration, remaining));
+    const now = ctx.currentTime;
+    const actualDuration = sliceDuration / playbackRate;
+    const fadeInSec = Math.max(0, Math.min(fadeInMs / 1000, actualDuration * 0.4));
+    const fadeOutSec = Math.max(0, Math.min(fadeOutMs / 1000, actualDuration * 0.45));
+
+    if (fadeInSec > 0 || fadeOutSec > 0) {
+      gainNode.gain.setValueAtTime(0.001, now);
+
+      if (fadeInSec > 0) {
+        gainNode.gain.linearRampToValueAtTime(targetGain, now + fadeInSec);
+      } else {
+        gainNode.gain.setValueAtTime(targetGain, now);
+      }
+
+      const fadeOutStart = Math.max(now + fadeInSec, now + actualDuration - fadeOutSec);
+      gainNode.gain.setValueAtTime(targetGain, fadeOutStart);
+
+      if (fadeOutSec > 0) {
+        gainNode.gain.linearRampToValueAtTime(0.001, now + actualDuration);
+      }
+    }
+
+    source.start(0, safeOffset, sliceDuration);
+    return {
+      source,
+      gainNode,
+      duration: actualDuration,
+    };
+  }
+
+  async function playSoundFile(filePath) {
+    const buffer = await loadAudioBuffer(filePath);
+    const {
+      source,
+      duration
+    } = playAudioBuffer(buffer);
+
+    return new Promise((resolve) => {
+      source.onended = () => resolve(duration);
+      setTimeout(() => resolve(duration), duration * 1000 + 100);
+    });
+  }
+
+  function getMenuSoundVolumeGain() {
+    return model.clampMenuSoundsVolumeLevel(state.menuSoundsVolumeLevel) / 6;
+  }
+
+  function playMenuSound(key) {
+    const filePath = menuSoundPaths[key];
+    if (!filePath || !env.fs.existsSync(filePath)) return;
+
+    loadAudioBuffer(filePath)
+      .then((buffer) => playAudioBuffer(buffer, {
+        volume: getMenuSoundVolumeGain()
+      }))
+      .catch(() => { });
+  }
+
+  class SpeechSoundLoop {
+    constructor(spriteRenderer) {
+      this.spriteRenderer = spriteRenderer;
+      this.sounds = [];
+      this.character = null;
+      this.running = false;
+      this.paused = false;
+      this.fastForward = false;
+      this.currentBasePlaybackRate = 1;
+      this.currentSource = null;
+      this.currentGainNode = null;
+      this._loopPromise = null;
+      this._abortController = null;
+      this._clipResolve = null;
+    }
+
+    start(soundFiles, character = null) {
+      this.stop();
+      this.sounds = soundFiles;
+      this.character = character;
+      this.running = true;
+      this.paused = false;
+      this._abortController = new AbortController();
+      this._loopPromise = this._loop();
+    }
+
+    pause() {
+      this.paused = true;
+    }
+
+    resume() {
+      this.paused = false;
+    }
+
+    setFastForward(enabled) {
+      this.fastForward = enabled;
+      if (!this.currentSource || !audioCtx) return;
+
+      try {
+        this.currentSource.playbackRate.setTargetAtTime(
+          this.currentBasePlaybackRate * (enabled ? constants.FAST_FORWARD_AUDIO_RATE : 1),
+          audioCtx.currentTime,
+          0.02,
+        );
+      } catch { }
+    }
+
+    stop() {
+      this.running = false;
+      this.paused = false;
+      this.currentBasePlaybackRate = 1;
+      this._killCurrentAudio();
+      this._resolveWait();
+
+      if (this._abortController) {
+        this._abortController.abort();
+        this._abortController = null;
+      }
+    }
+
+    async gracefulStop() {
+      this.running = false;
+      this.paused = false;
+      this._killCurrentAudio();
+      this._resolveWait();
+
+      if (this._abortController) {
+        this._abortController.abort();
+        this._abortController = null;
+      }
+
+      await this.spriteRenderer.smoothCloseAndIdle();
+    }
+
+    _killCurrentAudio() {
+      if (!this.currentSource) return;
+
+      if (this.currentGainNode && audioCtx) {
+        try {
+          const gainNode = this.currentGainNode;
+          gainNode.gain.setValueAtTime(gainNode.gain.value, audioCtx.currentTime);
+          gainNode.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+
+          const source = this.currentSource;
+          setTimeout(() => {
+            try {
+              source.stop();
+            } catch { }
+          }, 60);
+        } catch { }
+      } else {
+        try {
+          this.currentSource.stop();
+        } catch { }
+      }
+
+      this.currentSource = null;
+      this.currentGainNode = null;
+    }
+
+    _resolveWait() {
+      if (!this._clipResolve) return;
+      this._clipResolve();
+      this._clipResolve = null;
+    }
+
+    async _loop() {
+      while (this.running) {
+        if (this.paused) {
+          await model.sleep(50);
+          continue;
+        }
+
+        if (this.sounds.length === 0) {
+          await model.sleep(50);
+          continue;
+        }
+
+        const soundFile = model.pick(this.sounds);
+
+        try {
+          const buffer = await loadAudioBuffer(soundFile);
+          if (!this.running) break;
+          if (this.paused) continue;
+
+          const targetDuration = model.getSpeechCutTargetDuration(buffer.duration, this.fastForward);
+          const playbackConfig = model.getCharacterPlaybackConfig(
+            buffer.duration,
+            this.character,
+            targetDuration,
+            this.fastForward,
+          );
+
+          this.currentBasePlaybackRate = playbackConfig.basePlaybackRate;
+
+          const {
+            source,
+            gainNode,
+            duration
+          } = playAudioBuffer(buffer, {
+            playbackRate: playbackConfig.playbackRate,
+            offset: 0,
+            duration: playbackConfig.sourceDuration,
+            fadeInMs: 12,
+            fadeOutMs: this.fastForward ? 32 : 44,
+          });
+
+          this.currentSource = source;
+          this.currentGainNode = gainNode;
+
+          const durationMs = duration * 1000;
+          this.spriteRenderer.startSpeaking(durationMs);
+
+          await new Promise((resolve) => {
+            this._clipResolve = resolve;
+            source.onended = resolve;
+            setTimeout(resolve, durationMs + 50);
+          });
+
+          this._clipResolve = null;
+
+          if (!this.running) break;
+
+          this.currentSource = null;
+          this.currentGainNode = null;
+          this.currentBasePlaybackRate = 1;
+        } catch {
+          this._clipResolve = null;
+          this.currentSource = null;
+          this.currentGainNode = null;
+          this.currentBasePlaybackRate = 1;
+
+          if (!this.running) break;
+        }
+      }
+    }
+  }
+
+  return {
+    getAudioContext,
+    loadAudioBuffer,
+    playAudioBuffer,
+    playSoundFile,
+    playMenuSound,
+    getMenuSoundVolumeGain,
+    createSpeechLoop(spriteRenderer) {
+      return new SpeechSoundLoop(spriteRenderer);
+    },
+  };
+}
+
+module.exports = {
+  createAudioService
+};
