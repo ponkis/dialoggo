@@ -106,9 +106,16 @@ let isPlaying = false;
 let isPaused = false;
 let stopRequested = false;
 let pauseTransitionLock = false;
+let isFastForwarding = false;
+let fastForwardKeyHeld = false;
+let fastForwardButtonHeld = false;
 let dialogueMirrored = false;
 /** Low-res “N64” look: canvas downsample + chunky dialogue UI */
 let n64ModeEnabled = false;
+
+const FAST_FORWARD_TEXT_MULTIPLIER = 1.75;
+const FAST_FORWARD_AUDIO_RATE = 1.3;
+const FAST_FORWARD_SPRITE_MULTIPLIER = 1.18;
 
 /** Canvas 2D downsample block size — larger = chunkier (was 4; too fine once scaled into 72px sprite) */
 /** ~24×24 blocks on 144 canvas — visible but not extreme */
@@ -185,10 +192,16 @@ async function loadAudioBuffer(filePath) {
   return audioBuffer;
 }
 
-function playAudioBuffer(audioBuffer) {
+function playAudioBuffer(audioBuffer, options = {}) {
+  const {
+    playbackRate = 1,
+    offset = 0,
+    duration = Math.max(0, audioBuffer.duration - offset),
+  } = options;
   const ctx = getAudioContext();
   const source = ctx.createBufferSource();
   source.buffer = audioBuffer;
+  source.playbackRate.value = playbackRate;
 
   const gainNode = ctx.createGain();
   gainNode.gain.value = 1;
@@ -196,8 +209,16 @@ function playAudioBuffer(audioBuffer) {
   source.connect(gainNode);
   gainNode.connect(ctx.destination);
 
-  source.start(0);
-  return { source, gainNode, duration: audioBuffer.duration };
+  const safeOffset = Math.max(0, Math.min(offset, Math.max(0, audioBuffer.duration - 0.001)));
+  const remaining = Math.max(0.001, audioBuffer.duration - safeOffset);
+  const sliceDuration = Math.max(0.001, Math.min(duration, remaining));
+
+  source.start(0, safeOffset, sliceDuration);
+  return {
+    source,
+    gainNode,
+    duration: sliceDuration / playbackRate,
+  };
 }
 
 async function playSoundFile(filePath) {
@@ -275,6 +296,7 @@ class SpeechSoundLoop {
     this.sounds = [];
     this.running = false;
     this.paused = false;
+    this.fastForward = false;
     this.currentSource = null;
     this.currentGainNode = null;
     this._loopPromise = null;
@@ -296,6 +318,18 @@ class SpeechSoundLoop {
 
   resume() {
     this.paused = false;
+  }
+
+  setFastForward(enabled) {
+    this.fastForward = enabled;
+    if (!this.currentSource || !audioCtx) return;
+    try {
+      this.currentSource.playbackRate.setTargetAtTime(
+        getFastForwardAudioRate(),
+        audioCtx.currentTime,
+        0.02
+      );
+    } catch {}
   }
 
   stop() {
@@ -366,7 +400,18 @@ class SpeechSoundLoop {
         if (!this.running) break;
         if (this.paused) continue;
 
-        const { source, gainNode, duration } = playAudioBuffer(buffer);
+        const baseSliceRatioMin = this.fastForward ? 0.3 : 0.48;
+        const sliceRatioMax = this.fastForward ? 0.72 : 0.92;
+        const sliceRatio = baseSliceRatioMin + Math.random() * (sliceRatioMax - baseSliceRatioMin);
+        const sliceDuration = Math.max(0.055, buffer.duration * sliceRatio);
+        const maxOffset = Math.max(0, buffer.duration - sliceDuration);
+        const offset = maxOffset > 0 ? Math.random() * Math.min(maxOffset, buffer.duration * 0.2) : 0;
+
+        const { source, gainNode, duration } = playAudioBuffer(buffer, {
+          playbackRate: getFastForwardAudioRate(),
+          offset,
+          duration: sliceDuration,
+        });
         this.currentSource = source;
         this.currentGainNode = gainNode;
         const durationMs = duration * 1000;
@@ -559,7 +604,7 @@ class SpriteRenderer {
 
   startSpeaking(audioDurationMs) {
     this.stopSpeaking();
-    
+
     let currentFrame = this.mode === 'speaking' ? this.frameIndex : 0;
     this.mode = 'speaking';
 
@@ -584,7 +629,8 @@ class SpriteRenderer {
 
     this.showFrame(this.speakFrames, currentFrame);
 
-    this.speakTimer = setInterval(() => {
+    const step = () => {
+      if (this.mode !== 'speaking') return;
       if (opening) {
         currentFrame++;
         if (currentFrame >= maxFrame) {
@@ -595,13 +641,21 @@ class SpriteRenderer {
         currentFrame--;
         if (currentFrame <= 0) {
           currentFrame = 0;
-          clearInterval(this.speakTimer);
           this.speakTimer = null;
+          this.frameIndex = currentFrame;
+          this.showFrame(this.speakFrames, currentFrame);
+          return;
         }
       }
       this.frameIndex = currentFrame;
       this.showFrame(this.speakFrames, currentFrame);
-    }, frameTime);
+
+      const delay = Math.max(frameTime / getFastForwardSpriteMultiplier(), 24);
+      this.speakTimer = setTimeout(step, delay);
+    };
+
+    const initialDelay = Math.max(frameTime / getFastForwardSpriteMultiplier(), 24);
+    this.speakTimer = setTimeout(step, initialDelay);
   }
 
   resetToIdle() {
@@ -680,6 +734,7 @@ const elInput = document.getElementById('dialogue-input');
 const elBtnPlay = document.getElementById('btn-play');
 const elBtnPause = document.getElementById('btn-pause');
 const elBtnStop = document.getElementById('btn-stop');
+const elBtnFastForward = document.getElementById('btn-fastforward');
 const elApp = document.querySelector('.app');
 const elPreviewArea = document.getElementById('preview-area');
 const elPanelWrapper = document.querySelector('.panel-wrapper');
@@ -888,6 +943,45 @@ const cardAnimState = new Map(); // charId -> { timer, frameIndex, direction, mo
 function setInputLocked(locked) {
   elInput.readOnly = locked;
   elInput.classList.toggle('is-locked', locked);
+}
+
+function canFastForward() {
+  return isPlaying && !isPaused && !stopRequested;
+}
+
+function getFastForwardTextMultiplier() {
+  return isFastForwarding ? FAST_FORWARD_TEXT_MULTIPLIER : 1;
+}
+
+function getFastForwardAudioRate() {
+  return isFastForwarding ? FAST_FORWARD_AUDIO_RATE : 1;
+}
+
+function getFastForwardSpriteMultiplier() {
+  return isFastForwarding ? FAST_FORWARD_SPRITE_MULTIPLIER : 1;
+}
+
+async function sleepPlaybackPaced(ms) {
+  let virtualElapsed = 0;
+  while (virtualElapsed < ms && !stopRequested) {
+    await waitWhilePaused();
+    if (stopRequested) break;
+
+    const realStep = Math.min(20, Math.max(6, ms - virtualElapsed));
+    await sleep(realStep);
+    virtualElapsed += realStep * getFastForwardTextMultiplier();
+  }
+}
+
+function updateFastForwardAvailability() {
+  if (!elBtnFastForward) return;
+
+  const enabled = canFastForward();
+  elBtnFastForward.disabled = !enabled;
+  elBtnFastForward.classList.toggle('fast-forwarding', isFastForwarding);
+  elBtnFastForward.title = enabled
+    ? 'Hold to fast forward'
+    : 'Fast forward (available during playback)';
 }
 
 function normalizeCharacterSearch(value) {
@@ -1250,6 +1344,24 @@ const speechLoop = new SpeechSoundLoop(spriteRenderer);
 
 const PAUSE_CHARS = new Set(['.', ',', '!', '?', ':', ';']);
 
+function syncFastForwardState() {
+  const next = canFastForward() && (fastForwardKeyHeld || fastForwardButtonHeld);
+  if (next === isFastForwarding) {
+    updateFastForwardAvailability();
+    return;
+  }
+
+  isFastForwarding = next;
+  speechLoop.setFastForward(next);
+  updateFastForwardAvailability();
+}
+
+function resetFastForwardState() {
+  fastForwardKeyHeld = false;
+  fastForwardButtonHeld = false;
+  syncFastForwardState();
+}
+
 // ── Pause / Resume helpers ──────────────────────────────────
 let pauseResolve = null;
 
@@ -1280,6 +1392,7 @@ async function playDialogue() {
   isPaused = false;
   stopRequested = false;
   pauseTransitionLock = false;
+  resetFastForwardState();
 
   const text = elInput.value.trim();
   if (!text) {
@@ -1399,10 +1512,10 @@ async function playDialogue() {
         if (n64ModeEnabled) {
           await Promise.all([
             n64RepaintDuringScrollTransition(scrollWrapper, 350),
-            sleep(350),
+            sleepPlaybackPaced(350),
           ]);
         } else {
-          await sleep(350);
+          await sleepPlaybackPaced(350);
         }
       }
 
@@ -1412,7 +1525,7 @@ async function playDialogue() {
       scrollWrapper.appendChild(lineEl);
       totalLinesAdded++;
 
-      if (lineIndex > 0) await sleep(200);
+      if (lineIndex > 0) await sleepPlaybackPaced(200);
 
       speechLoop.resume();
 
@@ -1430,14 +1543,14 @@ async function playDialogue() {
           speechLoop.pause();
           spriteRenderer.resetToIdle();
           const pauseDuration = (ch === '.' || ch === '!' || ch === '?') ? 400 : 200;
-          await sleep(pauseDuration);
+          await sleepPlaybackPaced(pauseDuration);
           if (i < line.length - 1 && !PAUSE_CHARS.has(line[i + 1])) {
             speechLoop.resume();
           }
         } else if (ch === ' ') {
-          await sleep(charMsPerChar * 0.6);
+          await sleepPlaybackPaced(charMsPerChar * 0.6);
         } else {
-          await sleep(charMsPerChar);
+          await sleepPlaybackPaced(charMsPerChar);
         }
       }
 
@@ -1448,7 +1561,7 @@ async function playDialogue() {
     await speechLoop.gracefulStop();
     spriteRenderer.startIdleAfterDelay(2000);
 
-    if (!stopRequested) await sleep(500);
+    if (!stopRequested) await sleepPlaybackPaced(500);
   } catch (err) {
     /* Any throw here used to skip gracefulStop → speechLoop ran forever */
     console.error('[Dialoggo] playDialogue playback error', err);
@@ -1497,6 +1610,7 @@ async function finishDialogue() {
   isPaused = false;
   stopRequested = false;
   pauseTransitionLock = false;
+  resetFastForwardState();
   elBtnStop.disabled = true;
   elBtnPause.disabled = true;
   elBtnPlay.title = 'Play';
@@ -1517,6 +1631,7 @@ function stopDialogue() {
   stopRequested = true;
   isPaused = false;
   pauseTransitionLock = false;
+  resetFastForwardState();
   if (pauseResolve) {
     const r = pauseResolve;
     pauseResolve = null;
@@ -1540,6 +1655,7 @@ function doPause() {
   if (!isPlaying || isPaused || pauseTransitionLock) return;
   pauseTransitionLock = true;
   isPaused = true;
+  resetFastForwardState();
   // Pause speech loop and kill any currently playing clip.
   // Keeping loop instance alive avoids start/stop race conditions on rapid taps.
   speechLoop.pause();
@@ -1560,6 +1676,7 @@ function doPause() {
 function doResume() {
   if (!isPlaying || !isPaused || pauseTransitionLock) return;
   pauseTransitionLock = true;
+  resetFastForwardState();
   // Stop idle timers, show neutral s1
   spriteRenderer.stop();
   spriteRenderer.frameIndex = 0;
@@ -1580,6 +1697,41 @@ function doResume() {
 elBtnPlay.addEventListener('click', playDialogue);
 elBtnPause.addEventListener('click', doPause);
 elBtnStop.addEventListener('click', stopDialogue);
+elBtnFastForward?.addEventListener('pointerdown', (e) => {
+  if (!canFastForward()) return;
+  e.preventDefault();
+  fastForwardButtonHeld = true;
+  syncFastForwardState();
+});
+elBtnFastForward?.addEventListener('pointerup', () => {
+  fastForwardButtonHeld = false;
+  syncFastForwardState();
+});
+elBtnFastForward?.addEventListener('pointerleave', () => {
+  fastForwardButtonHeld = false;
+  syncFastForwardState();
+});
+elBtnFastForward?.addEventListener('pointercancel', () => {
+  fastForwardButtonHeld = false;
+  syncFastForwardState();
+});
+
+window.addEventListener('keydown', (e) => {
+  if (e.code !== 'Space' || e.repeat || !canFastForward()) return;
+  e.preventDefault();
+  fastForwardKeyHeld = true;
+  syncFastForwardState();
+});
+
+window.addEventListener('keyup', (e) => {
+  if (e.code !== 'Space') return;
+  fastForwardKeyHeld = false;
+  syncFastForwardState();
+});
+
+window.addEventListener('blur', () => {
+  resetFastForwardState();
+});
 
 // ── Reel Scroll Arrows ──────────────────────────────────────
 const elReelLeft = document.getElementById('reel-arrow-left');
@@ -1811,13 +1963,17 @@ async function showPanel(panel) {
 }
 
 function updateSettingsSleeveBlockedState() {
-  if (!elSleeveSettings) return;
+  const setBlockedState = (el, blocked, idleTitle, blockedTitle) => {
+    if (!el) return;
+    el.classList.toggle('sleeve-tab-blocked', blocked);
+    el.setAttribute('aria-disabled', blocked ? 'true' : 'false');
+    el.title = blocked ? blockedTitle : idleTitle;
+  };
+
   const blocked = isPlaying || isPaused;
-  elSleeveSettings.classList.toggle('sleeve-tab-blocked', blocked);
-  elSleeveSettings.setAttribute('aria-disabled', blocked ? 'true' : 'false');
-  elSleeveSettings.title = blocked
-    ? 'Settings (available when dialogue is idle)'
-    : 'Settings';
+  setBlockedState(elSleeveSettings, blocked, 'Settings', 'Settings (available when dialogue is idle)');
+  setBlockedState(elSleeveCamera, blocked, 'Export', 'Export (available when dialogue is idle)');
+  updateFastForwardAvailability();
 }
 
 elSleeveSettings.addEventListener('click', () => {
@@ -1827,6 +1983,7 @@ elSleeveSettings.addEventListener('click', () => {
 });
 
 elSleeveCamera.addEventListener('click', () => {
+  if (isPlaying || isPaused) return;
   playMenuSound('forbidden');
 });
 
