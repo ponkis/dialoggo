@@ -1029,6 +1029,10 @@ img {
     0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
+.settings-category .setting-row+.setting-row {
+  margin-top: 12px;
+}
+
 .setting-row .uiverse-rocker-host {
   margin-left: auto;
   flex-shrink: 0;
@@ -1061,16 +1065,19 @@ img {
 
 .setting-row--menu-volume {
   gap: 16px 24px;
+  align-items: center;
+  padding: 14px 16px;
+  min-height: 0;
 }
 
 .menu-volume-knob-host {
   margin-left: auto;
   flex: 0 0 auto;
-  min-width: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 6px 2px;
+  align-self: center;
+  padding: 0 12px 0 10px;
 }
 
 .menu-volume-knob {
@@ -1106,8 +1113,8 @@ img {
   width: 48px;
   height: 48px;
   cursor: pointer;
-  top: 2px;
-  left: 2px;
+  top: 6px;
+  left: 6px;
 }
 
 .menu-volume-knob-dial {
@@ -1164,7 +1171,7 @@ img {
   z-index: 2;
 }
 
-#menu-sounds-volume-1:checked ~ .menu-volume-knob-dial {
+#menu-sounds-volume-1:checked~.menu-volume-knob-dial {
   transform: rotate(0deg);
 }
 
@@ -1172,7 +1179,7 @@ img {
   z-index: 2;
 }
 
-#menu-sounds-volume-2:checked ~ .menu-volume-knob-dial {
+#menu-sounds-volume-2:checked~.menu-volume-knob-dial {
   transform: rotate(60deg);
   animation: none;
 }
@@ -1181,7 +1188,7 @@ img {
   z-index: 2;
 }
 
-#menu-sounds-volume-3:checked ~ .menu-volume-knob-dial {
+#menu-sounds-volume-3:checked~.menu-volume-knob-dial {
   transform: rotate(120deg);
   animation: none;
 }
@@ -1190,7 +1197,7 @@ img {
   z-index: 2;
 }
 
-#menu-sounds-volume-4:checked ~ .menu-volume-knob-dial {
+#menu-sounds-volume-4:checked~.menu-volume-knob-dial {
   transform: rotate(180deg);
   animation: none;
 }
@@ -1199,7 +1206,7 @@ img {
   z-index: 2;
 }
 
-#menu-sounds-volume-5:checked ~ .menu-volume-knob-dial {
+#menu-sounds-volume-5:checked~.menu-volume-knob-dial {
   transform: rotate(240deg);
   animation: none;
 }
@@ -1208,7 +1215,7 @@ img {
   z-index: 2;
 }
 
-#menu-sounds-volume-6:checked ~ .menu-volume-knob-dial {
+#menu-sounds-volume-6:checked~.menu-volume-knob-dial {
   transform: rotate(300deg);
   animation: none;
 }
@@ -2346,6 +2353,10 @@ body.maximized .preview-area.preview-settings-muted .preview-placeholder {
   gap: 12px 18px;
 }
 
+.settings-panel.settings-layout-maximized .setting-row--menu-volume {
+  padding: 14px 16px;
+}
+
 .settings-panel.settings-layout-maximized .setting-info {
   flex: 1 1 auto;
   max-width: none;
@@ -2357,8 +2368,7 @@ body.maximized .preview-area.preview-settings-muted .preview-placeholder {
 }
 
 .settings-panel.settings-layout-maximized .setting-row--menu-volume .menu-volume-knob-host {
-  margin-left: 18px;
-  min-width: 128px;
+  padding: 0 16px 0 10px;
 }
 
 /* ── Animations ─────────────────────────────────────────────── */
