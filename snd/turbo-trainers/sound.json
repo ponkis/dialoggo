@@ -1,3 +1,5 @@
 {
-  "hasSingleClip": true
+  "hasVariablePitch": true,
+  "pitch": 0.01,
+  "canStretch": false
 }

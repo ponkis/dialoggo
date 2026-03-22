@@ -81,6 +81,7 @@ function discoverCharacters() {
       }
     }
 
+    const parsedBasePitchTones = Number(soundConfig?.pitch);
     const hasAllSprites = speakFrames.length === SPEAK_FRAME_COUNT && idleFrames.length === IDLE_FRAME_COUNT;
     const hasAnySound = soundFiles.length > 0;
     const isAvailable = hasAllSprites && hasAnySound;
@@ -91,7 +92,9 @@ function discoverCharacters() {
       speakFrames,
       idleFrames,
       sounds: soundFiles,
-      hasSingleClip: soundConfig?.hasSingleClip === true && soundFiles.length === 1,
+      hasVariablePitch: soundConfig?.hasVariablePitch === true || soundConfig?.hasSingleClip === true,
+      basePitchTones: Number.isFinite(parsedBasePitchTones) ? parsedBasePitchTones : 0,
+      canStretch: soundConfig?.canStretch === true,
       isAvailable,
       hasAllSprites,
       hasAnySound,
@@ -436,19 +439,21 @@ class SpeechSoundLoop {
         if (!this.running) break;
         if (this.paused) continue;
 
-        const baseSliceRatioMin = this.fastForward ? 0.62 : 0.78;
-        const sliceRatioMax = this.fastForward ? 0.88 : 0.98;
-        const sliceRatio = baseSliceRatioMin + Math.random() * (sliceRatioMax - baseSliceRatioMin);
-        const sliceDuration = Math.max(0.055, buffer.duration * sliceRatio);
-        const basePlaybackRate = getSingleClipPitchRate(this.character);
-        this.currentBasePlaybackRate = basePlaybackRate;
+        const targetDuration = getSpeechCutTargetDuration(buffer.duration, this.fastForward);
+        const playbackConfig = getCharacterPlaybackConfig(
+          buffer.duration,
+          this.character,
+          targetDuration,
+          this.fastForward,
+        );
+        this.currentBasePlaybackRate = playbackConfig.basePlaybackRate;
 
         const { source, gainNode, duration } = playAudioBuffer(buffer, {
-          playbackRate: basePlaybackRate * getFastForwardAudioRate(),
+          playbackRate: playbackConfig.playbackRate,
           offset: 0,
-          duration: sliceDuration,
-          fadeInMs: 8,
-          fadeOutMs: this.fastForward ? 26 : 34,
+          duration: playbackConfig.sourceDuration,
+          fadeInMs: 10,
+          fadeOutMs: this.fastForward ? 28 : 38,
         });
         this.currentSource = source;
         this.currentGainNode = gainNode;
@@ -484,10 +489,61 @@ function pick(arr) {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function getSingleClipPitchRate(character) {
-  if (!character?.hasSingleClip) return 1;
-  const semitoneOffset = -2 + Math.random() * 4;
+function tonesToSemitoneOffset(value) {
+  if (!Number.isFinite(value)) return 0;
+  return value * 2;
+}
+
+function getCharacterPitchSemitoneOffset(character) {
+  let semitoneOffset = tonesToSemitoneOffset(character?.basePitchTones ?? 0);
+  if (character?.hasVariablePitch) {
+    semitoneOffset += -2 + Math.random() * 4;
+  }
+  return semitoneOffset;
+}
+
+function semitoneOffsetToRate(semitoneOffset) {
   return Math.pow(2, semitoneOffset / 12);
+}
+
+function getSpeechCutTargetDuration(bufferDuration, fastForward) {
+  const longness = Math.max(0, Math.min(1, (bufferDuration - 0.16) / 1.8));
+  const cutChance = Math.max(0.12, Math.min(0.92, 0.16 + longness * 0.56 + (fastForward ? 0.08 : 0)));
+  const shouldCut = Math.random() < cutChance;
+
+  if (!shouldCut) {
+    const fullRatioMin = fastForward
+      ? 0.86 - longness * 0.04
+      : 0.91 - longness * 0.05;
+    return bufferDuration * (fullRatioMin + Math.random() * (1 - fullRatioMin));
+  }
+
+  const minRatio = fastForward
+    ? 0.62 - longness * 0.18
+    : 0.74 - longness * 0.2;
+  const maxRatio = fastForward
+    ? 0.84 - longness * 0.12
+    : 0.92 - longness * 0.14;
+  const ratio = Math.max(0.36, Math.min(0.95, minRatio + Math.random() * (maxRatio - minRatio)));
+  return Math.max(0.07, bufferDuration * ratio);
+}
+
+function getCharacterPlaybackConfig(bufferDuration, character, desiredDuration, fastForward) {
+  const targetDuration = Math.max(0.055, Math.min(desiredDuration, bufferDuration));
+  const semitoneOffset = getCharacterPitchSemitoneOffset(character);
+  const basePlaybackRate = semitoneOffsetToRate(semitoneOffset);
+  const playbackRate = basePlaybackRate * (fastForward ? FAST_FORWARD_AUDIO_RATE : 1);
+
+  let sourceDuration = targetDuration;
+  if (!character?.canStretch) {
+    sourceDuration = Math.min(bufferDuration, targetDuration * basePlaybackRate);
+  }
+
+  return {
+    basePlaybackRate,
+    playbackRate,
+    sourceDuration: Math.max(0.001, sourceDuration),
+  };
 }
 
 // ── Sprite Loader ───────────────────────────────────────────
@@ -1303,7 +1359,8 @@ function selectCharacter(char) {
   playMenuSound('select');
   if (char.sounds.length > 0) {
     const randomClip = pick(char.sounds);
-    const playbackRate = getSingleClipPitchRate(char);
+    const semitoneOffset = getCharacterPitchSemitoneOffset(char);
+    const playbackRate = semitoneOffsetToRate(semitoneOffset);
     loadAudioBuffer(randomClip).then(buf => playAudioBuffer(buf, { playbackRate })).catch(() => {});
   }
 
