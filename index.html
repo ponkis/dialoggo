@@ -14,10 +14,25 @@
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
+<body class="startup-active startup-loading">
+
+  <div class="startup-overlay" id="startup-overlay" aria-hidden="true">
+    <div class="startup-loading" id="startup-loading">
+      <div class="startup-loading-preview" aria-hidden="true">
+        <div class="startup-loading-preview-frame">
+          <img class="startup-loading-anim" id="startup-loading-anim" alt="">
+        </div>
+      </div>
+      <span class="startup-loading-text">loading</span>
+    </div>
+
+    <div class="startup-intro" id="startup-intro" aria-hidden="true">
+      <canvas class="startup-intro-canvas" id="startup-intro-canvas"></canvas>
+    </div>
+  </div>
 
   <!-- Title Bar -->
-    <div class="titlebar">
+  <div class="titlebar">
     <div class="titlebar-controls">
       <button class="stoplight stoplight-close" id="btn-close"></button>
       <button class="stoplight stoplight-minimize" id="btn-minimize"></button>

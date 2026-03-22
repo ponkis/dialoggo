@@ -69,6 +69,103 @@ body {
   -webkit-app-region: no-drag;
 }
 
+.startup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: transparent;
+  pointer-events: auto;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.26s ease, visibility 0s linear 0.26s;
+}
+
+body.startup-complete .startup-overlay {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.startup-loading,
+.startup-intro {
+  position: absolute;
+  inset: 0;
+}
+
+.startup-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #000;
+  transition: opacity 0.18s ease, transform 0.22s ease;
+}
+
+body.startup-intro-running .startup-loading,
+body.startup-complete .startup-loading {
+  opacity: 0;
+  transform: scale(0.985);
+  pointer-events: none;
+}
+
+.startup-loading-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  aspect-ratio: auto;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.startup-loading-preview::before {
+  display: none;
+}
+
+.startup-loading-preview-frame {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.startup-loading-anim {
+  width: 64px;
+  height: 64px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  filter: grayscale(1) contrast(1.05) brightness(0.88);
+  opacity: 0.6;
+}
+
+.startup-loading-text {
+  font-family: 'Over the Rainbow', cursive;
+  font-size: 26px;
+  font-weight: 400;
+  letter-spacing: 0.8px;
+  color: lightgray;
+  opacity: 0.45;
+  text-shadow: none;
+}
+
+.startup-intro {
+  opacity: 0;
+  pointer-events: none;
+}
+
+body.startup-intro-running .startup-intro {
+  opacity: 1;
+}
+
+.startup-intro-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
 /* All images non-draggable and non-selectable */
 img {
   -webkit-user-drag: none;

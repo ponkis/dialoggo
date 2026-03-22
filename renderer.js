@@ -130,6 +130,12 @@ let n64ModeEnabled = false;
 const FAST_FORWARD_TEXT_MULTIPLIER = 1.75;
 const FAST_FORWARD_AUDIO_RATE = 1.3;
 const FAST_FORWARD_SPRITE_MULTIPLIER = 1.18;
+const STARTUP_INTRO_MS = 1160;
+const STARTUP_JIGGY_SIZE = 48;
+const STARTUP_JIGGY_CENTER_OFFSET_X = -2;
+const STARTUP_JIGGY_CENTER_OFFSET_Y = -2;
+const STARTUP_JIGGY_PATH_DATA = 'M47,26.54V11H31.46a6,6,0,1,0-8.92,0H11V26.54a6,6,0,1,0,0,8.92V47H22.54a6,6,0,1,1,8.92,0H47V35.46a6,6,0,1,1,0-8.92Z';
+const STARTUP_REVEAL_SOUND_PATH = path.join(SND_DIR, 'menu', '6.wav');
 
 /** Canvas 2D downsample block size — larger = chunkier (was 4; too fine once scaled into 72px sprite) */
 /** ~24×24 blocks on 144 canvas — visible but not extreme */
@@ -584,6 +590,27 @@ function fileToSrc(filePath) {
   return `file://${filePath.replace(/\\/g, '/')}`;
 }
 
+function collectFilesRecursive(rootDir, extensions) {
+  if (!fs.existsSync(rootDir)) return [];
+
+  const collected = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath);
+        continue;
+      }
+      if (!extensions || extensions.has(path.extname(entry.name).toLowerCase())) {
+        collected.push(fullPath);
+      }
+    }
+  };
+
+  walk(rootDir);
+  return collected;
+}
+
 // ── Sprite Renderer (individual files, canvas-based) ──────
 class SpriteRenderer {
   constructor(canvas) {
@@ -860,6 +887,9 @@ const elPanelWrapper = document.querySelector('.panel-wrapper');
 const elBottombar = document.querySelector('.bottombar');
 const elPlaceholder = document.getElementById('preview-placeholder');
 const elPlaceholderAnim = document.getElementById('placeholder-anim');
+const elStartupOverlay = document.getElementById('startup-overlay');
+const elStartupLoadingAnim = document.getElementById('startup-loading-anim');
+const elStartupIntroCanvas = document.getElementById('startup-intro-canvas');
 const elDialogueContainer = document.getElementById('dialogue-container');
 const elDialogueBox = document.getElementById('dialogue-box');
 const elDialogueTextArea = document.getElementById('dialogue-text-area');
@@ -1273,6 +1303,9 @@ for (let i = 1; i <= 22; i++) {
 }
 let placeholderFrameIdx = 0;
 let placeholderTimer = null;
+let startupLoadingFrameIdx = 0;
+let startupLoadingTimer = null;
+let startupRevealAudioHandle = null;
 
 function startPlaceholderAnim() {
   if (placeholderTimer) return;
@@ -1291,6 +1324,23 @@ function showPlaceholderFrame() {
   }
 }
 
+function startStartupLoadingAnim() {
+  if (!elStartupLoadingAnim || startupLoadingTimer) return;
+  startupLoadingFrameIdx = 0;
+  showStartupLoadingFrame();
+  startupLoadingTimer = setInterval(() => {
+    startupLoadingFrameIdx = (startupLoadingFrameIdx + 1) % PLACEHOLDER_FRAMES.length;
+    showStartupLoadingFrame();
+  }, 90);
+}
+
+function showStartupLoadingFrame() {
+  const fp = PLACEHOLDER_FRAMES[startupLoadingFrameIdx];
+  if (fp && fs.existsSync(fp) && elStartupLoadingAnim) {
+    elStartupLoadingAnim.src = fileToSrc(fp);
+  }
+}
+
 function stopPlaceholderAnim() {
   if (placeholderTimer) {
     clearInterval(placeholderTimer);
@@ -1298,7 +1348,167 @@ function stopPlaceholderAnim() {
   }
 }
 
+function stopStartupLoadingAnim() {
+  if (startupLoadingTimer) {
+    clearInterval(startupLoadingTimer);
+    startupLoadingTimer = null;
+  }
+}
+
+async function startStartupRevealSound() {
+  if (!fs.existsSync(STARTUP_REVEAL_SOUND_PATH)) return;
+
+  stopStartupRevealSound();
+
+  try {
+    const buffer = await loadAudioBuffer(STARTUP_REVEAL_SOUND_PATH);
+    startupRevealAudioHandle = playAudioBuffer(buffer, { volume: getMenuSoundVolumeGain() });
+  } catch {
+    startupRevealAudioHandle = null;
+  }
+}
+
+function stopStartupRevealSound() {
+  if (!startupRevealAudioHandle?.source) {
+    startupRevealAudioHandle = null;
+    return;
+  }
+
+  try {
+    startupRevealAudioHandle.source.stop();
+  } catch { }
+
+  startupRevealAudioHandle = null;
+}
+
 startPlaceholderAnim();
+
+async function prewarmAppAssets() {
+  const imageExts = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg']);
+  const audioExts = new Set(['.wav', '.mp3', '.ogg']);
+
+  const imageFiles = collectFilesRecursive(IMG_DIR, imageExts);
+  const audioFiles = collectFilesRecursive(SND_DIR, audioExts);
+
+  await Promise.allSettled([
+    ...imageFiles.map((filePath) => loadSpriteImage(filePath).catch(() => null)),
+    ...audioFiles.map((filePath) => loadAudioBuffer(filePath).catch(() => null)),
+  ]);
+}
+
+function resizeStartupIntroCanvas(canvas, ctx) {
+  const dpr = window.devicePixelRatio || 1;
+  const width = Math.max(1, Math.round(window.innerWidth * dpr));
+  const height = Math.max(1, Math.round(window.innerHeight * dpr));
+
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { width: window.innerWidth, height: window.innerHeight };
+}
+
+function drawStartupIntroFrame(ctx, jiggyPath, viewportWidth, viewportHeight, progress) {
+  const initialScale = 0.12;
+  const finalScale = (Math.hypot(viewportWidth, viewportHeight) * 1.55) / STARTUP_JIGGY_SIZE;
+  const scale = initialScale + ((finalScale - initialScale) * progress);
+  const rotationDeg = -18 + ((250 - (-18)) * progress);
+
+  ctx.clearRect(0, 0, viewportWidth, viewportHeight);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, viewportWidth, viewportHeight);
+
+  if (!jiggyPath) return;
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.translate(
+    (viewportWidth / 2) + STARTUP_JIGGY_CENTER_OFFSET_X,
+    (viewportHeight / 2) + STARTUP_JIGGY_CENTER_OFFSET_Y
+  );
+  ctx.rotate((rotationDeg * Math.PI) / 180);
+  ctx.scale(scale, scale);
+  ctx.translate(-(STARTUP_JIGGY_SIZE / 2), -(STARTUP_JIGGY_SIZE / 2));
+  ctx.fillStyle = '#ffffff';
+  ctx.fill(jiggyPath);
+  ctx.restore();
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+async function playStartupIntroAnimation() {
+  if (!elStartupIntroCanvas) {
+    await sleep(STARTUP_INTRO_MS);
+    return;
+  }
+
+  const ctx = elStartupIntroCanvas.getContext('2d');
+  if (!ctx) {
+    await sleep(STARTUP_INTRO_MS);
+    return;
+  }
+
+  let jiggyPath = null;
+  try {
+    jiggyPath = new Path2D(STARTUP_JIGGY_PATH_DATA);
+  } catch {
+    await sleep(STARTUP_INTRO_MS);
+    return;
+  }
+
+  return new Promise((resolve) => {
+    let startTs = null;
+
+    const tick = (ts) => {
+      if (startTs === null) startTs = ts;
+
+      const elapsed = ts - startTs;
+      const progress = Math.max(0, Math.min(1, elapsed / STARTUP_INTRO_MS));
+      const viewport = resizeStartupIntroCanvas(elStartupIntroCanvas, ctx);
+
+      drawStartupIntroFrame(ctx, jiggyPath, viewport.width, viewport.height, progress);
+
+      if (progress < 1) {
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      resolve();
+    };
+
+    requestAnimationFrame(tick);
+  });
+}
+
+async function runStartupSequence() {
+  if (!elStartupOverlay) return;
+
+  startStartupLoadingAnim();
+
+  try {
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    await prewarmAppAssets();
+  } catch (err) {
+    console.warn('[Dialoggo] startup prewarm failed', err);
+  } finally {
+    stopStartupLoadingAnim();
+    document.body.classList.remove('startup-loading');
+    document.body.classList.add('startup-intro-running');
+    await startStartupRevealSound();
+    await playStartupIntroAnimation();
+    stopStartupRevealSound();
+    await sleep(120);
+
+    document.body.classList.remove('startup-active', 'startup-intro-running');
+    document.body.classList.add('startup-complete');
+
+    setTimeout(() => {
+      elStartupOverlay.remove();
+    }, 320);
+  }
+}
 
 // ── Build Character Grid ────────────────────────────────────
 function buildCharacterGrid() {
@@ -2359,6 +2569,7 @@ document.querySelector('.menu-volume-knob-core-hit')?.addEventListener('click', 
 });
 
 initMenuSoundsVolumeFromStorage();
+void runStartupSequence();
 
 console.log(`[Dialoggo] v${appVersion} — ${characters.length} characters, ${genericSounds.length} generic sounds`);
 
