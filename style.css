@@ -1877,34 +1877,33 @@ body.maximized .settings-stitch--hero {
 /* Settings panel clips content and flexes */
 body.maximized .settings-panel {
   overflow: hidden;
-  padding: 0;
+  padding: 10px 14px 12px;
   display: flex;
   flex-direction: column;
 }
 
-/* Settings body: centered, full height */
+/* Settings body: fills remaining height, centers content */
 body.maximized .settings-body {
-  flex: 1;
+  flex: 1 1 0;
   display: flex;
   align-items: center;
-  justify-content: center;
   padding: 0;
-  max-width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  width: 100%;
 }
 
-/* Categories become a horizontal scroll strip */
+/* Categories: equal-width cards in one row, scrollable if overflow */
 body.maximized .settings-columns {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  align-items: center;
+  align-items: flex-start;
+  gap: 20px;
   overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
-  gap: 24px;
-  padding: 0 calc(50% - 165px);
-  height: 100%;
+  overflow-y: visible;
   width: 100%;
+  max-height: 100%;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -1913,15 +1912,23 @@ body.maximized .settings-columns::-webkit-scrollbar {
   display: none;
 }
 
-/* Each category card — large coverflow style */
+/* Each category card: equal share of the full width, compact height */
 body.maximized .settings-category {
-  min-width: 310px;
-  max-width: 330px;
-  flex: 0 0 auto;
-  scroll-snap-align: center;
-  margin: auto 0;
-  /* Restore default padding and sizes */
-  padding: 18px 20px 24px;
+  flex: 1 1 0;
+  min-width: 180px;
+  padding: 10px 14px 14px;
+}
+
+/* Compact category header spacing */
+body.maximized .settings-category-head {
+  margin-bottom: 4px;
+  padding-bottom: 6px;
+}
+
+/* Compact setting rows */
+body.maximized .setting-row {
+  padding: 8px 10px;
+  gap: 6px 10px;
 }
 
 /* ── Animations ─────────────────────────────────────────────── */

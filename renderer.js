@@ -1650,6 +1650,37 @@ function isLargeScreen() {
   return window.innerHeight >= 820;
 }
 
+/**
+ * Instantly reset to controls panel with no animation — used on window state
+ * changes (maximize / unmaximize) where the OS already provides visual feedback.
+ */
+function flipToControlsInstant() {
+  if (activePanel === 'controls') return;
+  // Flip card instantly (disable transition, flip, re-enable)
+  elFlipCard.style.transition = 'none';
+  elFlipCard.classList.remove('flipped');
+  // Force reflow so transition removal takes effect before re-enabling
+  void elFlipCard.offsetHeight;
+  elFlipCard.style.transition = '';
+
+  elSleeveSettings.classList.remove('active');
+  activePanel = 'controls';
+
+  // Clean up any preview collapse state left from small-screen settings path
+  elPreviewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
+  elPreviewArea.style.height = '';
+  elPreviewArea.style.flex = '';
+  elPreviewArea.style.minHeight = '';
+  elPreviewArea.style.overflow = '';
+  elPreviewArea.style.transition = '';
+  elApp?.classList.remove('settings-panel-open');
+  if (elPanelWrapper) delete elPanelWrapper.dataset.naturalPanelHeight;
+
+  if (!elDialogueContainer.classList.contains('active')) {
+    startPlaceholderAnim();
+  }
+}
+
 async function showPanel(panel) {
   if (panelTransitionLock || panel === activePanel) return;
   if (panel === 'settings' && (isPlaying || isPaused)) return;
@@ -1688,19 +1719,20 @@ async function showPanel(panel) {
       activePanel = 'controls';
       await sleep(FLIP_CARD_MS);
 
-      if (large) {
-        if (elApp?.classList.contains('settings-panel-open')) {
-          // If panel was open on small screen, smoothly transition it back
-          await expandPreviewAfterControls();
-        } else {
-          // Always large, just unmute
-          elPreviewArea.classList.remove('preview-settings-muted');
-          if (!elDialogueContainer.classList.contains('active')) {
-            startPlaceholderAnim();
-          }
-        }
-      } else {
+      // Only animate height if settings were opened on small screen (settings-panel-open set);
+      // if opened on large/maximized screen, that class was never added — just clean up.
+      if (elApp?.classList.contains('settings-panel-open')) {
         await expandPreviewAfterControls();
+      } else {
+        elPreviewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
+        elPreviewArea.style.height = '';
+        elPreviewArea.style.flex = '';
+        elPreviewArea.style.minHeight = '';
+        elPreviewArea.style.overflow = '';
+        elPreviewArea.style.transition = '';
+        if (!elDialogueContainer.classList.contains('active')) {
+          startPlaceholderAnim();
+        }
       }
     }
   } finally {
@@ -1829,7 +1861,6 @@ console.log(`[Dialoggo] v${appVersion} — ${characters.length} characters, ${ge
 // ── Maximize / Unmaximize ───────────────────────────────────
 ipcRenderer.on('window-maximized', () => {
   document.body.classList.add('maximized');
-  // Flip back to controls panel when maximizing (both panels are same size)
   if (activePanel === 'settings' && !panelTransitionLock) {
     void showPanel('controls');
   }
@@ -1837,4 +1868,7 @@ ipcRenderer.on('window-maximized', () => {
 
 ipcRenderer.on('window-unmaximized', () => {
   document.body.classList.remove('maximized');
+  if (activePanel === 'settings' && !panelTransitionLock) {
+    void showPanel('controls');
+  }
 });
