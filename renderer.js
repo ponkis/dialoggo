@@ -2026,18 +2026,6 @@ async function expandPreviewAfterControls() {
   }
 }
 
-function restorePreviewInstant() {
-  if (!elPreviewArea || !elPlaceholder) return;
-  const prevAreaTransition = elPreviewArea.style.transition;
-  const prevPlaceholderTransition = elPlaceholder.style.transition;
-  elPreviewArea.style.transition = 'none';
-  elPlaceholder.style.transition = 'none';
-  elPreviewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
-  void elPreviewArea.offsetHeight;
-  elPreviewArea.style.transition = prevAreaTransition;
-  elPlaceholder.style.transition = prevPlaceholderTransition;
-}
-
 /** Skip the preview collapse/expand animation on tall viewports (both panels fit) */
 function isLargeScreen() {
   return window.innerHeight >= 820;
@@ -2113,7 +2101,10 @@ async function showPanel(panel) {
       activePanel = 'settings';
     } else {
       if (large) {
-        restorePreviewInstant();
+        elPreviewArea.classList.remove('preview-settings-muted');
+        if (!elDialogueContainer.classList.contains('active')) {
+          startPlaceholderAnim();
+        }
       }
       playMenuSound('settingsClose');
       elFlipCard.classList.remove('flipped');
@@ -2320,6 +2311,12 @@ document.querySelectorAll('.menu-volume-knob-hit').forEach((label) => {
     event.preventDefault();
     setMenuSoundsVolumeLevel(level, { persist: true, playFeedback: true });
   });
+});
+
+document.querySelector('.menu-volume-knob-core-hit')?.addEventListener('click', (event) => {
+  event.preventDefault();
+  const nextLevel = menuSoundsVolumeLevel >= 6 ? 1 : menuSoundsVolumeLevel + 1;
+  setMenuSoundsVolumeLevel(nextLevel, { persist: true, playFeedback: true });
 });
 
 initMenuSoundsVolumeFromStorage();

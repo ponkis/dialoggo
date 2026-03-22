@@ -1111,7 +1111,7 @@ img {
   --menu-knob-label-offset: 7px;
   --menu-knob-bound-width: 86px;
   --menu-knob-bound-height: 72px;
-  --menu-knob-center-x: 54%;
+  --menu-knob-center-x: 63%;
   --menu-knob-center-y: 50%;
   margin-left: 0;
   flex: 0 0 auto;
@@ -1133,6 +1133,7 @@ img {
   width: 100%;
   height: 100%;
   flex: 0 0 auto;
+  cursor: pointer;
   --a: #0004, #fff4;
   --b: var(--a), var(--a), var(--a);
   --c: var(--b), var(--b), var(--b);
@@ -1175,10 +1176,27 @@ img {
   cursor: pointer;
   left: var(--menu-knob-center-x);
   top: var(--menu-knob-center-y);
-  z-index: 1;
+  z-index: 3;
   border-radius: 50%;
   transform:
     translate(-50%, -50%) rotate(calc((var(--n) - 1) * 60deg)) translateX(calc((var(--menu-knob-size) / 2) - var(--menu-knob-hit-offset))) rotate(calc((var(--n) - 1) * -60deg));
+}
+
+.menu-volume-knob-core-hit {
+  position: absolute;
+  left: var(--menu-knob-center-x);
+  top: var(--menu-knob-center-y);
+  width: calc(var(--menu-knob-size) - 16px);
+  height: calc(var(--menu-knob-size) - 16px);
+  transform: translate(-50%, -50%);
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  border-radius: 50%;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  z-index: 4;
 }
 
 .menu-volume-knob-dial {
@@ -2554,7 +2572,7 @@ body.maximized .preview-area.preview-settings-muted .preview-placeholder {
 }
 
 .settings-panel.settings-layout-maximized .setting-row--menu-volume {
-  grid-template-columns: minmax(0, 1fr) 92px;
+  grid-template-columns: minmax(0, 1fr) 108px;
   gap: 10px 12px;
   padding: 10px 12px;
 }
@@ -2574,17 +2592,17 @@ body.maximized .preview-area.preview-settings-muted .preview-placeholder {
 }
 
 .settings-panel.settings-layout-maximized .setting-row--menu-volume .menu-volume-knob-host {
-  --menu-knob-size: 39px;
-  --menu-knob-hit-size: 32px;
+  --menu-knob-size: 45px;
+  --menu-knob-hit-size: 35px;
   --menu-knob-hit-offset: 2px;
-  --menu-knob-dial-width: 16px;
+  --menu-knob-dial-width: 18px;
   --menu-knob-dial-height: 3px;
-  --menu-knob-notch-distance: 24px;
-  --menu-knob-label-font-size: 9.5px;
+  --menu-knob-notch-distance: 27px;
+  --menu-knob-label-font-size: 10px;
   --menu-knob-label-offset: 5px;
-  --menu-knob-bound-width: 96px;
-  --menu-knob-bound-height: 76px;
-  --menu-knob-center-x: 58%;
+  --menu-knob-bound-width: 108px;
+  --menu-knob-bound-height: 86px;
+  --menu-knob-center-x: 66%;
   margin-left: 0;
 }
 
