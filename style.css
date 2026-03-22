@@ -2391,7 +2391,6 @@ body.maximized .preview-area.preview-settings-muted .preview-placeholder {
   flex: 0 0 var(--maximized-settings-card-width);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto minmax(0, 1fr);
   width: var(--maximized-settings-card-width);
   min-width: var(--maximized-settings-card-width);
   min-height: 0;
