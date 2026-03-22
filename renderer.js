@@ -147,8 +147,10 @@ const N64_TEXT_FONT = 'bold 30px "Andy Bold", "Comic Sans MS", cursive';
 const N64_MODE_STORAGE_KEY = 'dialoggo-n64-mode';
 const MIRROR_MODE_STORAGE_KEY = 'dialoggo-mirror-mode';
 const HIDE_BROKEN_STORAGE_KEY = 'dialoggo-hide-broken-chars';
+const MENU_SOUNDS_VOLUME_STORAGE_KEY = 'dialoggo-menu-sounds-volume';
 
 let hideBrokenChars = false;
+let menuSoundsVolumeLevel = 6;
 
 let _n64PixelScratch = null;
 
@@ -211,6 +213,7 @@ function playAudioBuffer(audioBuffer, options = {}) {
     playbackRate = 1,
     offset = 0,
     duration = Math.max(0, audioBuffer.duration - offset),
+    volume = 1,
     fadeInMs = 0,
     fadeOutMs = 0,
   } = options;
@@ -220,7 +223,8 @@ function playAudioBuffer(audioBuffer, options = {}) {
   source.playbackRate.value = playbackRate;
 
   const gainNode = ctx.createGain();
-  gainNode.gain.value = 1;
+  const targetGain = Math.max(0, volume);
+  gainNode.gain.value = targetGain;
 
   source.connect(gainNode);
   gainNode.connect(ctx.destination);
@@ -236,13 +240,13 @@ function playAudioBuffer(audioBuffer, options = {}) {
   if (fadeInSec > 0 || fadeOutSec > 0) {
     gainNode.gain.setValueAtTime(0.001, now);
     if (fadeInSec > 0) {
-      gainNode.gain.linearRampToValueAtTime(1, now + fadeInSec);
+      gainNode.gain.linearRampToValueAtTime(targetGain, now + fadeInSec);
     } else {
-      gainNode.gain.setValueAtTime(1, now);
+      gainNode.gain.setValueAtTime(targetGain, now);
     }
 
     const fadeOutStart = Math.max(now + fadeInSec, now + actualDuration - fadeOutSec);
-    gainNode.gain.setValueAtTime(1, fadeOutStart);
+    gainNode.gain.setValueAtTime(targetGain, fadeOutStart);
     if (fadeOutSec > 0) {
       gainNode.gain.linearRampToValueAtTime(0.001, now + actualDuration);
     }
@@ -265,6 +269,16 @@ async function playSoundFile(filePath) {
   });
 }
 
+function clampMenuSoundsVolumeLevel(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 6;
+  return Math.max(1, Math.min(6, Math.round(parsed)));
+}
+
+function getMenuSoundVolumeGain() {
+  return clampMenuSoundsVolumeLevel(menuSoundsVolumeLevel) / 6;
+}
+
 // ── Menu Sound Effects ──────────────────────────────────────
 const MENU_SND_DIR = path.join(SND_DIR, 'menu');
 const menuSoundPaths = {
@@ -281,7 +295,7 @@ const menuSoundPaths = {
 function playMenuSound(key) {
   const p = menuSoundPaths[key];
   if (p && fs.existsSync(p)) {
-    loadAudioBuffer(p).then(buf => playAudioBuffer(buf)).catch(() => {});
+    loadAudioBuffer(p).then(buf => playAudioBuffer(buf, { volume: getMenuSoundVolumeGain() })).catch(() => {});
   }
 }
 
@@ -452,8 +466,8 @@ class SpeechSoundLoop {
           playbackRate: playbackConfig.playbackRate,
           offset: 0,
           duration: playbackConfig.sourceDuration,
-          fadeInMs: 10,
-          fadeOutMs: this.fastForward ? 28 : 38,
+          fadeInMs: 12,
+          fadeOutMs: this.fastForward ? 32 : 44,
         });
         this.currentSource = source;
         this.currentGainNode = gainNode;
@@ -507,25 +521,25 @@ function semitoneOffsetToRate(semitoneOffset) {
 }
 
 function getSpeechCutTargetDuration(bufferDuration, fastForward) {
-  const longness = Math.max(0, Math.min(1, (bufferDuration - 0.16) / 1.8));
-  const cutChance = Math.max(0.12, Math.min(0.92, 0.16 + longness * 0.56 + (fastForward ? 0.08 : 0)));
+  const longness = Math.max(0, Math.min(1, (bufferDuration - 0.08) / 1.65));
+  const cutChance = Math.max(0.28, Math.min(0.94, 0.28 + longness * 0.52 + (fastForward ? 0.08 : 0)));
   const shouldCut = Math.random() < cutChance;
 
   if (!shouldCut) {
     const fullRatioMin = fastForward
-      ? 0.86 - longness * 0.04
-      : 0.91 - longness * 0.05;
+      ? 0.82 - longness * 0.06
+      : 0.87 - longness * 0.07;
     return bufferDuration * (fullRatioMin + Math.random() * (1 - fullRatioMin));
   }
 
   const minRatio = fastForward
-    ? 0.62 - longness * 0.18
-    : 0.74 - longness * 0.2;
+    ? 0.5 - longness * 0.14
+    : 0.58 - longness * 0.18;
   const maxRatio = fastForward
-    ? 0.84 - longness * 0.12
-    : 0.92 - longness * 0.14;
-  const ratio = Math.max(0.36, Math.min(0.95, minRatio + Math.random() * (maxRatio - minRatio)));
-  return Math.max(0.07, bufferDuration * ratio);
+    ? 0.76 - longness * 0.1
+    : 0.84 - longness * 0.12;
+  const ratio = Math.max(0.34, Math.min(0.93, minRatio + Math.random() * (maxRatio - minRatio)));
+  return Math.max(0.055, bufferDuration * ratio);
 }
 
 function getCharacterPlaybackConfig(bufferDuration, character, desiredDuration, fastForward) {
@@ -1886,6 +1900,7 @@ const elSleeveBackgrounds = document.getElementById('sleeve-tab-backgrounds');
 const elSleeveGuide = document.getElementById('sleeve-tab-guide');
 const elSleeveSettings = document.getElementById('sleeve-tab-settings');
 const elInputMirrored = document.getElementById('input-mirrored-dialogue');
+const elMenuSoundsVolumeInputs = Array.from(document.querySelectorAll('input[name="menu-sounds-volume"]'));
 
 let activePanel = 'controls'; // 'controls' | 'settings'
 let panelTransitionLock = false;
@@ -2191,6 +2206,47 @@ elInputHideBroken?.addEventListener('change', () => {
 });
 
 initHideBrokenFromStorage();
+
+function syncMenuSoundsVolumeInputs() {
+  const level = clampMenuSoundsVolumeLevel(menuSoundsVolumeLevel);
+  elMenuSoundsVolumeInputs.forEach((input) => {
+    input.checked = Number(input.value) === level;
+  });
+}
+
+function setMenuSoundsVolumeLevel(value, { persist = false, playFeedback = false } = {}) {
+  menuSoundsVolumeLevel = clampMenuSoundsVolumeLevel(value);
+  syncMenuSoundsVolumeInputs();
+  if (persist) {
+    try {
+      localStorage.setItem(MENU_SOUNDS_VOLUME_STORAGE_KEY, String(menuSoundsVolumeLevel));
+    } catch { /* ignore */ }
+  }
+  if (playFeedback) {
+    playMenuSound('click');
+  }
+}
+
+function initMenuSoundsVolumeFromStorage() {
+  if (!elMenuSoundsVolumeInputs.length) return;
+  let nextLevel = 6;
+  try {
+    const saved = localStorage.getItem(MENU_SOUNDS_VOLUME_STORAGE_KEY);
+    if (saved !== null) {
+      nextLevel = clampMenuSoundsVolumeLevel(saved);
+    }
+  } catch { /* ignore */ }
+  setMenuSoundsVolumeLevel(nextLevel);
+}
+
+elMenuSoundsVolumeInputs.forEach((input) => {
+  input.addEventListener('change', () => {
+    if (!input.checked) return;
+    setMenuSoundsVolumeLevel(input.value, { persist: true, playFeedback: true });
+  });
+});
+
+initMenuSoundsVolumeFromStorage();
 
 console.log(`[Dialoggo] v${appVersion} — ${characters.length} characters, ${genericSounds.length} generic sounds`);
 
