@@ -384,7 +384,7 @@ body {
   border-radius: 44px;
   padding: 8px;
   min-height: 88px;
-  overflow: hidden;
+  overflow: visible;
   width: 88px;
   transform: translateX(-120px);
   opacity: 0;
@@ -455,7 +455,7 @@ body {
 .dialogue-box.n64-mode .dialogue-pixel-wrap {
   position: relative;
   z-index: 1;
-  overflow: hidden;
+  overflow: visible;
   border-radius: 44px;
 }
 
@@ -519,13 +519,14 @@ body {
   width: 72px;
   height: 72px;
   min-width: 72px;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   flex-shrink: 0;
   background: transparent;
+  z-index: 20;
 }
 
 .sprite-canvas {
@@ -902,8 +903,7 @@ body {
 }
 
 .settings-stitch--under-title {
-  height: 12px;
-  margin: 4px -16px 8px;
+  display: none;
 }
 
 .settings-stitch::before {
@@ -957,6 +957,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  margin-bottom: 12px;
 }
 
 .settings-category-title {
