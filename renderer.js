@@ -2106,7 +2106,9 @@ async function showPanel(panel) {
       elFlipCard.classList.add('flipped');
       activePanel = 'settings';
     } else {
-      if (large) {
+      const hasCollapsedPreviewFlow = elApp?.classList.contains('settings-panel-open');
+
+      if (large && !hasCollapsedPreviewFlow) {
         requestAnimationFrame(() => {
           elPreviewArea.classList.remove('preview-settings-muted');
           setPreviewPlaceholderSuppressed(false);
@@ -2124,7 +2126,7 @@ async function showPanel(panel) {
 
       // Only animate height if settings were opened on small screen (settings-panel-open set);
       // if opened on large/maximized screen, that class was never added — just clean up.
-      if (elApp?.classList.contains('settings-panel-open')) {
+      if (hasCollapsedPreviewFlow) {
         await expandPreviewAfterControls();
       } else {
         if (!large) {
