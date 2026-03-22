@@ -148,6 +148,7 @@ const N64_MODE_STORAGE_KEY = 'dialoggo-n64-mode';
 const MIRROR_MODE_STORAGE_KEY = 'dialoggo-mirror-mode';
 const HIDE_BROKEN_STORAGE_KEY = 'dialoggo-hide-broken-chars';
 const MENU_SOUNDS_VOLUME_STORAGE_KEY = 'dialoggo-menu-sounds-volume';
+const DIALOGUE_INPUT_MAX_LENGTH = 1000;
 
 let hideBrokenChars = false;
 let menuSoundsVolumeLevel = 6;
@@ -845,8 +846,10 @@ class SpriteRenderer {
 // ── DOM References ──────────────────────────────────────────
 const elCharGrid = document.getElementById('character-grid');
 const elCharacterSearchInput = document.getElementById('character-search-input');
+const elCharacterSearchClear = document.getElementById('character-search-clear');
 const elCharacterSearchEmpty = document.getElementById('character-search-empty');
 const elInput = document.getElementById('dialogue-input');
+const elDialogueInputCounter = document.getElementById('dialogue-input-counter');
 const elBtnPlay = document.getElementById('btn-play');
 const elBtnPause = document.getElementById('btn-pause');
 const elBtnStop = document.getElementById('btn-stop');
@@ -1059,6 +1062,36 @@ const cardAnimState = new Map(); // charId -> { timer, frameIndex, direction, mo
 function setInputLocked(locked) {
   elInput.readOnly = locked;
   elInput.classList.toggle('is-locked', locked);
+}
+
+function clampDialogueInputValue(value) {
+  return String(value || '').slice(0, DIALOGUE_INPUT_MAX_LENGTH);
+}
+
+function syncDialogueInputCounter() {
+  if (!elDialogueInputCounter || !elInput) return;
+  const length = elInput.value.length;
+  elDialogueInputCounter.textContent = `${length} / ${DIALOGUE_INPUT_MAX_LENGTH}`;
+  elDialogueInputCounter.classList.toggle('is-near-limit', length >= DIALOGUE_INPUT_MAX_LENGTH - 100 && length < DIALOGUE_INPUT_MAX_LENGTH);
+  elDialogueInputCounter.classList.toggle('is-at-limit', length >= DIALOGUE_INPUT_MAX_LENGTH);
+}
+
+function normalizeDialogueInput() {
+  if (!elInput) return;
+  const clamped = clampDialogueInputValue(elInput.value);
+  if (elInput.value !== clamped) {
+    const selectionStart = Math.min(elInput.selectionStart ?? clamped.length, clamped.length);
+    const selectionEnd = Math.min(elInput.selectionEnd ?? clamped.length, clamped.length);
+    elInput.value = clamped;
+    elInput.setSelectionRange(selectionStart, selectionEnd);
+  }
+  elInput.setCustomValidity('');
+  syncDialogueInputCounter();
+}
+
+function syncCharacterSearchClearButton() {
+  if (!elCharacterSearchClear || !elCharacterSearchInput) return;
+  elCharacterSearchClear.hidden = elCharacterSearchInput.value.length === 0;
 }
 
 function canFastForward() {
@@ -1388,7 +1421,12 @@ function updatePlayButton() {
   elBtnPlay.disabled = !hasText || !hasChar || (isPlaying && !isPaused);
 }
 
-elInput.addEventListener('input', updatePlayButton);
+function handleDialogueInputChange() {
+  normalizeDialogueInput();
+  updatePlayButton();
+}
+
+elInput.addEventListener('input', handleDialogueInputChange);
 
 
 // ── Utility: Sleep ──────────────────────────────────────────
@@ -1512,7 +1550,8 @@ async function playDialogue() {
   pauseTransitionLock = false;
   resetFastForwardState();
 
-  const text = elInput.value.trim();
+  normalizeDialogueInput();
+  const text = clampDialogueInputValue(elInput.value).trim();
   if (!text) {
     isPlaying = false;
     updateSettingsSleeveBlockedState();
@@ -1873,16 +1912,27 @@ elReelRight.addEventListener('click', () => {
 });
 elCharGrid.addEventListener('scroll', updateReelArrows);
 elCharacterSearchInput?.addEventListener('input', () => {
+  syncCharacterSearchClearButton();
   applyCharacterFilters({ resetScroll: true });
 });
 elCharacterSearchInput?.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape' || !elCharacterSearchInput.value) return;
   e.preventDefault();
   elCharacterSearchInput.value = '';
+  syncCharacterSearchClearButton();
   applyCharacterFilters({ resetScroll: true });
+});
+elCharacterSearchClear?.addEventListener('click', () => {
+  if (!elCharacterSearchInput) return;
+  elCharacterSearchInput.value = '';
+  syncCharacterSearchClearButton();
+  applyCharacterFilters({ resetScroll: true });
+  elCharacterSearchInput.focus();
 });
 
 // ── Init ────────────────────────────────────────────────────
+normalizeDialogueInput();
+syncCharacterSearchClearButton();
 buildCharacterGrid();
 requestAnimationFrame(updateReelArrows);
 
@@ -1976,6 +2026,18 @@ async function expandPreviewAfterControls() {
   }
 }
 
+function restorePreviewInstant() {
+  if (!elPreviewArea || !elPlaceholder) return;
+  const prevAreaTransition = elPreviewArea.style.transition;
+  const prevPlaceholderTransition = elPlaceholder.style.transition;
+  elPreviewArea.style.transition = 'none';
+  elPlaceholder.style.transition = 'none';
+  elPreviewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
+  void elPreviewArea.offsetHeight;
+  elPreviewArea.style.transition = prevAreaTransition;
+  elPlaceholder.style.transition = prevPlaceholderTransition;
+}
+
 /** Skip the preview collapse/expand animation on tall viewports (both panels fit) */
 function isLargeScreen() {
   return window.innerHeight >= 820;
@@ -2050,6 +2112,9 @@ async function showPanel(panel) {
       elFlipCard.classList.add('flipped');
       activePanel = 'settings';
     } else {
+      if (large) {
+        restorePreviewInstant();
+      }
       playMenuSound('settingsClose');
       elFlipCard.classList.remove('flipped');
       elSleeveSettings.classList.remove('active');
@@ -2062,7 +2127,9 @@ async function showPanel(panel) {
       if (elApp?.classList.contains('settings-panel-open')) {
         await expandPreviewAfterControls();
       } else {
-        elPreviewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
+        if (!large) {
+          elPreviewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
+        }
         elPreviewArea.style.height = '';
         elPreviewArea.style.flex = '';
         elPreviewArea.style.minHeight = '';
@@ -2243,6 +2310,15 @@ elMenuSoundsVolumeInputs.forEach((input) => {
   input.addEventListener('change', () => {
     if (!input.checked) return;
     setMenuSoundsVolumeLevel(input.value, { persist: true, playFeedback: true });
+  });
+});
+
+document.querySelectorAll('.menu-volume-knob-hit').forEach((label) => {
+  label.addEventListener('click', (event) => {
+    const level = Number(label.dataset.level || 0);
+    if (!Number.isFinite(level) || level < 1) return;
+    event.preventDefault();
+    setMenuSoundsVolumeLevel(level, { persist: true, playFeedback: true });
   });
 });
 

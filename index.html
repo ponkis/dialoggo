@@ -103,7 +103,8 @@
           <div class="editor-row">
             <div class="text-input-wrapper">
               <textarea class="text-input" id="dialogue-input" placeholder="Dialogue goes here..."
-                spellcheck="false"></textarea>
+                spellcheck="false" maxlength="1000"></textarea>
+              <div class="text-input-counter" id="dialogue-input-counter" aria-live="polite">0 / 1000</div>
             </div>
             <div class="action-buttons">
               <div class="action-buttons-row">
@@ -146,6 +147,10 @@
               </svg>
               <input class="character-search-input" id="character-search-input" type="search"
                 placeholder="Search characters..." spellcheck="false" autocomplete="off" aria-label="Search characters">
+              <button class="character-search-clear" id="character-search-clear" type="button" title="Clear search"
+                aria-label="Clear character search" hidden>
+                <span aria-hidden="true">&times;</span>
+              </button>
             </div>
             <button class="btn btn-fastforward" id="btn-fastforward" type="button" title="Fast forward" disabled>
               <div class="button-top">
@@ -196,13 +201,6 @@
         <!-- BACK — Settings Panel (red billiard cloth style) -->
         <div class="flip-face flip-back settings-panel" id="settings-panel">
           <div class="settings-body">
-            <header class="settings-heading">
-              <span class="settings-heading-title">Settings</span>
-              <span class="settings-heading-subtitle">Tweak the settings to your liking.</span>
-            </header>
-
-            <div class="settings-stitch settings-stitch--hero" aria-hidden="true"></div>
-
             <div class="settings-columns">
               <section class="settings-category" aria-labelledby="settings-cat-dialogue">
                 <div class="settings-category-head">

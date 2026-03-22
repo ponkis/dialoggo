@@ -16,7 +16,8 @@ function createWindow() {
       contextIsolation: false,
     },
     frame: false,
-    resizable: true,
+    resizable: false,
+    maximizable: true,
     show: false,
   });
 

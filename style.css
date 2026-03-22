@@ -1111,6 +1111,8 @@ img {
   --menu-knob-label-offset: 7px;
   --menu-knob-bound-width: 86px;
   --menu-knob-bound-height: 72px;
+  --menu-knob-center-x: 54%;
+  --menu-knob-center-y: 50%;
   margin-left: 0;
   flex: 0 0 auto;
   display: flex;
@@ -1141,8 +1143,8 @@ img {
 .menu-volume-knob::before {
   content: "";
   position: absolute;
-  left: 50%;
-  top: 50%;
+  left: var(--menu-knob-center-x);
+  top: var(--menu-knob-center-y);
   width: var(--menu-knob-size);
   height: var(--menu-knob-size);
   transform: translate(-50%, -50%);
@@ -1171,9 +1173,12 @@ img {
   width: var(--menu-knob-hit-size);
   height: var(--menu-knob-hit-size);
   cursor: pointer;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%) rotate(calc((var(--n) - 1) * 60deg)) translateX(calc((var(--menu-knob-size) / 2) - var(--menu-knob-hit-offset)));
+  left: var(--menu-knob-center-x);
+  top: var(--menu-knob-center-y);
+  z-index: 1;
+  border-radius: 50%;
+  transform:
+    translate(-50%, -50%) rotate(calc((var(--n) - 1) * 60deg)) translateX(calc((var(--menu-knob-size) / 2) - var(--menu-knob-hit-offset))) rotate(calc((var(--n) - 1) * -60deg));
 }
 
 .menu-volume-knob-dial {
@@ -1182,8 +1187,8 @@ img {
   height: var(--menu-knob-dial-height);
   border-radius: 999px;
   background-color: #000b;
-  top: calc(50% - (var(--menu-knob-dial-height) / 2));
-  left: calc(50% - 2px);
+  top: calc(var(--menu-knob-center-y) - (var(--menu-knob-dial-height) / 2));
+  left: calc(var(--menu-knob-center-x) - 2px);
   transform-origin: 2px 50%;
   transition: 0.15s;
   animation: menu-volume-knob-boot 0.15s;
@@ -1196,8 +1201,8 @@ img {
 
 .menu-volume-knob-notch {
   position: absolute;
-  left: 50%;
-  top: 50%;
+  left: var(--menu-knob-center-x);
+  top: var(--menu-knob-center-y);
   width: 8px;
   height: 1px;
   background-color: #fffc;
@@ -1226,16 +1231,8 @@ img {
   }
 }
 
-#menu-sounds-volume-1:checked~#menu-sounds-volume-label-2 {
-  z-index: 2;
-}
-
 #menu-sounds-volume-1:checked~.menu-volume-knob-dial {
   transform: rotate(0deg);
-}
-
-#menu-sounds-volume-2:checked~#menu-sounds-volume-label-3 {
-  z-index: 2;
 }
 
 #menu-sounds-volume-2:checked~.menu-volume-knob-dial {
@@ -1243,17 +1240,9 @@ img {
   animation: none;
 }
 
-#menu-sounds-volume-3:checked~#menu-sounds-volume-label-4 {
-  z-index: 2;
-}
-
 #menu-sounds-volume-3:checked~.menu-volume-knob-dial {
   transform: rotate(120deg);
   animation: none;
-}
-
-#menu-sounds-volume-4:checked~#menu-sounds-volume-label-5 {
-  z-index: 2;
 }
 
 #menu-sounds-volume-4:checked~.menu-volume-knob-dial {
@@ -1261,17 +1250,9 @@ img {
   animation: none;
 }
 
-#menu-sounds-volume-5:checked~#menu-sounds-volume-label-6 {
-  z-index: 2;
-}
-
 #menu-sounds-volume-5:checked~.menu-volume-knob-dial {
   transform: rotate(240deg);
   animation: none;
-}
-
-#menu-sounds-volume-6:checked~#menu-sounds-volume-label-1 {
-  z-index: 2;
 }
 
 #menu-sounds-volume-6:checked~.menu-volume-knob-dial {
@@ -1653,7 +1634,7 @@ img {
 
 .text-input {
   width: 100%;
-  padding: 10px 14px;
+  padding: 10px 14px 28px;
   background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
   border: 2px solid #2a2a2a;
   color: var(--text-primary);
@@ -1665,6 +1646,34 @@ img {
   box-shadow:
     var(--shadow-inset),
     inset 0 0 20px rgba(0, 0, 0, 0.4);
+}
+
+.text-input-counter {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  z-index: 2;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(8, 8, 8, 0.68);
+  border: 1px solid rgba(78, 78, 78, 0.5);
+  color: rgba(214, 214, 214, 0.72);
+  font-size: 9px;
+  letter-spacing: 0.4px;
+  line-height: 1;
+  pointer-events: none;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+}
+
+.text-input-counter.is-near-limit {
+  color: rgba(246, 211, 117, 0.92);
+  border-color: rgba(205, 149, 45, 0.58);
+}
+
+.text-input-counter.is-at-limit {
+  color: rgba(255, 223, 223, 0.94);
+  border-color: rgba(202, 74, 74, 0.72);
+  background: rgba(54, 10, 10, 0.76);
 }
 
 .text-input::placeholder {
@@ -1703,6 +1712,30 @@ img {
   box-shadow:
     inset 0 2px 8px rgba(0, 0, 0, 0.55),
     inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.text-input {
+  scrollbar-width: thin;
+  scrollbar-color: #555 #171717;
+}
+
+.text-input::-webkit-scrollbar {
+  width: 8px;
+}
+
+.text-input::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, rgba(10, 10, 10, 0.92), rgba(26, 26, 26, 0.92));
+  border-left: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.text-input::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #626262 0%, #404040 100%);
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.48);
+}
+
+.text-input::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #727272 0%, #4d4d4d 100%);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1976,7 +2009,7 @@ img {
   width: 100%;
   height: 100%;
   margin: 0;
-  padding: 0 12px 0 32px;
+  padding: 0 34px 0 32px;
   border: none;
   background: transparent;
   color: var(--text-primary);
@@ -1995,7 +2028,49 @@ img {
 }
 
 .character-search-input::-webkit-search-cancel-button {
-  filter: sepia(1) saturate(0.25) brightness(1.2);
+  display: none;
+  -webkit-appearance: none;
+}
+
+.character-search-clear {
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: rgba(214, 193, 160, 0.72);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition:
+    color 0.16s ease,
+    background-color 0.16s ease,
+    opacity 0.16s ease;
+}
+
+.character-search-clear[hidden] {
+  display: none;
+}
+
+.character-search-clear:hover,
+.character-search-clear:focus-visible {
+  color: rgba(246, 224, 189, 0.94);
+  outline: none;
+}
+
+.character-search-clear span {
+  display: block;
+  line-height: 1;
+  font-size: 16px;
+  transform: translateY(-1px);
 }
 
 @keyframes search-focus-pulse {
@@ -2311,11 +2386,52 @@ img {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--stone-dark);
+  background: #454545;
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--stone);
+  background: #5a5a5a;
+}
+
+.settings-panel,
+.settings-body,
+.settings-columns,
+.settings-category-body {
+  scrollbar-width: thin;
+  scrollbar-color: #a81e28 rgba(32, 6, 10, 0.45);
+}
+
+.settings-panel::-webkit-scrollbar,
+.settings-body::-webkit-scrollbar,
+.settings-columns::-webkit-scrollbar,
+.settings-category-body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.settings-panel::-webkit-scrollbar-track,
+.settings-body::-webkit-scrollbar-track,
+.settings-columns::-webkit-scrollbar-track,
+.settings-category-body::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, rgba(46, 8, 12, 0.62), rgba(26, 4, 7, 0.62));
+  border-radius: 999px;
+}
+
+.settings-panel::-webkit-scrollbar-thumb,
+.settings-body::-webkit-scrollbar-thumb,
+.settings-columns::-webkit-scrollbar-thumb,
+.settings-category-body::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #cf4c50 0%, #a01d24 55%, #6b0d13 100%);
+  border-radius: 999px;
+  border: 1px solid rgba(33, 4, 8, 0.7);
+}
+
+.settings-panel::-webkit-scrollbar-thumb:hover,
+.settings-body::-webkit-scrollbar-thumb:hover,
+.settings-columns::-webkit-scrollbar-thumb:hover,
+.settings-category-body::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #e36668 0%, #b82a31 55%, #7c1219 100%);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -2458,16 +2574,17 @@ body.maximized .preview-area.preview-settings-muted .preview-placeholder {
 }
 
 .settings-panel.settings-layout-maximized .setting-row--menu-volume .menu-volume-knob-host {
-  --menu-knob-size: 34px;
-  --menu-knob-hit-size: 30px;
+  --menu-knob-size: 39px;
+  --menu-knob-hit-size: 32px;
   --menu-knob-hit-offset: 2px;
-  --menu-knob-dial-width: 14px;
+  --menu-knob-dial-width: 16px;
   --menu-knob-dial-height: 3px;
-  --menu-knob-notch-distance: 21px;
-  --menu-knob-label-font-size: 9px;
+  --menu-knob-notch-distance: 24px;
+  --menu-knob-label-font-size: 9.5px;
   --menu-knob-label-offset: 5px;
-  --menu-knob-bound-width: 92px;
-  --menu-knob-bound-height: 70px;
+  --menu-knob-bound-width: 96px;
+  --menu-knob-bound-height: 76px;
+  --menu-knob-center-x: 58%;
   margin-left: 0;
 }
 
