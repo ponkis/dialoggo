@@ -1626,6 +1626,7 @@ const elControlsPanel = document.getElementById('controls-panel');
 const elSettingsPanel = document.getElementById('settings-panel');
 const elFlipCard = document.getElementById('flip-card');
 const elSleeveCamera = document.getElementById('sleeve-tab-camera');
+const elSleeveBackgrounds = document.getElementById('sleeve-tab-backgrounds');
 const elSleeveGuide = document.getElementById('sleeve-tab-guide');
 const elSleeveSettings = document.getElementById('sleeve-tab-settings');
 const elInputMirrored = document.getElementById('input-mirrored-dialogue');
@@ -1826,6 +1827,10 @@ elSleeveSettings.addEventListener('click', () => {
 });
 
 elSleeveCamera.addEventListener('click', () => {
+  playMenuSound('forbidden');
+});
+
+elSleeveBackgrounds?.addEventListener('click', () => {
   playMenuSound('forbidden');
 });
 
