@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 
 let mainWindow;
@@ -21,6 +21,12 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
+
+  // Open external links in the OS default browser instead of a new Electron window
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: 'deny' };
+  });
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();

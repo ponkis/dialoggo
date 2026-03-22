@@ -124,6 +124,10 @@ const N64_TEXT_LINE_HEIGHT = 33;
 const N64_TEXT_FONT = 'bold 30px "Andy Bold", "Comic Sans MS", cursive';
 
 const N64_MODE_STORAGE_KEY = 'dialoggo-n64-mode';
+const MIRROR_MODE_STORAGE_KEY = 'dialoggo-mirror-mode';
+const HIDE_BROKEN_STORAGE_KEY = 'dialoggo-hide-broken-chars';
+
+let hideBrokenChars = false;
 
 let _n64PixelScratch = null;
 
@@ -1016,8 +1020,14 @@ function buildCharacterGrid() {
     const miniImg = document.createElement('img');
 
     const previewPath = char.idleFrames[0] || char.speakFrames[0] || null;
-    if (previewPath) miniImg.src = fileToSrc(previewPath);
-    else miniImg.style.display = 'none';
+    if (previewPath) {
+      miniImg.src = fileToSrc(previewPath);
+    } else {
+      // Use tooty/s5.png as placeholder with B&W filter
+      const placeholderPath = path.join(IMG_DIR, 'tooty', 's5.png');
+      miniImg.src = fileToSrc(placeholderPath);
+      miniImg.classList.add('missing-char-icon');
+    }
     miniImg.alt = char.displayName;
     spriteWrap.appendChild(miniImg);
 
@@ -1702,6 +1712,9 @@ function setMirrored(value) {
 
 elInputMirrored?.addEventListener('change', () => {
   setMirrored(elInputMirrored.checked);
+  try {
+    localStorage.setItem(MIRROR_MODE_STORAGE_KEY, String(elInputMirrored.checked));
+  } catch { /* ignore */ }
   playMenuSound('click');
 });
 
@@ -1735,5 +1748,51 @@ elInputN64?.addEventListener('change', () => {
 
 updateSettingsSleeveBlockedState();
 initN64ModeFromDom();
+
+// ── Mirror Mode: restore from localStorage ──────────────────
+try {
+  const savedMirror = localStorage.getItem(MIRROR_MODE_STORAGE_KEY);
+  if (savedMirror !== null) {
+    const val = savedMirror === 'true';
+    setMirrored(val);
+  }
+} catch { /* ignore */ }
+
+// ── Hide Broken Characters ──────────────────────────────────
+const elInputHideBroken = document.getElementById('input-hide-broken-chars');
+
+function applyHideBrokenChars() {
+  document.querySelectorAll('.char-btn.unavailable').forEach(btn => {
+    btn.classList.toggle('hidden-broken', hideBrokenChars);
+  });
+  requestAnimationFrame(updateReelArrows);
+}
+
+function initHideBrokenFromStorage() {
+  if (!elInputHideBroken) return;
+  try {
+    const saved = localStorage.getItem(HIDE_BROKEN_STORAGE_KEY);
+    if (saved !== null) {
+      hideBrokenChars = saved === 'true';
+      elInputHideBroken.checked = hideBrokenChars;
+    } else {
+      hideBrokenChars = elInputHideBroken.checked;
+    }
+  } catch {
+    hideBrokenChars = elInputHideBroken.checked;
+  }
+  applyHideBrokenChars();
+}
+
+elInputHideBroken?.addEventListener('change', () => {
+  hideBrokenChars = elInputHideBroken.checked;
+  try {
+    localStorage.setItem(HIDE_BROKEN_STORAGE_KEY, String(hideBrokenChars));
+  } catch { /* ignore */ }
+  applyHideBrokenChars();
+  playMenuSound('click');
+});
+
+initHideBrokenFromStorage();
 
 console.log(`[Dialoggo] v${appVersion} — ${characters.length} characters, ${genericSounds.length} generic sounds`);
