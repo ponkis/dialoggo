@@ -1645,6 +1645,11 @@ async function expandPreviewAfterControls() {
   }
 }
 
+/** Skip the preview collapse/expand animation on tall viewports (both panels fit) */
+function isLargeScreen() {
+  return window.innerHeight >= 820;
+}
+
 async function showPanel(panel) {
   if (panelTransitionLock || panel === activePanel) return;
   if (panel === 'settings' && (isPlaying || isPaused)) return;
@@ -1656,16 +1661,25 @@ async function showPanel(panel) {
     playMenuSound('settingsClose');
   }
 
+  const large = isLargeScreen();
+
   try {
     if (panel === 'settings') {
       elSleeveSettings.classList.add('active');
-      if (elPanelWrapper) {
+      if (!large && elPanelWrapper) {
         elPanelWrapper.dataset.naturalPanelHeight = String(
           Math.round(elPanelWrapper.getBoundingClientRect().height)
         );
       }
-      elApp?.classList.add('settings-panel-open');
-      await collapsePreviewThenSettings();
+      if (large) {
+        // Large screen: just mute preview + flip — no height animation
+        elPreviewArea.classList.add('preview-settings-muted');
+        stopPlaceholderAnim();
+      } else {
+        elApp?.classList.add('settings-panel-open');
+        await collapsePreviewThenSettings();
+      }
+
       elFlipCard.classList.add('flipped');
       activePanel = 'settings';
     } else {
@@ -1673,7 +1687,18 @@ async function showPanel(panel) {
       elSleeveSettings.classList.remove('active');
       activePanel = 'controls';
       await sleep(FLIP_CARD_MS);
-      await expandPreviewAfterControls();
+
+      if (large) {
+        // Large screen: just unmute preview — no height animation
+        elPreviewArea.classList.remove('preview-settings-muted');
+        elApp?.classList.remove('settings-panel-open');
+        if (elPanelWrapper) delete elPanelWrapper.dataset.naturalPanelHeight;
+        if (!elDialogueContainer.classList.contains('active')) {
+          startPlaceholderAnim();
+        }
+      } else {
+        await expandPreviewAfterControls();
+      }
     }
   } finally {
     panelTransitionLock = false;

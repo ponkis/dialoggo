@@ -1465,6 +1465,7 @@ img {
   display: flex;
   gap: 6px;
   flex-direction: column;
+  width: 92px;
 }
 
 .action-buttons-row {
@@ -1472,6 +1473,16 @@ img {
   flex-direction: row;
   gap: 6px;
   flex: 1;
+}
+
+/* Buttons inside the row share width equally */
+.action-buttons-row .btn {
+  width: auto;
+}
+
+/* Pause spans the full width under the row */
+.action-buttons > .btn-pause {
+  width: auto;
 }
 
 .btn {
@@ -1609,7 +1620,6 @@ img {
     inset 0 -2px 0 #1a6a1a,
     0 3px 6px rgba(0, 0, 0, 0.5);
   border-bottom: 3px solid #145014;
-
 }
 
 .btn-upload:hover {
@@ -1673,6 +1683,12 @@ img {
 /* Left arrow outside */
 .reel-arrow-left {
   width: 22px;
+  overflow: hidden;
+  transition: width 0.2s ease, opacity 0.2s ease;
+}
+
+.reel-arrow-left.hidden {
+  width: 0;
 }
 
 /* Right arrow inside the reel */
