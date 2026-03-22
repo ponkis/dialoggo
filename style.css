@@ -1874,36 +1874,44 @@ body.maximized .settings-stitch--hero {
   display: none;
 }
 
-/* Settings panel clips content and flexes */
+/* Settings panel stays open enough for the rocker switch artwork and shadows */
 body.maximized .settings-panel {
-  overflow: hidden;
-  padding: 10px 14px 12px;
+  overflow: visible;
+  padding: 12px 16px 16px;
   display: flex;
   flex-direction: column;
 }
 
-/* Settings body: fills remaining height, centers content */
+/* Settings body: fills remaining height and lets the horizontal strip start from the left edge */
 body.maximized .settings-body {
+  --maximized-settings-card-width: clamp(360px, 21vw, 420px);
   flex: 1 1 0;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
   padding: 0;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
-/* Categories: equal-width cards in one row, scrollable if overflow */
+/* Categories: fixed-width cards in one left-to-right row; extra cards extend horizontally */
 body.maximized .settings-columns {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
-  align-items: flex-start;
-  gap: 20px;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 16px;
   overflow-x: auto;
-  overflow-y: visible;
+  overflow-y: hidden;
   width: 100%;
+  min-width: 0;
   max-height: 100%;
+  padding: 4px 2px 10px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -1912,23 +1920,38 @@ body.maximized .settings-columns::-webkit-scrollbar {
   display: none;
 }
 
-/* Each category card: equal share of the full width, compact height */
+/* Each category card keeps its width so the strip scrolls instead of shrinking */
 body.maximized .settings-category {
-  flex: 1 1 0;
-  min-width: 180px;
-  padding: 10px 14px 14px;
+  flex: 0 0 var(--maximized-settings-card-width);
+  width: var(--maximized-settings-card-width);
+  min-width: var(--maximized-settings-card-width);
+  min-height: 158px;
+  padding: 12px 16px 18px;
 }
 
 /* Compact category header spacing */
 body.maximized .settings-category-head {
-  margin-bottom: 4px;
-  padding-bottom: 6px;
+  margin-bottom: 10px;
+  padding-bottom: 0;
 }
 
-/* Compact setting rows */
+/* Keep the switch and copy on one line so the card stays readable and unclipped */
 body.maximized .setting-row {
-  padding: 8px 10px;
-  gap: 6px 10px;
+  align-items: center;
+  flex-wrap: nowrap;
+  min-height: 102px;
+  padding: 12px 14px;
+  gap: 12px 18px;
+}
+
+body.maximized .setting-info {
+  flex: 1 1 auto;
+  max-width: none;
+}
+
+body.maximized .setting-row .uiverse-rocker-host {
+  --uiverse-scale: 0.42;
+  margin-left: 18px;
 }
 
 /* ── Animations ─────────────────────────────────────────────── */
