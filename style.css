@@ -2562,6 +2562,12 @@ img {
   padding: 0;
 }
 
+.settings-panel.settings-layout-maximized .settings-category:has(.settings-category-body .setting-row + .setting-row) .settings-category-body {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: minmax(138px, 1fr);
+  align-content: stretch;
+}
+
 .settings-panel.settings-layout-maximized .settings-category-body:has(> .setting-row:only-child) {
   display: flex;
 }
@@ -2579,24 +2585,35 @@ img {
   align-items: center;
   align-content: center;
   gap: 10px 14px;
-  min-height: 112px;
-  padding: 16px 18px;
+  min-height: 132px;
+  padding: 18px 20px;
 }
 
 .settings-panel.settings-layout-maximized .setting-row--menu-volume {
   grid-template-columns: minmax(0, 1fr) 108px;
   gap: 10px 12px;
-  padding: 10px 12px;
+  padding: 16px 18px;
 }
 
 .settings-panel.settings-layout-maximized .setting-info {
   flex: 1 1 auto;
   max-width: none;
   min-width: 0;
+  gap: 6px;
+}
+
+.settings-panel.settings-layout-maximized .setting-label {
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+
+.settings-panel.settings-layout-maximized .setting-desc {
+  font-size: 10.5px;
+  line-height: 1.4;
 }
 
 .settings-panel.settings-layout-maximized .setting-row .uiverse-rocker-host {
-  --uiverse-scale: 0.35;
+  --uiverse-scale: 0.39;
   width: calc((150px * var(--uiverse-scale)) + 14px);
   min-width: calc((150px * var(--uiverse-scale)) + 14px);
   height: calc((195px * var(--uiverse-scale)) + 14px);
@@ -2604,16 +2621,16 @@ img {
 }
 
 .settings-panel.settings-layout-maximized .setting-row--menu-volume .menu-volume-knob-host {
-  --menu-knob-size: 45px;
-  --menu-knob-hit-size: 35px;
+  --menu-knob-size: 52px;
+  --menu-knob-hit-size: 39px;
   --menu-knob-hit-offset: 2px;
-  --menu-knob-dial-width: 18px;
+  --menu-knob-dial-width: 20px;
   --menu-knob-dial-height: 3px;
-  --menu-knob-notch-distance: 27px;
-  --menu-knob-label-font-size: 10px;
-  --menu-knob-label-offset: 5px;
-  --menu-knob-bound-width: 108px;
-  --menu-knob-bound-height: 86px;
+  --menu-knob-notch-distance: 31px;
+  --menu-knob-label-font-size: 11px;
+  --menu-knob-label-offset: 6px;
+  --menu-knob-bound-width: 116px;
+  --menu-knob-bound-height: 96px;
   --menu-knob-center-x: 66%;
   margin-left: 0;
 }
