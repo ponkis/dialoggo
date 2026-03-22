@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,6 +13,7 @@
   <link rel="manifest" href="./site.webmanifest" />
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
   <!-- Title Bar -->
@@ -29,28 +31,29 @@
     <!-- Preview Area -->
     <div class="preview-area" id="preview-area">
       <div class="preview-area-content" id="preview-area-content">
-      <div class="preview-placeholder" id="preview-placeholder">
-        <img class="placeholder-anim" id="placeholder-anim" alt="">
-        <span>Select a character and start talking.</span>
-      </div>
+        <div class="preview-placeholder" id="preview-placeholder">
+          <img class="placeholder-anim" id="placeholder-anim" alt="">
+          <span>Select a character and start talking.</span>
+        </div>
 
-      <!-- Dialogue Box (hidden until playing) -->
-      <div class="dialogue-container" id="dialogue-container">
-        <div class="dialogue-box" id="dialogue-box">
-          <div class="dialogue-pixel-wrap">
-            <div class="sprite-container">
-              <canvas class="sprite-canvas" id="sprite-canvas" width="144" height="144"></canvas>
-            </div>
-            <div class="dialogue-text-area" id="dialogue-text-area">
-              <div class="dialogue-text-n64-shell">
-                <div class="dialogue-text" id="dialogue-text"></div>
+        <!-- Dialogue Box (hidden until playing) -->
+        <div class="dialogue-container" id="dialogue-container">
+          <div class="dialogue-box" id="dialogue-box">
+            <div class="dialogue-pixel-wrap">
+              <div class="sprite-container">
+                <canvas class="sprite-canvas" id="sprite-canvas" width="144" height="144"></canvas>
               </div>
-              <!-- After in-flow text so stacking paints canvas on top; pixelation via downsample in renderer.js -->
-              <canvas class="dialogue-text-n64-canvas" id="dialogue-text-n64-canvas" width="1" height="1" aria-hidden="true"></canvas>
+              <div class="dialogue-text-area" id="dialogue-text-area">
+                <div class="dialogue-text-n64-shell">
+                  <div class="dialogue-text" id="dialogue-text"></div>
+                </div>
+                <!-- After in-flow text so stacking paints canvas on top; pixelation via downsample in renderer.js -->
+                <canvas class="dialogue-text-n64-canvas" id="dialogue-text-n64-canvas" width="1" height="1"
+                  aria-hidden="true"></canvas>
+              </div>
             </div>
           </div>
         </div>
-      </div>
       </div>
     </div>
 
@@ -61,15 +64,18 @@
       <!-- Sleeve Tabs (peeking from behind) -->
       <div class="sleeve-tabs">
         <button class="sleeve-tab sleeve-tab-camera" id="sleeve-tab-camera" title="Screenshot (coming soon)">
-          <svg class="sleeve-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-            <circle cx="12" cy="13" r="4"/>
+          <svg class="sleeve-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+            <circle cx="12" cy="13" r="4" />
           </svg>
         </button>
         <button class="sleeve-tab sleeve-tab-settings" id="sleeve-tab-settings" title="Settings">
-          <svg class="sleeve-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+          <svg class="sleeve-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
           </svg>
         </button>
       </div>
@@ -80,28 +86,24 @@
         <div class="flip-face flip-front controls-panel" id="controls-panel">
           <div class="editor-row">
             <div class="text-input-wrapper">
-              <textarea
-                class="text-input"
-                id="dialogue-input"
-                placeholder="Dialogue goes here..."
-                spellcheck="false"
-              ></textarea>
+              <textarea class="text-input" id="dialogue-input" placeholder="Dialogue goes here..."
+                spellcheck="false"></textarea>
             </div>
             <div class="action-buttons">
               <button class="btn btn-play" id="btn-play" disabled title="Play">
                 <svg viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="7,4 20,12 7,20"/>
+                  <polygon points="7,4 20,12 7,20" />
                 </svg>
               </button>
               <button class="btn btn-pause" id="btn-pause" disabled title="Pause">
                 <svg viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="5" width="4" height="14" rx="1"/>
-                  <rect x="14" y="5" width="4" height="14" rx="1"/>
+                  <rect x="6" y="5" width="4" height="14" rx="1" />
+                  <rect x="14" y="5" width="4" height="14" rx="1" />
                 </svg>
               </button>
               <button class="btn btn-stop" id="btn-stop" disabled title="Stop">
                 <svg viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="6" width="12" height="12" rx="1"/>
+                  <rect x="6" y="6" width="12" height="12" rx="1" />
                 </svg>
               </button>
             </div>
@@ -110,14 +112,18 @@
             <img src="./img/menu/00001466.png" alt="Character" class="section-label-img">
             <div class="reel-wrapper">
               <div class="reel-arrow reel-arrow-left" id="reel-arrow-left">
-                <svg viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7"/></svg>
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M15 19l-7-7 7-7" />
+                </svg>
               </div>
               <div class="film-reel">
                 <div class="reel-sprockets reel-sprockets-top"></div>
                 <div class="character-grid" id="character-grid"></div>
                 <div class="reel-sprockets reel-sprockets-bottom"></div>
                 <div class="reel-arrow reel-arrow-right" id="reel-arrow-right">
-                  <svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M9 5l7 7-7 7" />
+                  </svg>
                 </div>
               </div>
             </div>
@@ -141,9 +147,9 @@
                 </div>
                 <div class="settings-stitch settings-stitch--under-title" aria-hidden="true"></div>
 
-                <div class="setting-row" role="group" aria-label="Dialogue orientation">
+                <div class="setting-row" role="group" aria-label="Mirror mode">
                   <div class="setting-info">
-                    <span class="setting-label">Orientation</span>
+                    <span class="setting-label">Mirror mode</span>
                     <span class="setting-desc">Regular starts left. Mirrored starts right.</span>
                   </div>
                   <!-- Uiverse 3D rocker (shared style) -->
@@ -242,4 +248,5 @@
 
   <script src="renderer.js"></script>
 </body>
+
 </html>
