@@ -1689,17 +1689,15 @@ async function showPanel(panel) {
       await sleep(FLIP_CARD_MS);
 
       if (large) {
-        // Large screen: clean up all preview state (may have been opened on small screen)
-        elPreviewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
-        elPreviewArea.style.height = '';
-        elPreviewArea.style.flex = '';
-        elPreviewArea.style.minHeight = '';
-        elPreviewArea.style.overflow = '';
-        elPreviewArea.style.transition = '';
-        elApp?.classList.remove('settings-panel-open');
-        if (elPanelWrapper) delete elPanelWrapper.dataset.naturalPanelHeight;
-        if (!elDialogueContainer.classList.contains('active')) {
-          startPlaceholderAnim();
+        if (elApp?.classList.contains('settings-panel-open')) {
+          // If panel was open on small screen, smoothly transition it back
+          await expandPreviewAfterControls();
+        } else {
+          // Always large, just unmute
+          elPreviewArea.classList.remove('preview-settings-muted');
+          if (!elDialogueContainer.classList.contains('active')) {
+            startPlaceholderAnim();
+          }
         }
       } else {
         await expandPreviewAfterControls();
