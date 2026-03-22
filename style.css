@@ -1688,7 +1688,7 @@ img {
 }
 
 .reel-arrow-left.hidden {
-  width: 0;
+  width: 5px;
 }
 
 /* Right arrow inside the reel */
@@ -1853,6 +1853,94 @@ img {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--stone);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MAXIMIZED MODE
+   ══════════════════════════════════════════════════════════════ */
+
+/* Fade preview placeholder ONLY when settings panel is open while maximized */
+body.maximized .preview-area.preview-settings-muted .preview-placeholder {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+/* ── Maximized Settings: compact horizontal scroll ─────────── */
+
+/* Hide the hero heading + stitch */
+body.maximized .settings-heading,
+body.maximized .settings-stitch--hero {
+  display: none;
+}
+
+/* Settings panel clips content */
+body.maximized .settings-panel {
+  overflow: hidden;
+  padding: 6px 12px;
+}
+
+/* Settings body: centered, compact, allow overflow scroll */
+body.maximized .settings-body {
+  justify-content: center;
+  padding: 4px 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+body.maximized .settings-body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Categories become a horizontal scroll strip */
+body.maximized .settings-columns {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 16px;
+  padding: 4px 24px;
+  width: max-content;
+  min-width: 100%;
+  justify-content: center;
+}
+
+/* Each category card — compact */
+body.maximized .settings-category {
+  min-width: 220px;
+  max-width: 280px;
+  flex: 0 0 auto;
+  padding: 8px 10px 10px;
+}
+
+body.maximized .settings-category-head {
+  margin-bottom: 6px;
+}
+
+body.maximized .settings-category-title {
+  font-size: 8px;
+  letter-spacing: 2px;
+}
+
+/* Compact setting rows */
+body.maximized .setting-row {
+  padding: 6px 10px;
+  gap: 8px 12px;
+}
+
+body.maximized .setting-label {
+  font-size: 9px;
+}
+
+body.maximized .setting-desc {
+  font-size: 8px;
+}
+
+/* Smaller rocker switches */
+body.maximized .uiverse-rocker-host {
+  --uiverse-scale: 0.22;
 }
 
 /* ── Animations ─────────────────────────────────────────────── */

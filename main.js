@@ -32,6 +32,14 @@ function createWindow() {
     mainWindow.show();
   });
 
+  // Forward maximize / unmaximize to renderer
+  mainWindow.on('maximize', () => {
+    mainWindow.webContents.send('window-maximized');
+  });
+  mainWindow.on('unmaximize', () => {
+    mainWindow.webContents.send('window-unmaximized');
+  });
+
   mainWindow.on('closed', () => {
     mainWindow = null;
   });

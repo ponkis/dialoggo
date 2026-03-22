@@ -1689,8 +1689,13 @@ async function showPanel(panel) {
       await sleep(FLIP_CARD_MS);
 
       if (large) {
-        // Large screen: just unmute preview — no height animation
-        elPreviewArea.classList.remove('preview-settings-muted');
+        // Large screen: clean up all preview state (may have been opened on small screen)
+        elPreviewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
+        elPreviewArea.style.height = '';
+        elPreviewArea.style.flex = '';
+        elPreviewArea.style.minHeight = '';
+        elPreviewArea.style.overflow = '';
+        elPreviewArea.style.transition = '';
         elApp?.classList.remove('settings-panel-open');
         if (elPanelWrapper) delete elPanelWrapper.dataset.naturalPanelHeight;
         if (!elDialogueContainer.classList.contains('active')) {
@@ -1717,6 +1722,7 @@ function updateSettingsSleeveBlockedState() {
 
 elSleeveSettings.addEventListener('click', () => {
   if (isPlaying || isPaused) return; /* forbidden sound: global pointerdown + aria-disabled */
+  playMenuSound('click');
   void showPanel(activePanel === 'settings' ? 'controls' : 'settings');
 });
 
@@ -1821,3 +1827,16 @@ elInputHideBroken?.addEventListener('change', () => {
 initHideBrokenFromStorage();
 
 console.log(`[Dialoggo] v${appVersion} — ${characters.length} characters, ${genericSounds.length} generic sounds`);
+
+// ── Maximize / Unmaximize ───────────────────────────────────
+ipcRenderer.on('window-maximized', () => {
+  document.body.classList.add('maximized');
+  // Flip back to controls panel when maximizing (both panels are same size)
+  if (activePanel === 'settings' && !panelTransitionLock) {
+    void showPanel('controls');
+  }
+});
+
+ipcRenderer.on('window-unmaximized', () => {
+  document.body.classList.remove('maximized');
+});
