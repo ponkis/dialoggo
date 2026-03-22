@@ -1119,14 +1119,26 @@ img {
 }
 
 .menu-volume-knob {
-  display: flex;
+  display: block;
   position: relative;
-  width: var(--menu-knob-size);
-  height: var(--menu-knob-size);
-  flex: 0 0 var(--menu-knob-size);
+  width: 100%;
+  height: 100%;
+  flex: 0 0 auto;
   --a: #0004, #fff4;
   --b: var(--a), var(--a), var(--a);
   --c: var(--b), var(--b), var(--b);
+  margin: 0;
+  overflow: visible;
+}
+
+.menu-volume-knob::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--menu-knob-size);
+  height: var(--menu-knob-size);
+  transform: translate(-50%, -50%);
   background: conic-gradient(from -2deg,
       #efefff88,
       #00000088,
@@ -1139,8 +1151,7 @@ img {
   background-position: -4px -4px;
   border: 4px solid #0005;
   border-radius: 50%;
-  margin: auto;
-  overflow: visible;
+  pointer-events: none;
 }
 
 .menu-volume-knob input {
@@ -1153,8 +1164,9 @@ img {
   width: var(--menu-knob-hit-size);
   height: var(--menu-knob-hit-size);
   cursor: pointer;
-  top: var(--menu-knob-hit-offset);
-  left: var(--menu-knob-hit-offset);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(calc((var(--n) - 1) * 60deg)) translateX(calc((var(--menu-knob-size) / 2) - var(--menu-knob-hit-offset)));
 }
 
 .menu-volume-knob-dial {
@@ -2386,13 +2398,14 @@ body.maximized .preview-area.preview-settings-muted .preview-placeholder {
 /* Keep the switch and copy on one line so the card stays readable and unclipped */
 .settings-panel.settings-layout-maximized .setting-row {
   flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr) 84px;
   align-items: center;
-  min-height: 0;
   padding: 10px 12px;
   gap: 10px 14px;
 }
 
 .settings-panel.settings-layout-maximized .setting-row--menu-volume {
+  grid-template-columns: minmax(0, 1fr) 92px;
   gap: 10px 12px;
   padding: 10px 12px;
 }
@@ -2404,22 +2417,57 @@ body.maximized .preview-area.preview-settings-muted .preview-placeholder {
 }
 
 .settings-panel.settings-layout-maximized .setting-row .uiverse-rocker-host {
-  --uiverse-scale: 0.34;
+  --uiverse-scale: 0.35;
+  width: calc((150px * var(--uiverse-scale)) + 14px);
+  min-width: calc((150px * var(--uiverse-scale)) + 14px);
+  height: calc((195px * var(--uiverse-scale)) + 14px);
   margin-left: 0;
 }
 
 .settings-panel.settings-layout-maximized .setting-row--menu-volume .menu-volume-knob-host {
+  --menu-knob-size: 34px;
+  --menu-knob-hit-size: 30px;
+  --menu-knob-hit-offset: 2px;
+  --menu-knob-dial-width: 14px;
+  --menu-knob-dial-height: 3px;
+  --menu-knob-notch-distance: 21px;
+  --menu-knob-label-font-size: 9px;
+  --menu-knob-label-offset: 5px;
+  --menu-knob-bound-width: 92px;
+  --menu-knob-bound-height: 70px;
+  margin-left: 0;
+}
+
+.settings-panel.settings-layout-maximized .settings-category:has(.setting-row + .setting-row) .setting-row {
+  grid-template-columns: minmax(0, 1fr) 66px;
+  gap: 8px 14px;
+  padding: 8px 12px;
+}
+
+.settings-panel.settings-layout-maximized .settings-category:has(.setting-row + .setting-row) .setting-row--menu-volume {
+  grid-template-columns: minmax(0, 1fr) 84px;
+}
+
+.settings-panel.settings-layout-maximized .settings-category:has(.setting-row + .setting-row) .setting-row .uiverse-rocker-host {
+  --uiverse-scale: 0.27;
+  width: calc((150px * var(--uiverse-scale)) + 12px);
+  min-width: calc((150px * var(--uiverse-scale)) + 12px);
+  height: calc((195px * var(--uiverse-scale)) + 12px);
+  justify-self: center;
+}
+
+.settings-panel.settings-layout-maximized .settings-category:has(.setting-row + .setting-row) .setting-row--menu-volume .menu-volume-knob-host {
   --menu-knob-size: 30px;
-  --menu-knob-hit-size: 24px;
-  --menu-knob-hit-offset: 3px;
-  --menu-knob-dial-width: 13px;
+  --menu-knob-hit-size: 26px;
+  --menu-knob-hit-offset: 2px;
+  --menu-knob-dial-width: 12px;
   --menu-knob-dial-height: 3px;
   --menu-knob-notch-distance: 18px;
-  --menu-knob-label-font-size: 8.5px;
-  --menu-knob-label-offset: 5px;
-  --menu-knob-bound-width: 72px;
-  --menu-knob-bound-height: 60px;
-  margin-left: 0;
+  --menu-knob-label-font-size: 8px;
+  --menu-knob-label-offset: 4px;
+  --menu-knob-bound-width: 84px;
+  --menu-knob-bound-height: 64px;
+  justify-self: center;
 }
 
 /* ── Animations ─────────────────────────────────────────────── */
