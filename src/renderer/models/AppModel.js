@@ -1,8 +1,6 @@
-const path = require('path');
-const fs = require('fs');
 const {
-  fileURLToPath
-} = require('url');
+  getDialoggoBridge,
+} = require('../runtime/getBridge');
 
 const SPEAK_FRAME_COUNT = 6;
 const IDLE_FRAME_COUNT = 4;
@@ -32,42 +30,33 @@ const storageKeys = {
 };
 
 function createEnvironment() {
-  const publicDir = path.dirname(fileURLToPath(window.location.href));
-  const assetsDir = path.join(publicDir, 'assets');
-  const rootDir = path.join(publicDir, '..');
-  const sndDir = path.join(assetsDir, 'snd');
-  const imgDir = path.join(assetsDir, 'img');
-  const charImgDir = path.join(imgDir, 'char');
-  const charSndDir = path.join(sndDir, 'char');
-  const guiImgDir = path.join(imgDir, 'gui');
-  const guiAnimDir = path.join(guiImgDir, 'anim');
-  const startupRevealSoundPath = path.join(sndDir, 'gui', '6.wav');
-
-  const pkgPath = path.join(rootDir, 'package.json');
-  let appVersion = '0.0.0';
-
-  try {
-    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-    appVersion = pkg.version || appVersion;
-  } catch {
-    appVersion = '0.0.0';
-  }
+  const bridge = getDialoggoBridge();
+  const {
+    paths,
+    appVersion,
+    platform,
+  } = bridge.runtime;
 
   return {
-    path,
-    fs,
-    publicDir,
-    assetsDir,
-    rootDir,
-    sndDir,
-    imgDir,
-    charImgDir,
-    charSndDir,
-    guiImgDir,
-    guiAnimDir,
-    startupRevealSoundPath,
+    path: bridge.path,
+    fs: bridge.files,
+    publicDir: paths.publicDir,
+    assetsDir: paths.assetsDir,
+    sndDir: paths.sndDir,
+    imgDir: paths.imgDir,
+    charImgDir: paths.charImgDir,
+    charSndDir: paths.charSndDir,
+    guiImgDir: paths.guiImgDir,
+    guiAnimDir: paths.guiAnimDir,
+    startupRevealSoundPath: bridge.path.join(paths.sndDir, 'gui', '6.wav'),
     appVersion,
+    platform,
+    log: bridge.log,
   };
+}
+
+function isDirectoryEntry(entry) {
+  return !!entry && (entry.isDirectory === true || typeof entry.isDirectory === 'function' && entry.isDirectory());
 }
 
 function discoverCharacters(env) {
@@ -77,7 +66,7 @@ function discoverCharacters(env) {
   const dirs = env.fs.readdirSync(env.charImgDir, {
     withFileTypes: true
   })
-    .filter((entry) => entry.isDirectory())
+    .filter((entry) => isDirectoryEntry(entry))
     .map((entry) => entry.name);
 
   for (const name of dirs) {
@@ -111,7 +100,11 @@ function discoverCharacters(env) {
       const soundConfigPath = env.path.join(sndDir, 'sound.json');
       if (env.fs.existsSync(soundConfigPath)) {
         try {
-          soundConfig = JSON.parse(env.fs.readFileSync(soundConfigPath, 'utf-8')) || {};
+          soundConfig = env.fs.readJsonFile(soundConfigPath, {
+            fallback: {},
+            label: `Sound config for ${name}`,
+            maxBytes: 16 * 1024,
+          }) || {};
         } catch {
           soundConfig = {};
         }

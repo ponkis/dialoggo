@@ -1,7 +1,4 @@
 const {
-  ipcRenderer
-} = require('electron');
-const {
   createAppModel
 } = require('../models/AppModel');
 const {
@@ -10,8 +7,12 @@ const {
 const {
   createAppView
 } = require('../views/AppView');
+const {
+  getDialoggoBridge,
+} = require('../runtime/getBridge');
 
 function startApp() {
+  const bridge = getDialoggoBridge();
   const model = createAppModel();
   const audioService = createAudioService(model);
   const view = createAppView(model, audioService);
@@ -320,6 +321,11 @@ function startApp() {
       }
     } catch (error) {
       console.error('[Dialoggo] playDialogue playback error', error);
+      bridge.log.error('Dialogue playback error', {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+      });
       speechLoop.stop();
       spriteRenderer.stop();
       spriteRenderer.startIdleAfterDelay(2000);
@@ -630,15 +636,15 @@ function startApp() {
   }
 
   document.getElementById('btn-minimize')?.addEventListener('click', () => {
-    ipcRenderer.send('window-minimize');
+    bridge.windowControls.minimize();
   });
 
   document.getElementById('btn-maximize')?.addEventListener('click', () => {
-    ipcRenderer.send('window-maximize');
+    bridge.windowControls.maximize();
   });
 
   document.getElementById('btn-close')?.addEventListener('click', () => {
-    ipcRenderer.send('window-close');
+    bridge.windowControls.close();
   });
 
   document.addEventListener('click', (event) => {
@@ -854,14 +860,14 @@ function startApp() {
     });
   });
 
-  ipcRenderer.on('window-maximized', () => {
+  bridge.windowControls.onMaximized(() => {
     document.body.classList.add('maximized');
     if (state.activePanel === 'settings' && !state.panelTransitionLock) {
       void showPanel('controls');
     }
   });
 
-  ipcRenderer.on('window-unmaximized', () => {
+  bridge.windowControls.onUnmaximized(() => {
     document.body.classList.remove('maximized');
     if (state.activePanel === 'settings' && !state.panelTransitionLock) {
       void showPanel('controls');
@@ -892,6 +898,11 @@ function startApp() {
 
   void view.runStartupSequence();
 
+  bridge.log.info('Renderer started', {
+    version: model.env.appVersion,
+    characters: characters.length,
+    genericSounds: genericSounds.length,
+  });
   console.log(`[Dialoggo] v${model.env.appVersion} - ${characters.length} characters, ${genericSounds.length} generic sounds`);
 }
 

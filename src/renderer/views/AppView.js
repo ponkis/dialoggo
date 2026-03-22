@@ -55,23 +55,40 @@ function createAppView(model, audioService) {
   let n64DialogueTextSmall = null;
   let n64TextResizeRaf = 0;
 
+  const MAX_SPRITE_IMAGE_CACHE_ENTRIES = 120;
   const spriteImageCache = new Map();
   const cardAnimState = new Map();
 
+  function rememberSpriteImage(filePath, image) {
+    if (spriteImageCache.has(filePath)) {
+      spriteImageCache.delete(filePath);
+    }
+
+    spriteImageCache.set(filePath, image);
+
+    while (spriteImageCache.size > MAX_SPRITE_IMAGE_CACHE_ENTRIES) {
+      const oldestKey = spriteImageCache.keys().next().value;
+      if (!oldestKey) break;
+      spriteImageCache.delete(oldestKey);
+    }
+  }
+
   function fileToSrc(filePath) {
-    return `file://${filePath.replace(/\\/g, '/')}`;
+    return env.fs.toFileUrl(filePath);
   }
 
   function loadSpriteImage(filePath) {
     return new Promise((resolve, reject) => {
       if (spriteImageCache.has(filePath)) {
-        resolve(spriteImageCache.get(filePath));
+        const cachedImage = spriteImageCache.get(filePath);
+        rememberSpriteImage(filePath, cachedImage);
+        resolve(cachedImage);
         return;
       }
 
       const image = new Image();
       image.onload = () => {
-        spriteImageCache.set(filePath, image);
+        rememberSpriteImage(filePath, image);
         resolve(image);
       };
       image.onerror = reject;
@@ -89,7 +106,7 @@ function createAppView(model, audioService) {
       }).forEach((entry) => {
         const fullPath = env.path.join(directory, entry.name);
 
-        if (entry.isDirectory()) {
+        if (entry.isDirectory === true) {
           walk(fullPath);
           return;
         }
@@ -551,6 +568,10 @@ function createAppView(model, audioService) {
       outputCtx.drawImage(smallCanvas, 0, 0, width, height);
     } catch (error) {
       console.warn('[Dialoggo] N64 dialogue text canvas:', error);
+      env.log?.warn('N64 dialogue text canvas warning', {
+        name: error?.name,
+        message: error?.message,
+      });
     }
   }
 
@@ -1007,6 +1028,10 @@ function createAppView(model, audioService) {
       await prewarmStartupAssets();
     } catch (error) {
       console.warn('[Dialoggo] startup prewarm failed', error);
+      env.log?.warn('Startup prewarm failed', {
+        name: error?.name,
+        message: error?.message,
+      });
     } finally {
       stopStartupLoadingAnim();
       document.body.classList.remove('startup-loading');
@@ -1020,6 +1045,10 @@ function createAppView(model, audioService) {
         ]);
       } catch (error) {
         console.warn('[Dialoggo] startup intro failed', error);
+        env.log?.warn('Startup intro failed', {
+          name: error?.name,
+          message: error?.message,
+        });
       } finally {
         stopStartupRevealSound();
       }

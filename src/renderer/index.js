@@ -1,6 +1,9 @@
 const {
   startApp
 } = require('./controllers/AppController');
+const {
+  getDialoggoBridge,
+} = require('./runtime/getBridge');
 
 function normalizeError(error) {
   if (error instanceof Error) return error;
@@ -10,6 +13,13 @@ function normalizeError(error) {
 function renderFatalStartupError(rawError) {
   const error = normalizeError(rawError);
   console.error('[Dialoggo] fatal startup error', error);
+  try {
+    getDialoggoBridge().log.error('Renderer fatal startup error', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    });
+  } catch { }
 
   if (typeof document === 'undefined') return;
 

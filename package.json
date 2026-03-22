@@ -6,15 +6,22 @@
     "start": "electron .",
     "start:dist": "electron dist",
     "build": "node scripts/build-dist.js",
+    "audit:deps": "npm audit",
+    "audit:licenses": "node scripts/audit-licenses.js",
+    "licenses:summary": "license-checker --summary",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "description": "Banjo-Kazooie / Tooie dialogue generator",
   "devDependencies": {
     "electron": "^41.0.3",
+    "license-checker": "^25.0.1",
     "webpack": "^5.105.4",
     "webpack-obfuscator": "^3.6.0"
+  },
+  "dependencies": {
+    "electron-log": "^5.4.3"
   }
 }

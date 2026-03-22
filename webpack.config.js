@@ -21,7 +21,13 @@ const obfuscationOptions = {
   unicodeEscapeSequence: false,
 };
 
-function createConfig({ name, target, entry, outputPath, filename }) {
+function createConfig({
+  name,
+  target,
+  entry,
+  outputPath,
+  filename
+}) {
   return {
     name,
     mode: 'production',
@@ -58,6 +64,13 @@ module.exports = [
     entry: 'src/main/index.js',
     outputPath: 'dist/main',
     filename: 'index.js',
+  }),
+  createConfig({
+    name: 'preload',
+    target: 'electron-preload',
+    entry: 'src/main/preload.js',
+    outputPath: 'dist/main',
+    filename: 'preload.js',
   }),
   createConfig({
     name: 'renderer',

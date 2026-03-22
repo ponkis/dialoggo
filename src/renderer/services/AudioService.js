@@ -4,8 +4,12 @@ function createAudioService(model) {
     state,
     constants
   } = model;
+  const MAX_AUDIO_CACHE_ENTRIES = 18;
+  const MAX_AUDIO_FILE_BYTES = 8 * 1024 * 1024;
   const audioBufferCache = new Map();
   let audioCtx = null;
+  let audioUnlockBound = false;
+  let audioResumePromise = null;
 
   const menuSoundPaths = {
     click: env.path.join(env.sndDir, 'gui', '1.wav'),
@@ -17,20 +21,82 @@ function createAudioService(model) {
     settingsClose: env.path.join(env.sndDir, 'gui', '4.wav'),
   };
 
+  function getAudioContextClass() {
+    return window.AudioContext || window.webkitAudioContext || null;
+  }
+
   function getAudioContext() {
-    if (!audioCtx) audioCtx = new AudioContext();
+    if (!audioCtx) {
+      const AudioContextClass = getAudioContextClass();
+      if (!AudioContextClass) {
+        throw new Error('Web Audio API is not available in this Electron runtime.');
+      }
+
+      audioCtx = new AudioContextClass();
+    }
+
     return audioCtx;
   }
 
-  async function loadAudioBuffer(filePath) {
-    if (audioBufferCache.has(filePath)) return audioBufferCache.get(filePath);
-
+  async function ensureAudioContextRunning() {
     const ctx = getAudioContext();
-    const data = env.fs.readFileSync(filePath);
-    const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
-    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+    if (ctx.state === 'running') return ctx;
+    if (audioResumePromise) return audioResumePromise;
+
+    audioResumePromise = ctx.resume()
+      .catch(() => ctx)
+      .then(() => {
+        audioResumePromise = null;
+        return ctx;
+      });
+
+    return audioResumePromise;
+  }
+
+  function bindAudioUnlockListeners() {
+    if (audioUnlockBound || typeof window === 'undefined') return;
+
+    audioUnlockBound = true;
+    const unlock = () => {
+      void ensureAudioContextRunning();
+    };
+
+    ['pointerdown', 'keydown', 'touchstart'].forEach((eventName) => {
+      window.addEventListener(eventName, unlock, {
+        once: true,
+        passive: true,
+      });
+    });
+  }
+
+  function rememberAudioBuffer(filePath, audioBuffer) {
+    if (audioBufferCache.has(filePath)) {
+      audioBufferCache.delete(filePath);
+    }
 
     audioBufferCache.set(filePath, audioBuffer);
+
+    while (audioBufferCache.size > MAX_AUDIO_CACHE_ENTRIES) {
+      const oldestKey = audioBufferCache.keys().next().value;
+      if (!oldestKey) break;
+      audioBufferCache.delete(oldestKey);
+    }
+  }
+
+  async function loadAudioBuffer(filePath) {
+    if (audioBufferCache.has(filePath)) {
+      const cachedBuffer = audioBufferCache.get(filePath);
+      rememberAudioBuffer(filePath, cachedBuffer);
+      return cachedBuffer;
+    }
+
+    const ctx = getAudioContext();
+    const arrayBuffer = env.fs.readBinaryFile(filePath, {
+      maxBytes: MAX_AUDIO_FILE_BYTES,
+    });
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+
+    rememberAudioBuffer(filePath, audioBuffer);
     return audioBuffer;
   }
 
@@ -45,6 +111,10 @@ function createAudioService(model) {
     } = options;
 
     const ctx = getAudioContext();
+    if (ctx.state !== 'running') {
+      void ensureAudioContextRunning();
+    }
+
     const source = ctx.createBufferSource();
     source.buffer = audioBuffer;
     source.playbackRate.value = playbackRate;
@@ -116,6 +186,8 @@ function createAudioService(model) {
       }))
       .catch(() => { });
   }
+
+  bindAudioUnlockListeners();
 
   class SpeechSoundLoop {
     constructor(spriteRenderer) {

@@ -2,7 +2,12 @@ const {
   BrowserWindow,
   shell
 } = require('electron');
-const { resolveAppPaths } = require('../paths/resolveAppPaths');
+const {
+  resolveAppPaths
+} = require('../paths/resolveAppPaths');
+const {
+  sanitizeExternalUrl
+} = require('../security/safeExternalUrl');
 
 function createMainWindow() {
   const paths = resolveAppPaths();
@@ -15,8 +20,10 @@ function createMainWindow() {
     backgroundColor: '#0a0c16',
     icon: paths.iconPath,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      preload: paths.preloadPath,
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: false,
     },
     frame: false,
     resizable: false,
@@ -29,10 +36,19 @@ function createMainWindow() {
   window.webContents.setWindowOpenHandler(({
     url
   }) => {
-    shell.openExternal(url);
+    const safeUrl = sanitizeExternalUrl(url);
+    if (safeUrl) shell.openExternal(safeUrl);
     return {
       action: 'deny'
     };
+  });
+
+  window.webContents.on('will-navigate', (event, url) => {
+    if (url === window.webContents.getURL()) return;
+
+    event.preventDefault();
+    const safeUrl = sanitizeExternalUrl(url);
+    if (safeUrl) shell.openExternal(safeUrl);
   });
 
   window.once('ready-to-show', () => {

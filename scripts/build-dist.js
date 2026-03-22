@@ -31,7 +31,9 @@ function copyRecursiveSafe(sourcePath, destinationPath) {
   }
 
   if (stats.isDirectory()) {
-    fs.mkdirSync(destinationPath, { recursive: true });
+    fs.mkdirSync(destinationPath, {
+      recursive: true
+    });
 
     let entries = [];
     try {
@@ -53,7 +55,9 @@ function copyRecursiveSafe(sourcePath, destinationPath) {
     return;
   }
 
-  fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
+  fs.mkdirSync(path.dirname(destinationPath), {
+    recursive: true
+  });
 
   try {
     fs.copyFileSync(sourcePath, destinationPath);
@@ -127,8 +131,13 @@ function runWebpackBuild() {
 
 async function buildDist() {
   log('Cleaning dist directory');
-  fs.rmSync(distDir, { recursive: true, force: true });
-  fs.mkdirSync(distDir, { recursive: true });
+  fs.rmSync(distDir, {
+    recursive: true,
+    force: true
+  });
+  fs.mkdirSync(distDir, {
+    recursive: true
+  });
 
   log('Copying public assets');
   copyRecursiveSafe(publicDir, path.join(distDir, 'public'));
@@ -140,6 +149,7 @@ async function buildDist() {
   writeDistPackageJson();
   copyOptionalFile('README.md');
   copyOptionalFile('LICENSE');
+  copyOptionalFile('NOTICE.md');
 
   log('Build complete');
 }
