@@ -691,8 +691,7 @@ img {
   white-space: pre;
 }
 
-.dialogue-char-emphasis {
-}
+.dialogue-char-emphasis {}
 
 .dialogue-char-shake {
   animation: dialogue-char-shake var(--dialogue-char-shake-duration, 280ms) steps(1, end) infinite;
@@ -1207,7 +1206,7 @@ img {
 }
 
 .menu-volume-knob-host {
-  --menu-knob-size: 36px;
+  --menu-knob-size: 30px;
   --menu-knob-hit-size: 30px;
   --menu-knob-hit-offset: 3px;
   --menu-knob-dial-width: 15px;
@@ -1774,6 +1773,32 @@ img {
   display: none;
 }
 
+.text-input-wrapper.is-locked .text-input-highlight {
+  background: linear-gradient(180deg, #1f1f1f 0%, #171717 100%);
+  border-color: #3a3a3a;
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  filter: grayscale(0.4) saturate(0.22) brightness(0.84);
+  opacity: 0.88;
+}
+
+.text-input-wrapper.is-locked .text-input-plain {
+  color: #8f8f8f;
+}
+
+.text-input-wrapper.is-locked .text-input-emphasis {
+  color: #8fa4b5;
+  text-shadow:
+    0.38px 0 0 rgba(143, 164, 181, 0.88),
+    -0.38px 0 0 rgba(143, 164, 181, 0.88),
+    0 0 0.7px rgba(143, 164, 181, 0.28);
+}
+
+.text-input-wrapper.is-locked .text-input-modifier {
+  color: rgba(143, 164, 181, 0.34);
+}
+
 .text-input {
   position: relative;
   z-index: 1;
@@ -1863,6 +1888,12 @@ img {
 
 .text-input[readonly] {
   cursor: not-allowed;
+}
+
+.text-input-wrapper.is-locked .text-input-counter {
+  color: rgba(171, 171, 171, 0.56);
+  border-color: rgba(78, 78, 78, 0.34);
+  background: rgba(10, 10, 10, 0.54);
 }
 
 .text-input.is-locked {
@@ -2761,7 +2792,7 @@ img {
 }
 
 .settings-panel.settings-layout-maximized .setting-row--menu-volume .menu-volume-knob-host {
-  --menu-knob-size: 52px;
+  --menu-knob-size: 49px;
   --menu-knob-hit-size: 39px;
   --menu-knob-hit-offset: 2px;
   --menu-knob-dial-width: 20px;

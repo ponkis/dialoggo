@@ -667,6 +667,7 @@ function createAppView(model, audioService) {
   function setInputLocked(locked) {
     refs.input.readOnly = locked;
     refs.input.classList.toggle('is-locked', locked);
+    refs.input.parentElement?.classList.toggle('is-locked', locked);
   }
 
   function escapeHtml(value) {
