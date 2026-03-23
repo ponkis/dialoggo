@@ -41,6 +41,13 @@ function startApp() {
     if (refs.inputN64) state.n64ModeEnabled = refs.inputN64.checked;
   }
 
+  function blurPlaybackButtonFocus() {
+    const activeElement = document.activeElement;
+    if (!(activeElement instanceof HTMLElement)) return;
+    if (!activeElement.matches('#btn-play, #btn-pause, #btn-stop, #btn-fastforward')) return;
+    activeElement.blur();
+  }
+
   function updatePlayButton() {
     const hasText = refs.input.value.trim().length > 0;
     const hasCharacter = state.selectedCharacter !== null;
@@ -169,6 +176,7 @@ function startApp() {
     view.setActionButtonBlocked(refs.btnPause, false);
     view.setActionButtonBlocked(refs.btnStop, false);
     view.setInputLocked(true);
+    blurPlaybackButtonFocus();
     document.querySelectorAll('.char-btn').forEach((button) => {
       button.disabled = true;
     });
@@ -723,15 +731,16 @@ function startApp() {
   window.addEventListener('keydown', (event) => {
     if (event.code !== 'Space' || event.repeat || !canFastForward()) return;
     event.preventDefault();
+    blurPlaybackButtonFocus();
     state.fastForwardKeyHeld = true;
     syncFastForwardState();
-  });
+  }, true);
 
   window.addEventListener('keyup', (event) => {
     if (event.code !== 'Space') return;
     state.fastForwardKeyHeld = false;
     syncFastForwardState();
-  });
+  }, true);
 
   window.addEventListener('blur', () => {
     resetFastForwardState();

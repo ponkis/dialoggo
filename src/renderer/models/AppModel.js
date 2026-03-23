@@ -59,39 +59,53 @@ function isDirectoryEntry(entry) {
   return !!entry && (entry.isDirectory === true || typeof entry.isDirectory === 'function' && entry.isDirectory());
 }
 
-function discoverCharacters(env) {
-  const characters = [];
-  if (!env.fs.existsSync(env.charImgDir)) return characters;
+function listCharacterDirectoryNames(env, rootDir) {
+  if (!env.fs.existsSync(rootDir)) return [];
 
-  const dirs = env.fs.readdirSync(env.charImgDir, {
-    withFileTypes: true
+  return env.fs.readdirSync(rootDir, {
+    withFileTypes: true,
   })
     .filter((entry) => isDirectoryEntry(entry))
     .map((entry) => entry.name);
+}
 
-  for (const name of dirs) {
+function discoverCharacters(env) {
+  const characters = [];
+  const names = new Set([
+    ...listCharacterDirectoryNames(env, env.charImgDir),
+    ...listCharacterDirectoryNames(env, env.charSndDir),
+  ]);
+
+  if (names.size === 0) return characters;
+
+  for (const name of names) {
     const imgDir = env.path.join(env.charImgDir, name);
     const sndDir = env.path.join(env.charSndDir, name);
+    const hasImgDirectory = env.fs.existsSync(imgDir);
+    const hasSoundDirectory = env.fs.existsSync(sndDir);
 
-    if (!env.fs.existsSync(imgDir) || !env.fs.existsSync(sndDir)) continue;
+    if (!hasImgDirectory && !hasSoundDirectory) continue;
 
     const speakFrames = [];
     const idleFrames = [];
+    const displaySpritePath = env.path.join(imgDir, 'i1.png');
 
-    for (let i = 1; i <= SPEAK_FRAME_COUNT; i += 1) {
-      const spritePath = env.path.join(imgDir, `s${i}.png`);
-      if (env.fs.existsSync(spritePath)) speakFrames.push(spritePath);
-    }
+    if (hasImgDirectory) {
+      for (let i = 1; i <= SPEAK_FRAME_COUNT; i += 1) {
+        const spritePath = env.path.join(imgDir, `s${i}.png`);
+        if (env.fs.existsSync(spritePath)) speakFrames.push(spritePath);
+      }
 
-    for (let i = 1; i <= IDLE_FRAME_COUNT; i += 1) {
-      const spritePath = env.path.join(imgDir, `i${i}.png`);
-      if (env.fs.existsSync(spritePath)) idleFrames.push(spritePath);
+      for (let i = 1; i <= IDLE_FRAME_COUNT; i += 1) {
+        const spritePath = env.path.join(imgDir, `i${i}.png`);
+        if (env.fs.existsSync(spritePath)) idleFrames.push(spritePath);
+      }
     }
 
     const soundFiles = [];
     let soundConfig = {};
 
-    if (env.fs.existsSync(sndDir)) {
+    if (hasSoundDirectory) {
       const files = env.fs.readdirSync(sndDir).filter((file) => /\.(wav|mp3|ogg)$/i.test(file));
       files.forEach((file) => {
         soundFiles.push(env.path.join(sndDir, file));
@@ -114,12 +128,14 @@ function discoverCharacters(env) {
     const parsedBasePitchTones = Number(soundConfig?.pitch);
     const hasAllSprites = speakFrames.length === SPEAK_FRAME_COUNT && idleFrames.length === IDLE_FRAME_COUNT;
     const hasAnySound = soundFiles.length > 0;
+    const hasDisplaySprite = hasImgDirectory && env.fs.existsSync(displaySpritePath);
 
     characters.push({
       id: name,
       displayName: name.charAt(0).toUpperCase() + name.slice(1),
       speakFrames,
       idleFrames,
+      previewSpritePath: hasDisplaySprite ? displaySpritePath : null,
       sounds: soundFiles,
       hasVariablePitch: soundConfig?.hasVariablePitch === true || soundConfig?.hasSingleClip === true,
       basePitchTones: Number.isFinite(parsedBasePitchTones) ? parsedBasePitchTones : 0,
@@ -127,6 +143,8 @@ function discoverCharacters(env) {
       isAvailable: hasAllSprites && hasAnySound,
       hasAllSprites,
       hasAnySound,
+      hasImgDirectory,
+      hasSoundDirectory,
     });
   }
 

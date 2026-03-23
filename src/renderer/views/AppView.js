@@ -1082,7 +1082,7 @@ function createAppView(model, audioService) {
       spriteWrap.className = 'char-btn-sprite';
 
       const spriteImage = document.createElement('img');
-      const previewPath = character.idleFrames[0] || character.speakFrames[0] || null;
+      const previewPath = character.previewSpritePath || null;
       if (previewPath) {
         spriteImage.src = fileToSrc(previewPath);
       } else {
@@ -1110,8 +1110,8 @@ function createAppView(model, audioService) {
           badge.src = fileToSrc(warningPath);
           badge.alt = 'Unavailable';
           badge.title = (!character.hasAllSprites && !character.hasAnySound) ?
-            'Missing sprite frames and no sounds' :
-            (!character.hasAllSprites ? 'Missing sprite frames' : 'No sounds found');
+            'Missing sprite frames and no usable sounds' :
+            (!character.hasAllSprites ? 'Missing sprite frames' : 'No usable sounds found');
           button.appendChild(badge);
         }
       }
