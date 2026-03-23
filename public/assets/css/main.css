@@ -695,9 +695,10 @@ img {
 }
 
 .dialogue-char-shake {
-  animation: dialogue-char-shake var(--dialogue-char-shake-duration, 380ms) infinite;
+  animation: dialogue-char-shake var(--dialogue-char-shake-duration, 280ms) steps(1, end) infinite;
   animation-delay: var(--dialogue-char-shake-delay, 0ms);
   transform-origin: 50% 70%;
+  will-change: transform;
 }
 
 @keyframes dialogue-char-shake {
@@ -705,32 +706,36 @@ img {
     transform: translate(0, 0) rotate(0deg);
   }
 
-  12% {
-    transform: translate(-2.6px, -2px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -1.05));
+  11% {
+    transform: translate(-3.1px, -2.3px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -1.1));
   }
 
-  24% {
-    transform: translate(3px, 1.4px) rotate(var(--dialogue-char-shake-rotate, 0deg));
+  22% {
+    transform: translate(3.8px, 1.8px) rotate(var(--dialogue-char-shake-rotate, 0deg));
   }
 
-  36% {
-    transform: translate(-2px, 2.5px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.75));
+  33% {
+    transform: translate(-2.4px, 3.4px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.8));
   }
 
-  48% {
-    transform: translate(2.4px, -1.9px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.92));
+  44% {
+    transform: translate(3.1px, -2.8px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.95));
   }
 
-  60% {
-    transform: translate(-2.8px, 1.2px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.88));
+  55% {
+    transform: translate(-3.6px, 1.5px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -1));
   }
 
-  72% {
-    transform: translate(1.9px, 2.7px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.68));
+  66% {
+    transform: translate(2.1px, 3.7px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.72));
   }
 
-  84% {
-    transform: translate(2.2px, -2.4px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.55));
+  77% {
+    transform: translate(3.3px, -3.2px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.58));
+  }
+
+  88% {
+    transform: translate(-2.5px, -1.5px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.86));
   }
 
   100% {

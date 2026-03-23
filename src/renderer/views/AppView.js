@@ -60,6 +60,22 @@ function createAppView(model, audioService) {
   const MAX_SPRITE_IMAGE_CACHE_ENTRIES = 120;
   const spriteImageCache = new Map();
   const cardAnimState = new Map();
+  const dialogueShakeSamples = [
+    { x: 0, y: 0 },
+    { x: -3.1, y: -2.3 },
+    { x: 3.8, y: 1.8 },
+    { x: -2.4, y: 3.4 },
+    { x: 3.1, y: -2.8 },
+    { x: -3.6, y: 1.5 },
+    { x: 2.1, y: 3.7 },
+    { x: 3.3, y: -3.2 },
+    { x: -2.5, y: -1.5 },
+  ];
+
+  function getDialogueShakeSample(elapsed, index) {
+    const sampleIndex = Math.floor((elapsed + (index * 37)) / 42) % dialogueShakeSamples.length;
+    return dialogueShakeSamples[sampleIndex < 0 ? sampleIndex + dialogueShakeSamples.length : sampleIndex];
+  }
 
   function rememberSpriteImage(filePath, image) {
     if (spriteImageCache.has(filePath)) {
@@ -577,9 +593,9 @@ function createAppView(model, audioService) {
         characterElements.forEach((characterElement, index) => {
           const characterText = characterElement.textContent || '';
           const emphasized = characterElement.classList.contains('dialogue-char-emphasis');
-          const phase = elapsed / (64 + ((index % 5) * 10));
-          const shakeX = emphasized ? Math.sin(phase + index) * 2.35 : 0;
-          const shakeY = emphasized ? Math.cos((phase * 1.21) + index) * 2.8 : 0;
+          const shakeSample = emphasized ? getDialogueShakeSample(elapsed, index) : null;
+          const shakeX = shakeSample ? shakeSample.x : 0;
+          const shakeY = shakeSample ? shakeSample.y : 0;
 
           hiCtx.fillStyle = '#ffffff';
           hiCtx.fillText(characterText, x + shakeX, y + shakeY);
@@ -663,9 +679,9 @@ function createAppView(model, audioService) {
 
     if (character.emphasis && /\S/.test(character.value)) {
       characterSpan.classList.add('dialogue-char-emphasis', 'dialogue-char-shake');
-      characterSpan.style.setProperty('--dialogue-char-shake-duration', `${360 + ((index % 5) * 35)}ms`);
-      characterSpan.style.setProperty('--dialogue-char-shake-delay', `${-170 - ((index % 7) * 120)}ms`);
-      characterSpan.style.setProperty('--dialogue-char-shake-rotate', `${((index % 3) - 1) * 3.5}deg`);
+      characterSpan.style.setProperty('--dialogue-char-shake-duration', `${270 + ((index % 5) * 22)}ms`);
+      characterSpan.style.setProperty('--dialogue-char-shake-delay', `${-180 - ((index % 7) * 85)}ms`);
+      characterSpan.style.setProperty('--dialogue-char-shake-rotate', `${((index % 3) - 1) * 5}deg`);
     }
 
     return characterSpan;
