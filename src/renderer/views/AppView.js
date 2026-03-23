@@ -702,33 +702,43 @@ function createAppView(model, audioService) {
 
   function buildDialogueInputHighlightMarkup(value) {
     const source = String(value || '');
-    let markup = '';
+    const segments = [];
     let emphasis = false;
     const pairedMarkerStarts = model.getPairedDialogueMarkerStarts(source);
+    let runStart = 0;
+
+    function pushRun(endIndex) {
+      if (endIndex <= runStart) return;
+      const className = emphasis ? 'text-input-emphasis' : 'text-input-plain';
+      segments.push(`<span class="${className}">${escapeHtml(source.slice(runStart, endIndex))}</span>`);
+    }
 
     for (let index = 0; index < source.length; index += 1) {
       if (source.startsWith('**', index) && pairedMarkerStarts.has(index)) {
-        markup += '<span class="text-input-modifier">**</span>';
+        pushRun(index);
+        segments.push('<span class="text-input-modifier">**</span>');
         emphasis = !emphasis;
+        runStart = index + 2;
         index += 1;
         continue;
       }
 
       if (source.startsWith('**', index)) {
-        markup += `<span class="text-input-plain">${escapeHtml(source.slice(index, index + 2))}</span>`;
+        pushRun(index);
+        segments.push(`<span class="text-input-plain">${escapeHtml(source.slice(index, index + 2))}</span>`);
+        runStart = index + 2;
         index += 1;
         continue;
       }
-
-      const className = emphasis ? 'text-input-emphasis' : 'text-input-plain';
-      markup += `<span class="${className}">${escapeHtml(source[index])}</span>`;
     }
 
-    if (markup.length === 0) {
+    pushRun(source.length);
+
+    if (segments.length === 0) {
       return '<span class="text-input-trailing-space">&#8203;</span>';
     }
 
-    return `${markup}<span class="text-input-trailing-space">&#8203;</span>`;
+    return `${segments.join('')}<span class="text-input-trailing-space">&#8203;</span>`;
   }
 
   function syncDialogueInputHighlightScroll() {
@@ -737,11 +747,30 @@ function createAppView(model, audioService) {
     refs.dialogueInputHighlight.scrollLeft = refs.input.scrollLeft;
   }
 
+  function syncDialogueInputHighlightMetrics() {
+    if (!refs.dialogueInputHighlight || !refs.input) return;
+
+    const computed = window.getComputedStyle(refs.input);
+    const borderLeft = parseFloat(computed.borderLeftWidth) || 0;
+    const borderRight = parseFloat(computed.borderRightWidth) || 0;
+    const basePaddingRight = parseFloat(computed.paddingRight) || 0;
+    const scrollbarWidth = Math.max(0, refs.input.offsetWidth - refs.input.clientWidth - borderLeft - borderRight);
+
+    refs.dialogueInputHighlight.style.paddingTop = computed.paddingTop;
+    refs.dialogueInputHighlight.style.paddingRight = `${basePaddingRight + scrollbarWidth}px`;
+    refs.dialogueInputHighlight.style.paddingBottom = computed.paddingBottom;
+    refs.dialogueInputHighlight.style.paddingLeft = computed.paddingLeft;
+    refs.dialogueInputHighlight.style.font = computed.font;
+    refs.dialogueInputHighlight.style.lineHeight = computed.lineHeight;
+    refs.dialogueInputHighlight.style.letterSpacing = computed.letterSpacing;
+  }
+
   function syncDialogueInputHighlight() {
     if (!refs.dialogueInputHighlight || !refs.input) return;
 
     const hasValue = refs.input.value.length > 0;
     refs.input.parentElement?.classList.toggle('has-value', hasValue);
+    syncDialogueInputHighlightMetrics();
     refs.dialogueInputHighlight.innerHTML = buildDialogueInputHighlightMarkup(refs.input.value);
     syncDialogueInputHighlightScroll();
   }
@@ -1427,6 +1456,8 @@ function createAppView(model, audioService) {
 
   refs.versionLabel.textContent = `v${env.appVersion}`;
   refs.charCount.textContent = `${characters.length} chars`;
+  window.addEventListener('resize', syncDialogueInputHighlight);
+  syncDialogueInputHighlightMetrics();
   startPlaceholderAnim();
 
   return {
@@ -1445,6 +1476,7 @@ function createAppView(model, audioService) {
     appendDialogueCharacter,
     normalizeDialogueInput,
     syncDialogueInputHighlight,
+    syncDialogueInputHighlightMetrics,
     syncDialogueInputHighlightScroll,
     syncDialogueInputCounter,
     syncCharacterSearchClearButton,

@@ -1754,6 +1754,9 @@ img {
   line-height: 1.4;
   letter-spacing: normal;
   tab-size: 4;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overflow-wrap: break-word;
 }
 
 .text-input-highlight {
@@ -1761,11 +1764,9 @@ img {
   inset: 0;
   z-index: 0;
   margin: 0;
-  overflow: auto;
   pointer-events: none;
   white-space: pre-wrap;
-  overflow-wrap: break-word;
-  word-break: break-word;
+  word-break: normal;
   color: var(--text-primary);
   background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
   border: 2px solid #2a2a2a;
@@ -1819,6 +1820,7 @@ img {
   box-shadow: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.16s ease;
   caret-color: var(--text-primary);
+  scrollbar-gutter: stable;
 }
 
 .text-input-wrapper.has-value .text-input {
