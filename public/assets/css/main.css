@@ -695,7 +695,7 @@ img {
 }
 
 .dialogue-char-shake {
-  animation: dialogue-char-shake var(--dialogue-char-shake-duration, 620ms) steps(2, end) infinite;
+  animation: dialogue-char-shake var(--dialogue-char-shake-duration, 380ms) infinite;
   animation-delay: var(--dialogue-char-shake-delay, 0ms);
   transform-origin: 50% 70%;
 }
@@ -705,20 +705,32 @@ img {
     transform: translate(0, 0) rotate(0deg);
   }
 
-  20% {
-    transform: translate(-1.4px, -1.7px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -1));
+  12% {
+    transform: translate(-2.6px, -2px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -1.05));
   }
 
-  40% {
-    transform: translate(1.8px, 1px) rotate(var(--dialogue-char-shake-rotate, 0deg));
+  24% {
+    transform: translate(3px, 1.4px) rotate(var(--dialogue-char-shake-rotate, 0deg));
+  }
+
+  36% {
+    transform: translate(-2px, 2.5px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.75));
+  }
+
+  48% {
+    transform: translate(2.4px, -1.9px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.92));
   }
 
   60% {
-    transform: translate(-1.1px, 1.6px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.7));
+    transform: translate(-2.8px, 1.2px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.88));
   }
 
-  80% {
-    transform: translate(1.25px, -1.35px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.85));
+  72% {
+    transform: translate(1.9px, 2.7px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.68));
+  }
+
+  84% {
+    transform: translate(2.2px, -2.4px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.55));
   }
 
   100% {

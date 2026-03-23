@@ -577,9 +577,9 @@ function createAppView(model, audioService) {
         characterElements.forEach((characterElement, index) => {
           const characterText = characterElement.textContent || '';
           const emphasized = characterElement.classList.contains('dialogue-char-emphasis');
-          const phase = elapsed / (92 + ((index % 5) * 14));
-          const shakeX = emphasized ? Math.sin(phase + index) * 1.45 : 0;
-          const shakeY = emphasized ? Math.cos((phase * 1.17) + index) * 1.8 : 0;
+          const phase = elapsed / (64 + ((index % 5) * 10));
+          const shakeX = emphasized ? Math.sin(phase + index) * 2.35 : 0;
+          const shakeY = emphasized ? Math.cos((phase * 1.21) + index) * 2.8 : 0;
 
           hiCtx.fillStyle = '#ffffff';
           hiCtx.fillText(characterText, x + shakeX, y + shakeY);
@@ -659,13 +659,13 @@ function createAppView(model, audioService) {
   function createDialogueCharacterElement(character, index) {
     const characterSpan = document.createElement('span');
     characterSpan.className = 'dialogue-char';
-    characterSpan.textContent = character.value === ' ' ? '\u00A0' : character.value;
+    characterSpan.textContent = character.value;
 
-    if (character.emphasis) {
+    if (character.emphasis && /\S/.test(character.value)) {
       characterSpan.classList.add('dialogue-char-emphasis', 'dialogue-char-shake');
-      characterSpan.style.setProperty('--dialogue-char-shake-duration', `${560 + ((index % 5) * 55)}ms`);
-      characterSpan.style.setProperty('--dialogue-char-shake-delay', `${-140 - ((index % 7) * 110)}ms`);
-      characterSpan.style.setProperty('--dialogue-char-shake-rotate', `${((index % 3) - 1) * 2.4}deg`);
+      characterSpan.style.setProperty('--dialogue-char-shake-duration', `${360 + ((index % 5) * 35)}ms`);
+      characterSpan.style.setProperty('--dialogue-char-shake-delay', `${-170 - ((index % 7) * 120)}ms`);
+      characterSpan.style.setProperty('--dialogue-char-shake-rotate', `${((index % 3) - 1) * 3.5}deg`);
     }
 
     return characterSpan;
