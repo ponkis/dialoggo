@@ -577,11 +577,11 @@ function createAppView(model, audioService) {
         characterElements.forEach((characterElement, index) => {
           const characterText = characterElement.textContent || '';
           const emphasized = characterElement.classList.contains('dialogue-char-emphasis');
-          const phase = elapsed / (125 + ((index % 5) * 18));
-          const shakeX = emphasized ? Math.sin(phase + index) * 0.6 : 0;
-          const shakeY = emphasized ? Math.cos((phase * 1.17) + index) * 0.8 : 0;
+          const phase = elapsed / (92 + ((index % 5) * 14));
+          const shakeX = emphasized ? Math.sin(phase + index) * 1.45 : 0;
+          const shakeY = emphasized ? Math.cos((phase * 1.17) + index) * 1.8 : 0;
 
-          hiCtx.fillStyle = emphasized ? '#9fd8ff' : '#ffffff';
+          hiCtx.fillStyle = '#ffffff';
           hiCtx.fillText(characterText, x + shakeX, y + shakeY);
           x += hiCtx.measureText(characterText).width + letterSpacing;
         });
@@ -656,28 +656,24 @@ function createAppView(model, audioService) {
       .replace(/'/g, '&#39;');
   }
 
-  function renderDialogueLineCharacters(lineElement, characters, visibleCount = characters.length) {
+  function createDialogueCharacterElement(character, index) {
+    const characterSpan = document.createElement('span');
+    characterSpan.className = 'dialogue-char';
+    characterSpan.textContent = character.value === ' ' ? '\u00A0' : character.value;
+
+    if (character.emphasis) {
+      characterSpan.classList.add('dialogue-char-emphasis', 'dialogue-char-shake');
+      characterSpan.style.setProperty('--dialogue-char-shake-duration', `${560 + ((index % 5) * 55)}ms`);
+      characterSpan.style.setProperty('--dialogue-char-shake-delay', `${-140 - ((index % 7) * 110)}ms`);
+      characterSpan.style.setProperty('--dialogue-char-shake-rotate', `${((index % 3) - 1) * 2.4}deg`);
+    }
+
+    return characterSpan;
+  }
+
+  function appendDialogueCharacter(lineElement, character, index) {
     if (!lineElement) return;
-
-    const fragment = document.createDocumentFragment();
-    const visibleCharacters = characters.slice(0, visibleCount);
-
-    visibleCharacters.forEach((character, index) => {
-      const characterSpan = document.createElement('span');
-      characterSpan.className = 'dialogue-char';
-      characterSpan.textContent = character.value;
-
-      if (character.emphasis) {
-        characterSpan.classList.add('dialogue-char-emphasis', 'dialogue-char-shake');
-        characterSpan.style.setProperty('--dialogue-char-shake-duration', `${720 + ((index % 5) * 70)}ms`);
-        characterSpan.style.setProperty('--dialogue-char-shake-delay', `${-((index % 7) * 90)}ms`);
-        characterSpan.style.setProperty('--dialogue-char-shake-rotate', `${((index % 3) - 1) * 1.35}deg`);
-      }
-
-      fragment.appendChild(characterSpan);
-    });
-
-    lineElement.replaceChildren(fragment);
+    lineElement.appendChild(createDialogueCharacterElement(character, index));
     syncN64ShakeLoop();
   }
 
@@ -685,11 +681,18 @@ function createAppView(model, audioService) {
     const source = String(value || '');
     let markup = '';
     let emphasis = false;
+    const pairedMarkerStarts = model.getPairedDialogueMarkerStarts(source);
 
     for (let index = 0; index < source.length; index += 1) {
-      if (source.startsWith('**', index)) {
+      if (source.startsWith('**', index) && pairedMarkerStarts.has(index)) {
         markup += '<span class="text-input-modifier">**</span>';
         emphasis = !emphasis;
+        index += 1;
+        continue;
+      }
+
+      if (source.startsWith('**', index)) {
+        markup += `<span class="text-input-plain">${escapeHtml(source.slice(index, index + 2))}</span>`;
         index += 1;
         continue;
       }
@@ -1416,7 +1419,7 @@ function createAppView(model, audioService) {
     renderN64DialogueTextCanvas,
     n64RepaintDuringScrollTransition,
     setInputLocked,
-    renderDialogueLineCharacters,
+    appendDialogueCharacter,
     normalizeDialogueInput,
     syncDialogueInputHighlight,
     syncDialogueInputHighlightScroll,

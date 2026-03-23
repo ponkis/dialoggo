@@ -299,7 +299,7 @@ function startApp() {
           await waitWhilePaused();
           if (state.stopRequested) break;
 
-          view.renderDialogueLineCharacters(lineElement, line.characters, i + 1);
+          view.appendDialogueCharacter(lineElement, line.characters[i], i);
           if (state.n64ModeEnabled) view.renderN64DialogueTextCanvas();
 
           const currentChar = line.characters[i].value;

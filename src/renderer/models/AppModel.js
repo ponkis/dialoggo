@@ -199,13 +199,29 @@ function createLineFromCharacters(characters) {
   };
 }
 
+function getPairedDialogueMarkerStarts(text) {
+  const source = String(text || '');
+  const markerStarts = [];
+
+  for (let index = 0; index < source.length; index += 1) {
+    if (!source.startsWith(DIALOGUE_SHAKE_MARKER, index)) continue;
+    markerStarts.push(index);
+    index += DIALOGUE_SHAKE_MARKER.length - 1;
+  }
+
+  if (markerStarts.length < 2) return new Set();
+
+  return new Set(markerStarts.slice(0, markerStarts.length - (markerStarts.length % 2)));
+}
+
 function parseDialogueMarkup(text) {
   const source = String(text || '').toUpperCase();
   const characters = [];
   let emphasis = false;
+  const pairedMarkerStarts = getPairedDialogueMarkerStarts(source);
 
   for (let index = 0; index < source.length; index += 1) {
-    if (source.startsWith(DIALOGUE_SHAKE_MARKER, index)) {
+    if (source.startsWith(DIALOGUE_SHAKE_MARKER, index) && pairedMarkerStarts.has(index)) {
       emphasis = !emphasis;
       index += DIALOGUE_SHAKE_MARKER.length - 1;
       continue;
@@ -414,6 +430,7 @@ function createAppModel() {
     clampMenuSoundsVolumeLevel,
     clampDialogueInputValue,
     normalizeCharacterSearch,
+    getPairedDialogueMarkerStarts,
     parseDialogueMarkup,
     splitStyledTextIntoLines,
     splitTextIntoLines,

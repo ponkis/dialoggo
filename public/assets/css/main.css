@@ -688,15 +688,14 @@ img {
 
 .dialogue-char {
   display: inline-block;
+  white-space: pre;
 }
 
 .dialogue-char-emphasis {
-  color: #9fd8ff;
-  font-weight: 700;
 }
 
 .dialogue-char-shake {
-  animation: dialogue-char-shake var(--dialogue-char-shake-duration, 780ms) steps(2, end) infinite;
+  animation: dialogue-char-shake var(--dialogue-char-shake-duration, 620ms) steps(2, end) infinite;
   animation-delay: var(--dialogue-char-shake-delay, 0ms);
   transform-origin: 50% 70%;
 }
@@ -707,19 +706,19 @@ img {
   }
 
   20% {
-    transform: translate(-0.55px, -0.75px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -1));
+    transform: translate(-1.4px, -1.7px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -1));
   }
 
   40% {
-    transform: translate(0.7px, 0.45px) rotate(var(--dialogue-char-shake-rotate, 0deg));
+    transform: translate(1.8px, 1px) rotate(var(--dialogue-char-shake-rotate, 0deg));
   }
 
   60% {
-    transform: translate(-0.4px, 0.7px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.7));
+    transform: translate(-1.1px, 1.6px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.7));
   }
 
   80% {
-    transform: translate(0.5px, -0.5px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.85));
+    transform: translate(1.25px, -1.35px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.85));
   }
 
   100% {
@@ -1792,12 +1791,14 @@ img {
 
 .text-input-emphasis {
   color: #9fd8ff;
-  font-weight: 700;
+  text-shadow:
+    0.38px 0 0 currentColor,
+    -0.38px 0 0 currentColor,
+    0 0 0.7px rgba(159, 216, 255, 0.55);
 }
 
 .text-input-modifier {
   color: rgba(159, 216, 255, 0.38);
-  font-weight: 700;
 }
 
 .text-input-trailing-space {
