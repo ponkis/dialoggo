@@ -1105,6 +1105,13 @@ img {
   align-items: start;
 }
 
+.settings-category-block {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
 .settings-category {
   position: relative;
   padding: 12px 14px 14px;
@@ -1129,7 +1136,7 @@ img {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-bottom: 12px;
+  padding: 0 6px;
 }
 
 .settings-category-title {
@@ -2692,11 +2699,10 @@ img {
 }
 
 .settings-panel.settings-layout-maximized .settings-category {
-  flex: 0 0 var(--maximized-settings-card-width);
   display: flex;
   flex-direction: column;
-  width: var(--maximized-settings-card-width);
-  min-width: var(--maximized-settings-card-width);
+  width: 100%;
+  min-width: 0;
   min-height: 0;
   padding: 16px 16px 18px;
   gap: 14px;
@@ -2704,7 +2710,17 @@ img {
   align-content: start;
 }
 
-.settings-panel.settings-layout-maximized .settings-category:has(.settings-category-body .setting-row + .setting-row) {
+.settings-panel.settings-layout-maximized .settings-category-block {
+  flex: 0 0 var(--maximized-settings-card-width);
+  display: flex;
+  flex-direction: column;
+  width: var(--maximized-settings-card-width);
+  min-width: var(--maximized-settings-card-width);
+  min-height: 0;
+  gap: 8px;
+}
+
+.settings-panel.settings-layout-maximized .settings-category-block:has(.settings-category-body .setting-row + .setting-row) {
   flex-basis: calc((var(--maximized-settings-card-width) * 2) + 16px);
   width: calc((var(--maximized-settings-card-width) * 2) + 16px);
   min-width: calc((var(--maximized-settings-card-width) * 2) + 16px);
