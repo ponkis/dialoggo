@@ -74,7 +74,7 @@ function listCharacterDirectoryNames(env, rootDir) {
 
 function formatCharacterFolderName(folderName) {
   const sanitizedFolderName = String(folderName || '')
-    .replace(/-/g, '')
+    .replace(/-/g, ' ')
     .trim();
 
   if (!sanitizedFolderName) return '';
