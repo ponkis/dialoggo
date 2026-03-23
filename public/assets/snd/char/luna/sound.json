@@ -1,5 +1,5 @@
 {
   "hasVariablePitch": true,
-  "pitch": 10,
-  "canStretch": true
+  "pitch": 3.0,
+  "canStretch": false
 }
