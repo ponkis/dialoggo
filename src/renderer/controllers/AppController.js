@@ -505,7 +505,7 @@ function startApp() {
         }
 
         audioService.playMenuSound('settingsOpen');
-        refs.flipCard.classList.add('flipped');
+        view.setFlipCardPanel('settings');
         state.activePanel = 'settings';
       } else if (panel === 'backgrounds') {
         view.setActiveBackPanel('backgrounds');
@@ -532,7 +532,7 @@ function startApp() {
         }
 
         audioService.playMenuSound('settingsOpen');
-        refs.flipCard.classList.add('flipped');
+        view.setFlipCardPanel('backgrounds');
         state.activePanel = 'backgrounds';
       } else {
         if (large && !hasCollapsedPreviewFlow) {
@@ -546,7 +546,7 @@ function startApp() {
         }
 
         audioService.playMenuSound('settingsClose');
-        refs.flipCard.classList.remove('flipped');
+        view.setFlipCardPanel(null);
         refs.sleeveSettings.classList.remove('active');
         refs.sleeveBackgrounds.classList.remove('active');
         state.activePanel = 'controls';

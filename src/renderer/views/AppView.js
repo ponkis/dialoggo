@@ -1378,6 +1378,11 @@ function createAppView(model, audioService) {
     refs.backgroundsPanel?.setAttribute('aria-hidden', panel !== 'backgrounds' ? 'true' : 'false');
   }
 
+  function setFlipCardPanel(panel) {
+    refs.flipCard?.classList.toggle('panel-settings', panel === 'settings');
+    refs.flipCard?.classList.toggle('panel-backgrounds', panel === 'backgrounds');
+  }
+
   async function collapsePreviewThenSettings() {
     const height = Math.round(refs.previewArea.getBoundingClientRect().height);
     refs.previewArea.style.flex = '0 0 auto';
@@ -1456,7 +1461,7 @@ function createAppView(model, audioService) {
     if (state.activePanel === 'controls') return;
 
     refs.flipCard.style.transition = 'none';
-    refs.flipCard.classList.remove('flipped');
+    setFlipCardPanel(null);
     void refs.flipCard.offsetHeight;
     refs.flipCard.style.transition = '';
 
@@ -1523,6 +1528,7 @@ function createAppView(model, audioService) {
     computeExpandedPreviewHeight,
     setPreviewPlaceholderSuppressed,
     setActiveBackPanel,
+    setFlipCardPanel,
     collapsePreviewThenSettings,
     expandPreviewAfterControls,
     isLargeScreen,
