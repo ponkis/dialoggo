@@ -1,0 +1,8 @@
+{
+    "character":  {
+                      "name":  "Gobi"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
+}

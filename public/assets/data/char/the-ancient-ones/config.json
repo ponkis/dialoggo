@@ -1,0 +1,8 @@
+{
+    "character":  {
+                      "name":  "The Ancient Ones"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
+}

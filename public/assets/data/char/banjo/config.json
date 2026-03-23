@@ -1,0 +1,8 @@
+{
+    "character":  {
+                      "name":  "Banjo"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
+}

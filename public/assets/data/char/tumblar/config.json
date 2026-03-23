@@ -1,0 +1,8 @@
+{
+    "character":  {
+                      "name":  "Tumblar"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
+}

@@ -1,0 +1,10 @@
+{
+    "character":  {
+                      "name":  "Turbo Trainers"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true,
+                  "pitch":  -1,
+                  "canStretch":  false
+              }
+}

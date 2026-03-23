@@ -19,8 +19,10 @@ const appPaths = resolveAppPaths();
 const assetsPaths = {
   publicDir: appPaths.publicDir,
   assetsDir: path.join(appPaths.publicDir, 'assets'),
+  dataDir: path.join(appPaths.publicDir, 'assets', 'data'),
   imgDir: path.join(appPaths.publicDir, 'assets', 'img'),
   sndDir: path.join(appPaths.publicDir, 'assets', 'snd'),
+  charDataDir: path.join(appPaths.publicDir, 'assets', 'data', 'char'),
   charImgDir: path.join(appPaths.publicDir, 'assets', 'img', 'char'),
   charSndDir: path.join(appPaths.publicDir, 'assets', 'snd', 'char'),
   guiImgDir: path.join(appPaths.publicDir, 'assets', 'img', 'gui'),

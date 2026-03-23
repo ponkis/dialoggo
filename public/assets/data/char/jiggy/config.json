@@ -1,0 +1,10 @@
+{
+    "character":  {
+                      "name":  "Jiggy"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true,
+                  "pitch":  5,
+                  "canStretch":  false
+              }
+}

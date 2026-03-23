@@ -43,8 +43,10 @@ function createEnvironment() {
     fs: bridge.files,
     publicDir: paths.publicDir,
     assetsDir: paths.assetsDir,
+    dataDir: paths.dataDir,
     sndDir: paths.sndDir,
     imgDir: paths.imgDir,
+    charDataDir: paths.charDataDir,
     charImgDir: paths.charImgDir,
     charSndDir: paths.charSndDir,
     guiImgDir: paths.guiImgDir,
@@ -70,9 +72,41 @@ function listCharacterDirectoryNames(env, rootDir) {
     .map((entry) => entry.name);
 }
 
+function formatCharacterFolderName(folderName) {
+  const sanitizedFolderName = String(folderName || '')
+    .replace(/-/g, '')
+    .trim();
+
+  if (!sanitizedFolderName) return '';
+
+  return sanitizedFolderName.charAt(0).toUpperCase() + sanitizedFolderName.slice(1);
+}
+
+function getCharacterDisplayName(folderName, characterConfig) {
+  const configuredName = String(characterConfig?.name || '').trim();
+  if (configuredName) return configuredName;
+  return formatCharacterFolderName(folderName);
+}
+
+function readCharacterConfig(env, characterName) {
+  const configPath = env.path.join(env.charDataDir, characterName, 'config.json');
+  if (!env.fs.existsSync(configPath)) return {};
+
+  try {
+    return env.fs.readJsonFile(configPath, {
+      fallback: {},
+      label: `Character config for ${characterName}`,
+      maxBytes: 16 * 1024,
+    }) || {};
+  } catch {
+    return {};
+  }
+}
+
 function discoverCharacters(env) {
   const characters = [];
   const names = new Set([
+    ...listCharacterDirectoryNames(env, env.charDataDir),
     ...listCharacterDirectoryNames(env, env.charImgDir),
     ...listCharacterDirectoryNames(env, env.charSndDir),
   ]);
@@ -82,6 +116,10 @@ function discoverCharacters(env) {
   for (const name of names) {
     const imgDir = env.path.join(env.charImgDir, name);
     const sndDir = env.path.join(env.charSndDir, name);
+    const characterConfig = readCharacterConfig(env, name);
+    const soundConfig = typeof characterConfig?.sound === 'object' && characterConfig.sound !== null
+      ? characterConfig.sound
+      : {};
     const hasImgDirectory = env.fs.existsSync(imgDir);
     const hasSoundDirectory = env.fs.existsSync(sndDir);
 
@@ -104,26 +142,12 @@ function discoverCharacters(env) {
     }
 
     const soundFiles = [];
-    let soundConfig = {};
 
     if (hasSoundDirectory) {
       const files = env.fs.readdirSync(sndDir).filter((file) => /\.(wav|mp3|ogg)$/i.test(file));
       files.forEach((file) => {
         soundFiles.push(env.path.join(sndDir, file));
       });
-
-      const soundConfigPath = env.path.join(sndDir, 'sound.json');
-      if (env.fs.existsSync(soundConfigPath)) {
-        try {
-          soundConfig = env.fs.readJsonFile(soundConfigPath, {
-            fallback: {},
-            label: `Sound config for ${name}`,
-            maxBytes: 16 * 1024,
-          }) || {};
-        } catch {
-          soundConfig = {};
-        }
-      }
     }
 
     const parsedBasePitchTones = Number(soundConfig?.pitch);
@@ -133,12 +157,12 @@ function discoverCharacters(env) {
 
     characters.push({
       id: name,
-      displayName: name.charAt(0).toUpperCase() + name.slice(1),
+      displayName: getCharacterDisplayName(name, characterConfig?.character),
       speakFrames,
       idleFrames,
       previewSpritePath: hasDisplaySprite ? displaySpritePath : null,
       sounds: soundFiles,
-      hasVariablePitch: soundConfig?.hasVariablePitch === true || soundConfig?.hasSingleClip === true,
+      hasVariablePitch: soundConfig?.hasVariablePitch === true,
       basePitchTones: Number.isFinite(parsedBasePitchTones) ? parsedBasePitchTones : 0,
       canStretch: soundConfig?.canStretch === true,
       isAvailable: hasAllSprites && hasAnySound,

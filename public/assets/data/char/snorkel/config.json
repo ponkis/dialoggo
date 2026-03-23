@@ -1,0 +1,8 @@
+{
+    "character":  {
+                      "name":  "Snorkel"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
+}

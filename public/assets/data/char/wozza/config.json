@@ -1,0 +1,8 @@
+{
+    "character":  {
+                      "name":  "Wozza"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
+}

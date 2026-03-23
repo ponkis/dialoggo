@@ -1,0 +1,8 @@
+{
+    "character":  {
+                      "name":  "Twinkly Muncher"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
+}

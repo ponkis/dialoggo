@@ -1,0 +1,8 @@
+{
+    "character":  {
+                      "name":  "Coconut"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
+}

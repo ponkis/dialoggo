@@ -1,0 +1,8 @@
+{
+    "character":  {
+                      "name":  "Leaky"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
+}

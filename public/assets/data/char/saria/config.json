@@ -1,0 +1,9 @@
+{
+    "character":  {
+                      "name":  "Saria"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true,
+                  "pitch":  1
+              }
+}

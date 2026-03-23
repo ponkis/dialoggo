@@ -1,0 +1,8 @@
+{
+    "character":  {
+                      "name":  "Yellow Jinjo"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
+}

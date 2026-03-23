@@ -1,0 +1,8 @@
+{
+    "character":  {
+                      "name":  "Egg"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
+}
