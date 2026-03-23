@@ -2714,7 +2714,6 @@ img {
   width: var(--maximized-settings-card-width);
   min-width: var(--maximized-settings-card-width);
   min-height: 0;
-  gap: 8px;
 }
 
 .settings-panel.settings-layout-maximized .settings-category-block:has(.settings-category-body .setting-row + .setting-row) {
@@ -2748,8 +2747,24 @@ img {
 }
 
 .settings-panel.settings-layout-maximized .settings-category:has(.settings-category-body .setting-row + .setting-row) .settings-category-body {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
   align-content: stretch;
+}
+
+.settings-panel.settings-layout-maximized .settings-category:has(.settings-category-body .setting-row + .setting-row) .settings-category-body>.setting-row {
+  flex: 0 0 auto;
+  width: fit-content;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.settings-panel.settings-layout-maximized .settings-category:has(.settings-category-body .setting-row + .setting-row) .settings-category-body>.setting-row+.setting-row {
+  flex: 1 1 0;
+  width: auto;
+  max-width: none;
 }
 
 .settings-panel.settings-layout-maximized .settings-category-body:has(> .setting-row:only-child) {

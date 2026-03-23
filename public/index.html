@@ -206,7 +206,6 @@
         <!-- Settings Panel -->
         <div class="flip-face flip-back settings-panel" id="settings-panel">
           <div class="settings-body">
-            <div class="settings-stitch settings-stitch--hero" aria-hidden="true"></div>
             <div class="settings-columns">
               <div class="settings-category-block">
                 <div class="settings-category-head">
@@ -271,64 +270,64 @@
                 <section class="settings-category" aria-labelledby="settings-cat-misc">
                   <div class="settings-stitch settings-stitch--under-title" aria-hidden="true"></div>
                   <div class="settings-category-body">
-                  <div class="setting-row" role="group" aria-label="Hide broken characters">
-                    <div class="setting-info">
-                      <span class="setting-label">Hide broken characters</span>
-                      <span class="setting-desc">Hides characters that are incomplete.</span>
+                    <div class="setting-row" role="group" aria-label="Hide broken characters">
+                      <div class="setting-info">
+                        <span class="setting-label">Hide broken characters</span>
+                        <span class="setting-desc">Hides characters that are incomplete.</span>
+                      </div>
+                      <div class="uiverse-rocker-host" title="Hide broken characters">
+                        <label class="uiverse-rocker-switch" id="switch-hide-broken-chars">
+                          <input type="checkbox" id="input-hide-broken-chars" aria-label="Hide broken characters">
+                          <div class="uiverse-switch-button">
+                            <div class="uiverse-light"></div>
+                            <div class="uiverse-dots"></div>
+                            <div class="uiverse-characters"></div>
+                            <div class="uiverse-shine"></div>
+                            <div class="uiverse-shadow"></div>
+                          </div>
+                        </label>
+                      </div>
                     </div>
-                    <div class="uiverse-rocker-host" title="Hide broken characters">
-                      <label class="uiverse-rocker-switch" id="switch-hide-broken-chars">
-                        <input type="checkbox" id="input-hide-broken-chars" aria-label="Hide broken characters">
-                        <div class="uiverse-switch-button">
-                          <div class="uiverse-light"></div>
-                          <div class="uiverse-dots"></div>
-                          <div class="uiverse-characters"></div>
-                          <div class="uiverse-shine"></div>
-                          <div class="uiverse-shadow"></div>
-                        </div>
-                      </label>
-                    </div>
-                  </div>
-                  <div class="setting-row setting-row--menu-volume" role="radiogroup"
-                    aria-labelledby="settings-menu-sounds-volume-label">
-                    <div class="setting-info">
-                      <span class="setting-label" id="settings-menu-sounds-volume-label">Menu sounds volume</span>
-                      <span class="setting-desc">Adjusts the interface clicks and panel sounds.</span>
-                    </div>
-                    <div class="menu-volume-knob-host" title="Menu sounds volume">
-                      <div class="menu-volume-knob">
-                        <input type="radio" id="menu-sounds-volume-1" name="menu-sounds-volume" value="1">
-                        <input type="radio" id="menu-sounds-volume-2" name="menu-sounds-volume" value="2">
-                        <input type="radio" id="menu-sounds-volume-3" name="menu-sounds-volume" value="3">
-                        <input type="radio" id="menu-sounds-volume-4" name="menu-sounds-volume" value="4">
-                        <input type="radio" id="menu-sounds-volume-5" name="menu-sounds-volume" value="5">
-                        <input type="radio" id="menu-sounds-volume-6" name="menu-sounds-volume" value="6" checked>
-                        <label class="menu-volume-knob-hit" for="menu-sounds-volume-1" id="menu-sounds-volume-label-1"
-                          data-level="1" style="--n:1" aria-label="Menu sounds volume 1"></label>
-                        <label class="menu-volume-knob-hit" for="menu-sounds-volume-2" id="menu-sounds-volume-label-2"
-                          data-level="2" style="--n:2" aria-label="Menu sounds volume 2"></label>
-                        <label class="menu-volume-knob-hit" for="menu-sounds-volume-3" id="menu-sounds-volume-label-3"
-                          data-level="3" style="--n:3" aria-label="Menu sounds volume 3"></label>
-                        <label class="menu-volume-knob-hit" for="menu-sounds-volume-4" id="menu-sounds-volume-label-4"
-                          data-level="4" style="--n:4" aria-label="Menu sounds volume 4"></label>
-                        <label class="menu-volume-knob-hit" for="menu-sounds-volume-5" id="menu-sounds-volume-label-5"
-                          data-level="5" style="--n:5" aria-label="Menu sounds volume 5"></label>
-                        <label class="menu-volume-knob-hit" for="menu-sounds-volume-6" id="menu-sounds-volume-label-6"
-                          data-level="6" style="--n:6" aria-label="Menu sounds volume 6"></label>
-                        <button class="menu-volume-knob-core-hit" type="button" title="Increase menu sounds volume"
-                          aria-label="Increase menu sounds volume"></button>
-                        <div class="menu-volume-knob-dial"></div>
-                        <div class="menu-volume-knob-notches" aria-hidden="true">
-                          <div class="menu-volume-knob-notch" style="--n:1"></div>
-                          <div class="menu-volume-knob-notch" style="--n:2"></div>
-                          <div class="menu-volume-knob-notch" style="--n:3"></div>
-                          <div class="menu-volume-knob-notch" style="--n:4"></div>
-                          <div class="menu-volume-knob-notch" style="--n:5"></div>
-                          <div class="menu-volume-knob-notch" style="--n:6"></div>
+                    <div class="setting-row setting-row--menu-volume" role="radiogroup"
+                      aria-labelledby="settings-menu-sounds-volume-label">
+                      <div class="setting-info">
+                        <span class="setting-label" id="settings-menu-sounds-volume-label">Menu sounds volume</span>
+                        <span class="setting-desc">Adjusts the interface clicks and panel sounds.</span>
+                      </div>
+                      <div class="menu-volume-knob-host" title="Menu sounds volume">
+                        <div class="menu-volume-knob">
+                          <input type="radio" id="menu-sounds-volume-1" name="menu-sounds-volume" value="1">
+                          <input type="radio" id="menu-sounds-volume-2" name="menu-sounds-volume" value="2">
+                          <input type="radio" id="menu-sounds-volume-3" name="menu-sounds-volume" value="3">
+                          <input type="radio" id="menu-sounds-volume-4" name="menu-sounds-volume" value="4">
+                          <input type="radio" id="menu-sounds-volume-5" name="menu-sounds-volume" value="5">
+                          <input type="radio" id="menu-sounds-volume-6" name="menu-sounds-volume" value="6" checked>
+                          <label class="menu-volume-knob-hit" for="menu-sounds-volume-1" id="menu-sounds-volume-label-1"
+                            data-level="1" style="--n:1" aria-label="Menu sounds volume 1"></label>
+                          <label class="menu-volume-knob-hit" for="menu-sounds-volume-2" id="menu-sounds-volume-label-2"
+                            data-level="2" style="--n:2" aria-label="Menu sounds volume 2"></label>
+                          <label class="menu-volume-knob-hit" for="menu-sounds-volume-3" id="menu-sounds-volume-label-3"
+                            data-level="3" style="--n:3" aria-label="Menu sounds volume 3"></label>
+                          <label class="menu-volume-knob-hit" for="menu-sounds-volume-4" id="menu-sounds-volume-label-4"
+                            data-level="4" style="--n:4" aria-label="Menu sounds volume 4"></label>
+                          <label class="menu-volume-knob-hit" for="menu-sounds-volume-5" id="menu-sounds-volume-label-5"
+                            data-level="5" style="--n:5" aria-label="Menu sounds volume 5"></label>
+                          <label class="menu-volume-knob-hit" for="menu-sounds-volume-6" id="menu-sounds-volume-label-6"
+                            data-level="6" style="--n:6" aria-label="Menu sounds volume 6"></label>
+                          <button class="menu-volume-knob-core-hit" type="button" title="Increase menu sounds volume"
+                            aria-label="Increase menu sounds volume"></button>
+                          <div class="menu-volume-knob-dial"></div>
+                          <div class="menu-volume-knob-notches" aria-hidden="true">
+                            <div class="menu-volume-knob-notch" style="--n:1"></div>
+                            <div class="menu-volume-knob-notch" style="--n:2"></div>
+                            <div class="menu-volume-knob-notch" style="--n:3"></div>
+                            <div class="menu-volume-knob-notch" style="--n:4"></div>
+                            <div class="menu-volume-knob-notch" style="--n:5"></div>
+                            <div class="menu-volume-knob-notch" style="--n:6"></div>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
                 </section>
               </div>
             </div>
