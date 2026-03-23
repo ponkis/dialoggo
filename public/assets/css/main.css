@@ -2347,7 +2347,7 @@ img {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 5px;
+  gap: 0;
   margin-right: -14px;
 }
 
@@ -2491,11 +2491,7 @@ img {
 .reel-arrow-left {
   width: 22px;
   overflow: hidden;
-  transition: width 0.2s ease, opacity 0.2s ease;
-}
-
-.reel-arrow-left.hidden {
-  width: 5px;
+  transition: opacity 0.2s ease;
 }
 
 .reel-arrow-right {
