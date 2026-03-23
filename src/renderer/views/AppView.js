@@ -56,6 +56,7 @@ function createAppView(model, audioService) {
   let n64DialogueTextSmall = null;
   let n64TextResizeRaf = 0;
   let n64ShakeAnimationRaf = 0;
+  const DIALOGUE_SHAKE_CYCLE_MS = 280;
 
   const MAX_SPRITE_IMAGE_CACHE_ENTRIES = 120;
   const spriteImageCache = new Map();
@@ -72,9 +73,14 @@ function createAppView(model, audioService) {
     { x: -2.5, y: -1.5 },
   ];
 
-  function getDialogueShakeSample(elapsed, index) {
-    const sampleIndex = Math.floor((elapsed + (index * 37)) / 42) % dialogueShakeSamples.length;
-    return dialogueShakeSamples[sampleIndex < 0 ? sampleIndex + dialogueShakeSamples.length : sampleIndex];
+  function getDialogueShakeSample(elapsed, index, scale = 1) {
+    const sampleDuration = DIALOGUE_SHAKE_CYCLE_MS / dialogueShakeSamples.length;
+    const sampleIndex = Math.floor((elapsed + (index * sampleDuration)) / sampleDuration) % dialogueShakeSamples.length;
+    const sample = dialogueShakeSamples[sampleIndex < 0 ? sampleIndex + dialogueShakeSamples.length : sampleIndex];
+    return {
+      x: sample.x * scale,
+      y: sample.y * scale,
+    };
   }
 
   function rememberSpriteImage(filePath, image) {
@@ -593,7 +599,7 @@ function createAppView(model, audioService) {
         characterElements.forEach((characterElement, index) => {
           const characterText = characterElement.textContent || '';
           const emphasized = characterElement.classList.contains('dialogue-char-emphasis');
-          const shakeSample = emphasized ? getDialogueShakeSample(elapsed, index) : null;
+          const shakeSample = emphasized ? getDialogueShakeSample(elapsed, index, 1) : null;
           const shakeX = shakeSample ? shakeSample.x : 0;
           const shakeY = shakeSample ? shakeSample.y : 0;
 
