@@ -12,6 +12,7 @@ function createAppView(model, audioService) {
     characterSearchClear: document.getElementById('character-search-clear'),
     characterSearchEmpty: document.getElementById('character-search-empty'),
     input: document.getElementById('dialogue-input'),
+    dialogueInputHighlight: document.getElementById('dialogue-input-highlight'),
     dialogueInputCounter: document.getElementById('dialogue-input-counter'),
     btnPlay: document.getElementById('btn-play'),
     btnPause: document.getElementById('btn-pause'),
@@ -54,6 +55,7 @@ function createAppView(model, audioService) {
   let n64DialogueTextHi = null;
   let n64DialogueTextSmall = null;
   let n64TextResizeRaf = 0;
+  let n64ShakeAnimationRaf = 0;
 
   const MAX_SPRITE_IMAGE_CACHE_ENTRIES = 120;
   const spriteImageCache = new Map();
@@ -460,6 +462,7 @@ function createAppView(model, audioService) {
   }
 
   function clearN64DialogueTextCanvas() {
+    stopN64ShakeLoop();
     const canvas = refs.dialogueTextN64Canvas;
     if (!canvas?.getContext) return;
     const ctx = canvas.getContext('2d');
@@ -469,11 +472,37 @@ function createAppView(model, audioService) {
     }
   }
 
+  function stopN64ShakeLoop() {
+    if (!n64ShakeAnimationRaf) return;
+    cancelAnimationFrame(n64ShakeAnimationRaf);
+    n64ShakeAnimationRaf = 0;
+  }
+
+  function syncN64ShakeLoop() {
+    const needsLoop = state.n64ModeEnabled && !!refs.dialogueText?.querySelector('.dialogue-char-shake');
+    if (!needsLoop) {
+      stopN64ShakeLoop();
+      return;
+    }
+
+    if (n64ShakeAnimationRaf) return;
+
+    const tick = () => {
+      n64ShakeAnimationRaf = requestAnimationFrame(tick);
+      renderN64DialogueTextCanvas();
+    };
+
+    n64ShakeAnimationRaf = requestAnimationFrame(tick);
+  }
+
   function renderN64DialogueTextCanvas() {
     try {
       const canvas = refs.dialogueTextN64Canvas;
       const area = refs.dialogueTextArea;
-      if (!state.n64ModeEnabled || !canvas || !area || !refs.dialogueText) return;
+      if (!state.n64ModeEnabled || !canvas || !area || !refs.dialogueText) {
+        stopN64ShakeLoop();
+        return;
+      }
 
       const scrollWrapper = refs.dialogueText.querySelector('.dialogue-scroll');
       if (!scrollWrapper) {
@@ -522,19 +551,40 @@ function createAppView(model, audioService) {
       hiCtx.shadowOffsetX = 1;
       hiCtx.shadowOffsetY = 1;
       hiCtx.shadowBlur = 0;
+      const letterSpacing = 0.5;
 
       const lineElements = scrollWrapper.querySelectorAll('.line');
       const scrollY = getScrollWrapperTranslateYpx(scrollWrapper);
       const centered = refs.dialogueText.classList.contains('centered');
+      const elapsed = performance.now();
 
       for (let i = 0; i < lineElements.length; i += 1) {
-        const text = lineElements[i].textContent || '';
+        const lineElement = lineElements[i];
         let y = padTop + (i * constants.N64_TEXT_LINE_HEIGHT) + scrollY;
         if (centered && lineElements.length === 1) {
           y = (height - constants.N64_TEXT_LINE_HEIGHT) / 2;
         }
-        hiCtx.textAlign = 'left';
-        hiCtx.fillText(text, padLeft, y);
+
+        const characterElements = Array.from(lineElement.querySelectorAll('.dialogue-char'));
+        if (characterElements.length === 0) {
+          hiCtx.textAlign = 'left';
+          hiCtx.fillStyle = '#ffffff';
+          hiCtx.fillText(lineElement.textContent || '', padLeft, y);
+          continue;
+        }
+
+        let x = padLeft;
+        characterElements.forEach((characterElement, index) => {
+          const characterText = characterElement.textContent || '';
+          const emphasized = characterElement.classList.contains('dialogue-char-emphasis');
+          const phase = elapsed / (125 + ((index % 5) * 18));
+          const shakeX = emphasized ? Math.sin(phase + index) * 0.6 : 0;
+          const shakeY = emphasized ? Math.cos((phase * 1.17) + index) * 0.8 : 0;
+
+          hiCtx.fillStyle = emphasized ? '#9fd8ff' : '#ffffff';
+          hiCtx.fillText(characterText, x + shakeX, y + shakeY);
+          x += hiCtx.measureText(characterText).width + letterSpacing;
+        });
       }
 
       hiCtx.restore();
@@ -566,6 +616,7 @@ function createAppView(model, audioService) {
 
       outputCtx.clearRect(0, 0, width, height);
       outputCtx.drawImage(smallCanvas, 0, 0, width, height);
+      syncN64ShakeLoop();
     } catch (error) {
       console.warn('[Dialoggo] N64 dialogue text canvas:', error);
       env.log?.warn('N64 dialogue text canvas warning', {
@@ -596,6 +647,79 @@ function createAppView(model, audioService) {
     refs.input.classList.toggle('is-locked', locked);
   }
 
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function renderDialogueLineCharacters(lineElement, characters, visibleCount = characters.length) {
+    if (!lineElement) return;
+
+    const fragment = document.createDocumentFragment();
+    const visibleCharacters = characters.slice(0, visibleCount);
+
+    visibleCharacters.forEach((character, index) => {
+      const characterSpan = document.createElement('span');
+      characterSpan.className = 'dialogue-char';
+      characterSpan.textContent = character.value;
+
+      if (character.emphasis) {
+        characterSpan.classList.add('dialogue-char-emphasis', 'dialogue-char-shake');
+        characterSpan.style.setProperty('--dialogue-char-shake-duration', `${720 + ((index % 5) * 70)}ms`);
+        characterSpan.style.setProperty('--dialogue-char-shake-delay', `${-((index % 7) * 90)}ms`);
+        characterSpan.style.setProperty('--dialogue-char-shake-rotate', `${((index % 3) - 1) * 1.35}deg`);
+      }
+
+      fragment.appendChild(characterSpan);
+    });
+
+    lineElement.replaceChildren(fragment);
+    syncN64ShakeLoop();
+  }
+
+  function buildDialogueInputHighlightMarkup(value) {
+    const source = String(value || '');
+    let markup = '';
+    let emphasis = false;
+
+    for (let index = 0; index < source.length; index += 1) {
+      if (source.startsWith('**', index)) {
+        markup += '<span class="text-input-modifier">**</span>';
+        emphasis = !emphasis;
+        index += 1;
+        continue;
+      }
+
+      const className = emphasis ? 'text-input-emphasis' : 'text-input-plain';
+      markup += `<span class="${className}">${escapeHtml(source[index])}</span>`;
+    }
+
+    if (markup.length === 0) {
+      return '<span class="text-input-trailing-space">&#8203;</span>';
+    }
+
+    return `${markup}<span class="text-input-trailing-space">&#8203;</span>`;
+  }
+
+  function syncDialogueInputHighlightScroll() {
+    if (!refs.dialogueInputHighlight || !refs.input) return;
+    refs.dialogueInputHighlight.scrollTop = refs.input.scrollTop;
+    refs.dialogueInputHighlight.scrollLeft = refs.input.scrollLeft;
+  }
+
+  function syncDialogueInputHighlight() {
+    if (!refs.dialogueInputHighlight || !refs.input) return;
+
+    const hasValue = refs.input.value.length > 0;
+    refs.input.parentElement?.classList.toggle('has-value', hasValue);
+    refs.dialogueInputHighlight.innerHTML = buildDialogueInputHighlightMarkup(refs.input.value);
+    syncDialogueInputHighlightScroll();
+  }
+
   function syncDialogueInputCounter() {
     if (!refs.dialogueInputCounter || !refs.input) return;
 
@@ -617,6 +741,7 @@ function createAppView(model, audioService) {
     }
 
     refs.input.setCustomValidity('');
+    syncDialogueInputHighlight();
     syncDialogueInputCounter();
   }
 
@@ -774,6 +899,7 @@ function createAppView(model, audioService) {
 
   function syncN64ClassOnDialogueBox() {
     refs.dialogueBox?.classList.toggle('n64-mode', state.n64ModeEnabled);
+    if (!state.n64ModeEnabled) stopN64ShakeLoop();
   }
 
   function redrawSpriteForN64Toggle() {
@@ -1290,7 +1416,10 @@ function createAppView(model, audioService) {
     renderN64DialogueTextCanvas,
     n64RepaintDuringScrollTransition,
     setInputLocked,
+    renderDialogueLineCharacters,
     normalizeDialogueInput,
+    syncDialogueInputHighlight,
+    syncDialogueInputHighlightScroll,
     syncDialogueInputCounter,
     syncCharacterSearchClearButton,
     updateFastForwardAvailability,

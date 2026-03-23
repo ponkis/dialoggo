@@ -236,7 +236,7 @@ function startApp() {
       return;
     }
 
-    const lines = model.splitTextIntoLines(text);
+    const lines = model.splitStyledTextIntoLines(text);
     const isMultiLine = lines.length > 1;
     let lineIndex = 0;
 
@@ -293,22 +293,22 @@ function startApp() {
 
         speechLoop.resume();
 
-        for (let i = 0; i < line.length; i += 1) {
+        for (let i = 0; i < line.characters.length; i += 1) {
           if (state.stopRequested) break;
 
           await waitWhilePaused();
           if (state.stopRequested) break;
 
-          lineElement.textContent = line.slice(0, i + 1);
+          view.renderDialogueLineCharacters(lineElement, line.characters, i + 1);
           if (state.n64ModeEnabled) view.renderN64DialogueTextCanvas();
 
-          const currentChar = line[i];
+          const currentChar = line.characters[i].value;
           if (pauseChars.has(currentChar)) {
             speechLoop.pause();
             spriteRenderer.resetToIdle();
             const pauseDuration = (currentChar === '.' || currentChar === '!' || currentChar === '?') ? 400 : 200;
             await sleepPlaybackPaced(pauseDuration);
-            if (i < line.length - 1 && !pauseChars.has(line[i + 1])) {
+            if (i < line.characters.length - 1 && !pauseChars.has(line.characters[i + 1].value)) {
               speechLoop.resume();
             }
           } else if (currentChar === ' ') {
@@ -689,6 +689,7 @@ function startApp() {
   }, true);
 
   refs.input.addEventListener('input', handleDialogueInputChange);
+  refs.input.addEventListener('scroll', view.syncDialogueInputHighlightScroll);
 
   refs.btnPlay.addEventListener('click', (event) => {
     if (view.isActionButtonBlocked(refs.btnPlay)) {

@@ -21,6 +21,7 @@ const PREVIEW_STRIP_HEIGHT = 58;
 const PREVIEW_COLLAPSE_MS = 420;
 const FLIP_CARD_MS = 600;
 const PREVIEW_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const DIALOGUE_SHAKE_MARKER = '**';
 
 const storageKeys = {
   n64Mode: 'dialoggo-n64-mode',
@@ -184,48 +185,123 @@ function normalizeCharacterSearch(value) {
     .replace(/[^a-z0-9]+/g, '');
 }
 
-function splitTextIntoLines(text, maxCharsPerLine = 32) {
-  const lines = [];
-  const manualLines = text.toUpperCase().split('\n');
+function createDialogueCharacter(value, emphasis = false) {
+  return {
+    value,
+    emphasis,
+  };
+}
 
-  for (const manualLine of manualLines) {
-    if (manualLine.trim() === '') {
-      lines.push('');
+function createLineFromCharacters(characters) {
+  return {
+    text: characters.map((character) => character.value).join(''),
+    characters,
+  };
+}
+
+function parseDialogueMarkup(text) {
+  const source = String(text || '').toUpperCase();
+  const characters = [];
+  let emphasis = false;
+
+  for (let index = 0; index < source.length; index += 1) {
+    if (source.startsWith(DIALOGUE_SHAKE_MARKER, index)) {
+      emphasis = !emphasis;
+      index += DIALOGUE_SHAKE_MARKER.length - 1;
       continue;
     }
 
-    const words = manualLine.split(/\s+/);
-    let currentLine = '';
+    characters.push(createDialogueCharacter(source[index], emphasis));
+  }
 
-    for (let word of words) {
-      if (!word) continue;
+  return characters;
+}
 
-      while (word.length > maxCharsPerLine) {
-        if (currentLine.length > 0) {
-          lines.push(currentLine);
-          currentLine = '';
+function splitStyledTextIntoLines(text, maxCharsPerLine = 32) {
+  const lines = [];
+  const parsedCharacters = parseDialogueMarkup(text);
+  let manualLineCharacters = [];
+
+  const flushManualLine = () => {
+    const visibleText = manualLineCharacters.map((character) => character.value).join('');
+    if (visibleText.trim() === '') {
+      lines.push('');
+      manualLineCharacters = [];
+      return;
+    }
+
+    const words = [];
+    let currentWord = [];
+
+    manualLineCharacters.forEach((character) => {
+      if (/\s/.test(character.value)) {
+        if (currentWord.length > 0) {
+          words.push(currentWord);
+          currentWord = [];
         }
-
-        lines.push(word.slice(0, maxCharsPerLine));
-        word = word.slice(maxCharsPerLine);
+        return;
       }
 
+      currentWord.push(character);
+    });
+
+    if (currentWord.length > 0) {
+      words.push(currentWord);
+    }
+
+    let currentLine = [];
+
+    for (const word of words) {
+      let remainingWord = word.slice();
+
+      while (remainingWord.length > maxCharsPerLine) {
+        if (currentLine.length > 0) {
+          lines.push(createLineFromCharacters(currentLine));
+          currentLine = [];
+        }
+
+        lines.push(createLineFromCharacters(remainingWord.slice(0, maxCharsPerLine)));
+        remainingWord = remainingWord.slice(maxCharsPerLine);
+      }
+
+      if (remainingWord.length === 0) continue;
+
       if (currentLine.length === 0) {
-        currentLine = word;
-      } else if (currentLine.length + 1 + word.length <= maxCharsPerLine) {
-        currentLine += ` ${word}`;
+        currentLine = remainingWord.slice();
+      } else if (currentLine.length + 1 + remainingWord.length <= maxCharsPerLine) {
+        const previousChar = currentLine[currentLine.length - 1];
+        const nextChar = remainingWord[0];
+        currentLine.push(createDialogueCharacter(' ', !!(previousChar?.emphasis && nextChar?.emphasis)));
+        currentLine.push(...remainingWord);
       } else {
-        lines.push(currentLine);
-        currentLine = word;
+        lines.push(createLineFromCharacters(currentLine));
+        currentLine = remainingWord.slice();
       }
     }
 
     if (currentLine.length > 0) {
-      lines.push(currentLine);
+      lines.push(createLineFromCharacters(currentLine));
     }
-  }
 
-  return lines;
+    manualLineCharacters = [];
+  };
+
+  parsedCharacters.forEach((character) => {
+    if (character.value === '\n') {
+      flushManualLine();
+      return;
+    }
+
+    manualLineCharacters.push(character);
+  });
+
+  flushManualLine();
+
+  return lines.map((line) => (typeof line === 'string' ? createLineFromCharacters([]) : line));
+}
+
+function splitTextIntoLines(text, maxCharsPerLine = 32) {
+  return splitStyledTextIntoLines(text, maxCharsPerLine).map((line) => line.text);
 }
 
 function tonesToSemitoneOffset(value) {
@@ -338,6 +414,8 @@ function createAppModel() {
     clampMenuSoundsVolumeLevel,
     clampDialogueInputValue,
     normalizeCharacterSearch,
+    parseDialogueMarkup,
+    splitStyledTextIntoLines,
     splitTextIntoLines,
     getCharacterPitchSemitoneOffset,
     semitoneOffsetToRate,
