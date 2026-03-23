@@ -1817,6 +1817,7 @@ img {
   border: 2px solid transparent;
   font-size: 14px;
   height: 100%;
+  font-family: monospace;
   box-shadow: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.16s ease;
   caret-color: var(--text-primary);
