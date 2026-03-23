@@ -40,10 +40,12 @@ function createAppView(model, audioService) {
     reelRight: document.getElementById('reel-arrow-right'),
     controlsPanel: document.getElementById('controls-panel'),
     settingsPanel: document.getElementById('settings-panel'),
+    backgroundsPanel: document.getElementById('backgrounds-panel'),
     flipCard: document.getElementById('flip-card'),
     sleeveCamera: document.getElementById('sleeve-tab-camera'),
     sleeveBackgrounds: document.getElementById('sleeve-tab-backgrounds'),
     sleeveGuide: document.getElementById('sleeve-tab-guide'),
+    sleeveCharacter: document.getElementById('sleeve-tab-character'),
     sleeveSettings: document.getElementById('sleeve-tab-settings'),
     inputMirrored: document.getElementById('input-mirrored-dialogue'),
     menuSoundsVolumeInputs: Array.from(document.querySelectorAll('input[name="menu-sounds-volume"]')),
@@ -1368,6 +1370,14 @@ function createAppView(model, audioService) {
     refs.previewArea?.classList.toggle('preview-placeholder-suppressed', suppressed);
   }
 
+  function setActiveBackPanel(panel) {
+    refs.settingsPanel?.classList.toggle('active', panel === 'settings');
+    refs.backgroundsPanel?.classList.toggle('active', panel === 'backgrounds');
+
+    refs.settingsPanel?.setAttribute('aria-hidden', panel !== 'settings' ? 'true' : 'false');
+    refs.backgroundsPanel?.setAttribute('aria-hidden', panel !== 'backgrounds' ? 'true' : 'false');
+  }
+
   async function collapsePreviewThenSettings() {
     const height = Math.round(refs.previewArea.getBoundingClientRect().height);
     refs.previewArea.style.flex = '0 0 auto';
@@ -1388,7 +1398,8 @@ function createAppView(model, audioService) {
     await model.sleep(constants.PREVIEW_COLLAPSE_MS + 40);
   }
 
-  async function expandPreviewAfterControls() {
+  async function expandPreviewAfterControls(options = {}) {
+    const keepPlaceholderSuppressed = options.keepPlaceholderSuppressed === true;
     const targetHeight = computeExpandedPreviewHeight();
     refs.previewArea.style.flex = '0 0 auto';
     refs.previewArea.style.minHeight = '0';
@@ -1400,8 +1411,16 @@ function createAppView(model, audioService) {
 
     requestAnimationFrame(() => {
       refs.previewArea.style.height = `${targetHeight}px`;
-      refs.previewArea.classList.remove('preview-settings-muted', 'preview-placeholder-suppressed');
-      if (!refs.dialogueContainer.classList.contains('active')) {
+      refs.previewArea.classList.remove('preview-settings-muted');
+
+      if (keepPlaceholderSuppressed) {
+        setPreviewPlaceholderSuppressed(true);
+        stopPlaceholderAnim();
+      } else {
+        refs.previewArea.classList.remove('preview-placeholder-suppressed');
+      }
+
+      if (!keepPlaceholderSuppressed && !refs.dialogueContainer.classList.contains('active')) {
         startPlaceholderAnim();
       }
     });
@@ -1416,6 +1435,11 @@ function createAppView(model, audioService) {
     refs.previewArea.style.transition = '';
     refs.app?.classList.remove('settings-panel-open');
     if (refs.panelWrapper) delete refs.panelWrapper.dataset.naturalPanelHeight;
+
+    if (keepPlaceholderSuppressed) {
+      setPreviewPlaceholderSuppressed(true);
+      stopPlaceholderAnim();
+    }
   }
 
   function isLargeScreen() {
@@ -1436,6 +1460,8 @@ function createAppView(model, audioService) {
     void refs.flipCard.offsetHeight;
     refs.flipCard.style.transition = '';
 
+    setActiveBackPanel(null);
+    refs.sleeveBackgrounds.classList.remove('active');
     refs.sleeveSettings.classList.remove('active');
     state.activePanel = 'controls';
     refs.previewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
@@ -1496,6 +1522,7 @@ function createAppView(model, audioService) {
     redrawSpriteForN64Toggle,
     computeExpandedPreviewHeight,
     setPreviewPlaceholderSuppressed,
+    setActiveBackPanel,
     collapsePreviewThenSettings,
     expandPreviewAfterControls,
     isLargeScreen,

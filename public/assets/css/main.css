@@ -841,7 +841,22 @@ img {
   transform: rotateY(180deg);
 }
 
-.flip-card.flipped .flip-back {
+.flip-back.settings-panel,
+.flip-back.backgrounds-panel {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.22s ease, visibility 0s linear 0.22s;
+}
+
+.flip-back.settings-panel.active,
+.flip-back.backgrounds-panel.active {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.22s ease;
+}
+
+.flip-card.flipped .flip-back.settings-panel.active,
+.flip-card.flipped .flip-back.backgrounds-panel.active {
   pointer-events: auto;
 }
 
@@ -939,6 +954,17 @@ img {
     linear-gradient(180deg, #9b72d9 0%, #7954ae 40%, #5a3f84 100%);
 }
 
+.sleeve-tab-character {
+  background:
+    linear-gradient(180deg, #d3aa4e 0%, #ab7d22 40%, #7d5615 100%);
+  color: rgba(255, 236, 178, 0.92);
+}
+
+.sleeve-tab-character:hover {
+  background:
+    linear-gradient(180deg, #e3ba5e 0%, #bb8d32 40%, #8d6625 100%);
+}
+
 .sleeve-tab-settings {
   background:
     linear-gradient(180deg, #b54a4a 0%, #8a2e2e 40%, #651e1e 100%);
@@ -1005,6 +1031,161 @@ img {
 .flip-card .flip-back.settings-panel {
   position: absolute;
   inset: 0;
+}
+
+.backgrounds-panel {
+  padding: 14px 16px 12px;
+  background:
+    linear-gradient(180deg, rgba(255, 244, 222, 0.04), rgba(255, 244, 222, 0) 12%),
+    repeating-linear-gradient(90deg,
+      rgba(103, 64, 28, 0.9) 0 18px,
+      rgba(88, 54, 23, 0.9) 18px 34px,
+      rgba(118, 74, 32, 0.9) 34px 52px,
+      rgba(86, 52, 23, 0.92) 52px 68px),
+    linear-gradient(180deg, #6a401a 0%, #4f2f14 52%, #3b220f 100%);
+  border-top: 1px solid rgba(255, 220, 160, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 239, 214, 0.08),
+    inset 0 -2px 12px rgba(32, 16, 5, 0.32),
+    inset 0 0 0 1px rgba(74, 45, 17, 0.4),
+    inset 0 0 36px rgba(32, 15, 4, 0.18);
+  overflow: hidden;
+}
+
+.flip-card .flip-back.backgrounds-panel {
+  position: absolute;
+  inset: 0;
+}
+
+.backgrounds-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.18;
+  background:
+    linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.12) 55%, rgba(0, 0, 0, 0.18)),
+    repeating-linear-gradient(0deg,
+      rgba(255, 235, 196, 0.08) 0 1px,
+      transparent 1px 11px);
+}
+
+.backgrounds-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.backgrounds-heading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-align: center;
+}
+
+.backgrounds-heading-title {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: rgba(255, 245, 225, 0.95);
+  text-shadow: 0 1px 2px rgba(44, 19, 6, 0.6);
+}
+
+.backgrounds-heading-subtitle {
+  font-size: 9px;
+  letter-spacing: 0.35px;
+  color: rgba(255, 224, 176, 0.72);
+}
+
+.backgrounds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.background-card {
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  text-align: left;
+  background:
+    linear-gradient(180deg, rgba(255, 249, 235, 0.08), rgba(255, 249, 235, 0.02) 16%, rgba(0, 0, 0, 0.08) 100%),
+    linear-gradient(180deg, #3c2612 0%, #2f1d0f 100%);
+  border: 1px solid rgba(99, 63, 29, 0.78);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 241, 214, 0.08),
+    inset 0 -2px 10px rgba(0, 0, 0, 0.28),
+    0 2px 8px rgba(20, 10, 4, 0.26);
+  color: inherit;
+  cursor: default;
+}
+
+.background-card-preview {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border: 1px solid rgba(255, 239, 206, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
+}
+
+.background-card-preview::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 35%),
+    repeating-linear-gradient(90deg,
+      rgba(255, 255, 255, 0.04) 0 2px,
+      transparent 2px 16px);
+  pointer-events: none;
+}
+
+.background-card-preview--mountain {
+  background:
+    linear-gradient(180deg, #87b7d1 0%, #6b9dbc 44%, #496e52 45%, #36533a 70%, #2b2018 100%);
+}
+
+.background-card-preview--shore {
+  background:
+    linear-gradient(180deg, #91c8e6 0%, #72abd1 42%, #d4b57d 43%, #8b6d46 69%, #4d3421 100%);
+}
+
+.background-card-preview--lair {
+  background:
+    linear-gradient(180deg, #745072 0%, #583553 38%, #2a1f32 39%, #39291c 68%, #25170e 100%);
+}
+
+.background-card-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.background-card-title {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: rgba(255, 240, 208, 0.92);
+}
+
+.background-card-meta {
+  font-size: 8px;
+  letter-spacing: 0.45px;
+  color: rgba(233, 200, 150, 0.7);
+  text-transform: uppercase;
 }
 
 .settings-panel::before {
