@@ -95,11 +95,6 @@ function sendWindowControl(channel) {
   ipcRenderer.send(channel);
 }
 
-function onWindowState(channel, callback) {
-  if (typeof callback !== 'function') return;
-  ipcRenderer.on(channel, () => callback());
-}
-
 function logMessage(level, message, meta) {
   ipcRenderer.send('app-log', {
     level,
@@ -131,17 +126,8 @@ const bridge = {
     minimize() {
       sendWindowControl('window-minimize');
     },
-    maximize() {
-      sendWindowControl('window-maximize');
-    },
     close() {
       sendWindowControl('window-close');
-    },
-    onMaximized(callback) {
-      onWindowState('window-maximized', callback);
-    },
-    onUnmaximized(callback) {
-      onWindowState('window-unmaximized', callback);
     },
   },
   log: {

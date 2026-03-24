@@ -675,10 +675,6 @@ function startApp() {
     bridge.windowControls.minimize();
   });
 
-  document.getElementById('btn-maximize')?.addEventListener('click', () => {
-    bridge.windowControls.maximize();
-  });
-
   document.getElementById('btn-close')?.addEventListener('click', () => {
     bridge.windowControls.close();
   });
@@ -903,20 +899,6 @@ function startApp() {
       persist: true,
       playFeedback: true
     });
-  });
-
-  bridge.windowControls.onMaximized(() => {
-    document.body.classList.add('maximized');
-    if (state.activePanel === 'settings' && !state.panelTransitionLock) {
-      void showPanel(state.frontPanel);
-    }
-  });
-
-  bridge.windowControls.onUnmaximized(() => {
-    document.body.classList.remove('maximized');
-    if (state.activePanel === 'settings' && !state.panelTransitionLock) {
-      void showPanel(state.frontPanel);
-    }
   });
 
   view.normalizeDialogueInput();

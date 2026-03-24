@@ -32,21 +32,9 @@ function getMainWindow() {
   return mainWindow;
 }
 
-function sendWindowState(channel) {
-  mainWindow?.webContents.send(channel);
-}
-
 function bootstrapMainWindow() {
   mainWindow = createMainWindow();
   logger.info('Main window created');
-
-  mainWindow.on('maximize', () => {
-    sendWindowState('window-maximized');
-  });
-
-  mainWindow.on('unmaximize', () => {
-    sendWindowState('window-unmaximized');
-  });
 
   mainWindow.on('closed', () => {
     mainWindow = null;

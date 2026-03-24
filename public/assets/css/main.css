@@ -248,14 +248,25 @@ img {
 }
 
 .stoplight-maximize {
-  background: radial-gradient(circle at 35% 30%, #7aee7a, #40c040 55%, #20a020);
+  background: radial-gradient(circle at 35% 30%, #9a9a9a, #727272 55%, #555555);
   box-shadow:
-    inset 0 1px 2px rgba(255, 255, 255, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.22),
     0 1px 2px rgba(0, 0, 0, 0.35);
 }
 
 .stoplight:hover {
   filter: brightness(1.2);
+}
+
+.stoplight[aria-disabled="true"] {
+  cursor: default;
+  filter: grayscale(0.2) brightness(0.9);
+}
+
+.stoplight[aria-disabled="true"]:hover,
+.stoplight[aria-disabled="true"]:active {
+  filter: grayscale(0.2) brightness(0.9);
+  transform: none;
 }
 
 /* Bottom Bar */
@@ -777,13 +788,13 @@ img {
   width: 100%;
 }
 
-.settings-panel:not(.settings-layout-maximized) {
+.settings-panel {
   display: flex;
   flex-direction: column;
   min-height: 0;
 }
 
-.settings-panel:not(.settings-layout-maximized) .settings-body {
+.settings-panel .settings-body {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -791,7 +802,7 @@ img {
   scrollbar-width: thin;
 }
 
-.app.settings-panel-open .settings-panel:not(.settings-layout-maximized) .settings-body {
+.app.settings-panel-open .settings-panel .settings-body {
   justify-content: flex-start;
   align-self: stretch;
 }
@@ -2953,190 +2964,6 @@ img {
 .settings-columns::-webkit-scrollbar-thumb:hover,
 .settings-category-body::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #e36668 0%, #b82a31 55%, #7c1219 100%);
-}
-
-/* Maximized Mode */
-.settings-panel.settings-layout-maximized .settings-heading,
-.settings-panel.settings-layout-maximized .settings-stitch--hero {
-  display: none;
-}
-
-.settings-panel.settings-layout-maximized {
-  --maximized-setting-row-height: 118px;
-  overflow: visible;
-  padding: 12px 16px 16px;
-  display: flex;
-  flex-direction: column;
-}
-
-.settings-panel.settings-layout-maximized .settings-body {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  min-height: 0;
-  overflow: visible;
-  width: 100%;
-  max-width: none;
-  margin: 0;
-}
-
-.settings-panel.settings-layout-maximized .settings-columns {
-  flex: 1 1 0;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: stretch;
-  justify-content: flex-start;
-  gap: 16px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.settings-panel.settings-layout-maximized .settings-columns::-webkit-scrollbar {
-  display: none;
-}
-
-.settings-panel.settings-layout-maximized .settings-category {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
-  padding: 16px 16px 18px;
-  gap: 14px;
-  align-items: stretch;
-  align-content: start;
-}
-
-.settings-panel.settings-layout-maximized .settings-category-block {
-  flex: 0 0 var(--maximized-settings-card-width);
-  display: flex;
-  flex-direction: column;
-  width: var(--maximized-settings-card-width);
-  min-width: var(--maximized-settings-card-width);
-  min-height: 0;
-}
-
-.settings-panel.settings-layout-maximized .settings-category-block:has(.settings-category-body .setting-row + .setting-row) {
-  flex-basis: calc((var(--maximized-settings-card-width) * 2) + 16px);
-  width: calc((var(--maximized-settings-card-width) * 2) + 16px);
-  min-width: calc((var(--maximized-settings-card-width) * 2) + 16px);
-}
-
-.settings-panel.settings-layout-maximized .settings-category-head {
-  flex: 0 0 auto;
-  margin-bottom: 0;
-  padding-bottom: 0;
-}
-
-.settings-panel.settings-layout-maximized .settings-stitch--under-title {
-  flex: 0 0 auto;
-}
-
-.settings-panel.settings-layout-maximized .settings-category-body {
-  flex: 1 1 auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(calc(var(--maximized-settings-card-width) - 36px), 1fr));
-  grid-auto-rows: minmax(0, auto);
-  align-items: stretch;
-  align-content: start;
-  gap: 14px;
-  min-width: 0;
-  min-height: 0;
-  overflow: visible;
-  padding: 0;
-}
-
-.settings-panel.settings-layout-maximized .settings-category:has(.settings-category-body .setting-row + .setting-row) .settings-category-body {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  align-items: stretch;
-  align-content: stretch;
-}
-
-.settings-panel.settings-layout-maximized .settings-category:has(.settings-category-body .setting-row + .setting-row) .settings-category-body>.setting-row {
-  flex: 0 0 auto;
-  width: fit-content;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.settings-panel.settings-layout-maximized .settings-category:has(.settings-category-body .setting-row + .setting-row) .settings-category-body>.setting-row+.setting-row {
-  flex: 1 1 0;
-  width: auto;
-  max-width: none;
-}
-
-.settings-panel.settings-layout-maximized .settings-category-body:has(> .setting-row:only-child) {
-  display: flex;
-}
-
-.settings-panel.settings-layout-maximized .settings-category-body:has(> .setting-row:only-child)>.setting-row {
-  flex: 1 1 auto;
-}
-
-.settings-panel.settings-layout-maximized .setting-row {
-  width: auto;
-  min-width: 0;
-  grid-template-columns: minmax(0, 1fr) 84px;
-  align-items: center;
-  align-content: center;
-  gap: 10px 14px;
-  min-height: 132px;
-  padding: 18px 20px;
-}
-
-.settings-panel.settings-layout-maximized .setting-row--menu-volume {
-  gap: 10px 12px;
-  padding: 16px 18px;
-}
-
-.settings-panel.settings-layout-maximized .setting-info {
-  flex: 1 1 auto;
-  max-width: none;
-  min-width: 0;
-  gap: 6px;
-}
-
-.settings-panel.settings-layout-maximized .setting-label {
-  font-size: 13px;
-  letter-spacing: 1px;
-}
-
-.settings-panel.settings-layout-maximized .setting-desc {
-  font-size: 10.5px;
-  line-height: 1.4;
-}
-
-.settings-panel.settings-layout-maximized .setting-row .uiverse-rocker-host {
-  --uiverse-scale: 0.39;
-  width: calc((150px * var(--uiverse-scale)) + 14px);
-  min-width: calc((150px * var(--uiverse-scale)) + 14px);
-  height: calc((195px * var(--uiverse-scale)) + 14px);
-  margin-left: 0;
-}
-
-.settings-panel.settings-layout-maximized .setting-row--menu-volume .menu-volume-knob-host {
-  --menu-knob-size: 49px;
-  --menu-knob-hit-size: 39px;
-  --menu-knob-hit-offset: 2px;
-  --menu-knob-dial-width: 20px;
-  --menu-knob-dial-height: 3px;
-  --menu-knob-notch-distance: 31px;
-  --menu-knob-label-font-size: 11px;
-  --menu-knob-label-offset: 6px;
-  --menu-knob-bound-width: 116px;
-  --menu-knob-bound-height: 96px;
-  --menu-knob-center-x: 66%;
-  margin-left: 0;
 }
 
 /* Animations */

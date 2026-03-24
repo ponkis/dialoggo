@@ -1564,10 +1564,8 @@ function createAppView(model, audioService) {
     return window.innerHeight >= 820;
   }
 
-  function syncSettingsLayoutMode(panel = state.activePanel) {
-    if (!refs.settingsPanel) return;
-    const useMaximizedLayout = panel === 'settings' && document.body.classList.contains('maximized');
-    refs.settingsPanel.classList.toggle('settings-layout-maximized', useMaximizedLayout);
+  function syncSettingsLayoutMode() {
+    // Maximization support has been removed; keep the hook as a no-op for panel flow callers.
   }
 
   function flipToControlsInstant() {

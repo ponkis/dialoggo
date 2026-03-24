@@ -27,10 +27,12 @@ function createMainWindow() {
     },
     frame: false,
     resizable: false,
-    maximizable: true,
+    maximizable: false,
+    fullscreenable: false,
     show: false,
   });
 
+  window.removeMenu();
   window.loadFile(paths.indexHtmlPath);
 
   window.webContents.setWindowOpenHandler(({
