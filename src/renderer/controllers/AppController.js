@@ -798,15 +798,8 @@ function startApp() {
 
   function stopCharacterGridDrag() {
     if (!reelDragState) return;
-    const { pointerId } = reelDragState;
     reelDragState = null;
     refs.charGrid.classList.remove('is-dragging');
-
-    if (pointerId !== null) {
-      try {
-        refs.charGrid.releasePointerCapture(pointerId);
-      } catch { }
-    }
   }
 
   refs.charGrid?.addEventListener('pointerdown', (event) => {
@@ -820,13 +813,9 @@ function startApp() {
     };
 
     suppressCharacterGridClick = false;
-
-    try {
-      refs.charGrid.setPointerCapture(event.pointerId);
-    } catch { }
   });
 
-  refs.charGrid?.addEventListener('pointermove', (event) => {
+  window.addEventListener('pointermove', (event) => {
     if (!reelDragState || event.pointerId !== reelDragState.pointerId) return;
 
     const deltaX = event.clientX - reelDragState.startX;
@@ -842,7 +831,7 @@ function startApp() {
     refs.charGrid.scrollLeft = reelDragState.startScrollLeft - deltaX;
   });
 
-  refs.charGrid?.addEventListener('pointerup', (event) => {
+  window.addEventListener('pointerup', (event) => {
     if (!reelDragState || event.pointerId !== reelDragState.pointerId) return;
     stopCharacterGridDrag();
     if (suppressCharacterGridClick) {
@@ -852,17 +841,8 @@ function startApp() {
     }
   });
 
-  refs.charGrid?.addEventListener('pointercancel', (event) => {
+  window.addEventListener('pointercancel', (event) => {
     if (!reelDragState || event.pointerId !== reelDragState.pointerId) return;
-    stopCharacterGridDrag();
-    suppressCharacterGridClick = false;
-  });
-
-  window.addEventListener('pointerup', () => {
-    stopCharacterGridDrag();
-  });
-
-  window.addEventListener('pointercancel', () => {
     stopCharacterGridDrag();
     suppressCharacterGridClick = false;
   });
