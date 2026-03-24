@@ -18,6 +18,7 @@ function createAppView(model, audioService) {
     btnPause: document.getElementById('btn-pause'),
     btnStop: document.getElementById('btn-stop'),
     btnFastForward: document.getElementById('btn-fastforward'),
+    btnUpload: document.getElementById('btn-upload'),
     app: document.querySelector('.app'),
     previewArea: document.getElementById('preview-area'),
     panelWrapper: document.querySelector('.panel-wrapper'),
@@ -49,6 +50,7 @@ function createAppView(model, audioService) {
     sleeveSettings: document.getElementById('sleeve-tab-settings'),
     inputMirrored: document.getElementById('input-mirrored-dialogue'),
     menuSoundsVolumeInputs: Array.from(document.querySelectorAll('input[name="menu-sounds-volume"]')),
+    menuSoundsVolumeKnobButton: document.querySelector('.menu-volume-knob-core-hit'),
     inputN64: document.getElementById('input-n64-mode'),
     inputHideBroken: document.getElementById('input-hide-broken-chars'),
   };
@@ -64,6 +66,8 @@ function createAppView(model, audioService) {
   const spriteImageCache = new Map();
   const cardAnimState = new Map();
   let flipCardAnimation = null;
+  let previewPlaceholderExplicitSuppression = false;
+  let previewPlaceholderPanelIntent = null;
   const dialogueShakeSamples = [
     { x: 0, y: 0 },
     { x: -3.1, y: -2.3 },
@@ -754,13 +758,9 @@ function createAppView(model, audioService) {
     if (!refs.dialogueInputHighlight || !refs.input) return;
 
     const computed = window.getComputedStyle(refs.input);
-    const borderLeft = parseFloat(computed.borderLeftWidth) || 0;
-    const borderRight = parseFloat(computed.borderRightWidth) || 0;
-    const basePaddingRight = parseFloat(computed.paddingRight) || 0;
-    const scrollbarWidth = Math.max(0, refs.input.offsetWidth - refs.input.clientWidth - borderLeft - borderRight);
 
     refs.dialogueInputHighlight.style.paddingTop = computed.paddingTop;
-    refs.dialogueInputHighlight.style.paddingRight = `${basePaddingRight + scrollbarWidth}px`;
+    refs.dialogueInputHighlight.style.paddingRight = computed.paddingRight;
     refs.dialogueInputHighlight.style.paddingBottom = computed.paddingBottom;
     refs.dialogueInputHighlight.style.paddingLeft = computed.paddingLeft;
     refs.dialogueInputHighlight.style.font = computed.font;
@@ -1367,8 +1367,37 @@ function createAppView(model, audioService) {
     return Math.max(120, refs.app.clientHeight - refs.bottombar.offsetHeight - panelHeight);
   }
 
-  function setPreviewPlaceholderSuppressed(suppressed) {
+  function getPreviewPlaceholderPanelState() {
+    return previewPlaceholderPanelIntent || state.activePanel || 'controls';
+  }
+
+  function shouldSuppressPreviewPlaceholder() {
+    return previewPlaceholderExplicitSuppression
+      || getPreviewPlaceholderPanelState() !== 'controls'
+      || refs.dialogueContainer?.classList.contains('active');
+  }
+
+  function syncPreviewPlaceholderState() {
+    const suppressed = shouldSuppressPreviewPlaceholder();
     refs.previewArea?.classList.toggle('preview-placeholder-suppressed', suppressed);
+    refs.placeholder?.classList.toggle('fade-out', suppressed);
+
+    if (suppressed) {
+      stopPlaceholderAnim();
+      return;
+    }
+
+    startPlaceholderAnim();
+  }
+
+  function setPreviewPlaceholderSuppressed(suppressed) {
+    previewPlaceholderExplicitSuppression = suppressed === true;
+    syncPreviewPlaceholderState();
+  }
+
+  function setPreviewPlaceholderPanelIntent(panel) {
+    previewPlaceholderPanelIntent = panel || null;
+    syncPreviewPlaceholderState();
   }
 
   function setFrontPanel(panel) {
@@ -1505,9 +1534,8 @@ function createAppView(model, audioService) {
     void refs.previewArea.offsetHeight;
 
     refs.previewArea.style.transition = `height ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}, filter ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}`;
-    refs.previewArea.classList.add('preview-strip-collapsed', 'preview-settings-muted', 'preview-content-hidden');
+    refs.previewArea.classList.add('preview-strip-collapsed', 'preview-settings-muted', 'preview-content-hidden', 'preview-content-exiting');
     setPreviewPlaceholderSuppressed(true);
-    stopPlaceholderAnim();
 
     requestAnimationFrame(() => {
       refs.previewArea.style.height = `${constants.PREVIEW_STRIP_HEIGHT}px`;
@@ -1526,21 +1554,11 @@ function createAppView(model, audioService) {
     void refs.previewArea.offsetHeight;
 
     refs.previewArea.style.transition = `height ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}, filter ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}`;
+    setPreviewPlaceholderSuppressed(keepPlaceholderSuppressed);
 
     requestAnimationFrame(() => {
       refs.previewArea.style.height = `${targetHeight}px`;
-      refs.previewArea.classList.remove('preview-settings-muted');
-
-      if (keepPlaceholderSuppressed) {
-        setPreviewPlaceholderSuppressed(true);
-        stopPlaceholderAnim();
-      } else {
-        refs.previewArea.classList.remove('preview-placeholder-suppressed');
-      }
-
-      if (!keepPlaceholderSuppressed && !refs.dialogueContainer.classList.contains('active')) {
-        startPlaceholderAnim();
-      }
+      refs.previewArea.classList.remove('preview-settings-muted', 'preview-content-exiting');
     });
 
     await model.sleep(constants.PREVIEW_COLLAPSE_MS + 50);
@@ -1553,11 +1571,7 @@ function createAppView(model, audioService) {
     refs.previewArea.style.transition = '';
     refs.app?.classList.remove('settings-panel-open');
     if (refs.panelWrapper) delete refs.panelWrapper.dataset.naturalPanelHeight;
-
-    if (keepPlaceholderSuppressed) {
-      setPreviewPlaceholderSuppressed(true);
-      stopPlaceholderAnim();
-    }
+    syncPreviewPlaceholderState();
   }
 
   function isLargeScreen() {
@@ -1585,7 +1599,8 @@ function createAppView(model, audioService) {
     refs.sleeveSettings.classList.remove('active');
     state.frontPanel = 'controls';
     state.activePanel = 'controls';
-    refs.previewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
+    refs.previewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden', 'preview-content-exiting');
+    setPreviewPlaceholderPanelIntent(null);
     setPreviewPlaceholderSuppressed(false);
     refs.previewArea.style.height = '';
     refs.previewArea.style.flex = '';
@@ -1595,10 +1610,7 @@ function createAppView(model, audioService) {
     refs.app?.classList.remove('settings-panel-open');
     if (refs.panelWrapper) delete refs.panelWrapper.dataset.naturalPanelHeight;
     syncSettingsLayoutMode('controls');
-
-    if (!refs.dialogueContainer.classList.contains('active')) {
-      startPlaceholderAnim();
-    }
+    syncPreviewPlaceholderState();
   }
 
   refs.versionLabel.textContent = `v${env.appVersion}`;
@@ -1608,7 +1620,7 @@ function createAppView(model, audioService) {
   setFlipCardPanel(state.activePanel === 'settings' ? 'settings' : null);
   window.addEventListener('resize', syncDialogueInputHighlight);
   syncDialogueInputHighlightMetrics();
-  startPlaceholderAnim();
+  syncPreviewPlaceholderState();
 
   return {
     refs,
@@ -1646,6 +1658,8 @@ function createAppView(model, audioService) {
     redrawSpriteForN64Toggle,
     computeExpandedPreviewHeight,
     setPreviewPlaceholderSuppressed,
+    setPreviewPlaceholderPanelIntent,
+    syncPreviewPlaceholderState,
     setFrontPanel,
     flipPanel,
     setActiveBackPanel,

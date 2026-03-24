@@ -48,10 +48,39 @@ function startApp() {
     activeElement.blur();
   }
 
-  function updatePlayButton() {
+  function syncCharacterButtonAvailability() {
+    const interactionLocked = state.isPlaying || state.isPaused || state.stopRequested;
+    document.querySelectorAll('.char-btn').forEach((button) => {
+      const id = button.dataset.id;
+      const character = characters.find((item) => item.id === id);
+      button.disabled = interactionLocked || !(character && character.isAvailable);
+    });
+  }
+
+  function syncPlaybackUiState() {
     const hasText = refs.input.value.trim().length > 0;
     const hasCharacter = state.selectedCharacter !== null;
-    view.setActionButtonBlocked(refs.btnPlay, !hasText || !hasCharacter || (state.isPlaying && !state.isPaused));
+    const interactionLocked = state.isPlaying || state.isPaused || state.stopRequested;
+
+    view.setActionButtonBlocked(
+      refs.btnPlay,
+      state.stopRequested || !hasText || !hasCharacter || (state.isPlaying && !state.isPaused),
+    );
+    refs.btnPlay.title = state.isPaused ? 'Resume' : 'Play';
+    view.setActionButtonBlocked(
+      refs.btnPause,
+      state.stopRequested || !state.isPlaying || state.isPaused || state.pauseTransitionLock,
+    );
+    view.setActionButtonBlocked(refs.btnStop, state.stopRequested || !state.isPlaying);
+    view.setActionButtonBlocked(refs.btnUpload, interactionLocked);
+    view.setInputLocked(state.isPlaying || state.isPaused);
+    syncCharacterButtonAvailability();
+    updateFastForwardAvailability();
+    updateSettingsSleeveBlockedState();
+  }
+
+  function updatePlayButton() {
+    syncPlaybackUiState();
   }
 
   function updateFastForwardAvailability() {
@@ -160,33 +189,26 @@ function startApp() {
     state.stopRequested = false;
     state.pauseTransitionLock = false;
     resetFastForwardState();
+    syncPlaybackUiState();
 
     view.normalizeDialogueInput();
     const text = model.clampDialogueInputValue(refs.input.value).trim();
     if (!text) {
       state.isPlaying = false;
-      updateSettingsSleeveBlockedState();
+      syncPlaybackUiState();
       return;
     }
 
     const charMsPerChar = 40;
     const character = state.selectedCharacter;
 
-    view.setActionButtonBlocked(refs.btnPlay, true);
-    view.setActionButtonBlocked(refs.btnPause, false);
-    view.setActionButtonBlocked(refs.btnStop, false);
-    view.setInputLocked(true);
     blurPlaybackButtonFocus();
-    document.querySelectorAll('.char-btn').forEach((button) => {
-      button.disabled = true;
-    });
 
     refs.statusDot.classList.add('playing');
     refs.statusDot.classList.remove('paused');
-    updateSettingsSleeveBlockedState();
 
-    refs.placeholder.classList.add('fade-out');
     refs.dialogueContainer.classList.add('active');
+    view.syncPreviewPlaceholderState();
 
     syncN64ModeFromCheckbox();
     refs.dialogueText.innerHTML = '';
@@ -372,29 +394,16 @@ function startApp() {
     refs.dialogueBox.className = `dialogue-box${view.dialogueBoxExtraClasses()}`;
     refs.dialogueText.innerHTML = '';
     view.clearN64DialogueTextCanvas();
-    refs.placeholder.classList.remove('fade-out');
 
     state.isPlaying = false;
     state.isPaused = false;
     state.stopRequested = false;
     state.pauseTransitionLock = false;
     resetFastForwardState();
-
-    view.setActionButtonBlocked(refs.btnStop, true);
-    view.setActionButtonBlocked(refs.btnPause, true);
-    refs.btnPlay.title = 'Play';
-    view.setInputLocked(false);
     refs.statusDot.classList.remove('playing');
     refs.statusDot.classList.remove('paused');
-
-    document.querySelectorAll('.char-btn').forEach((button) => {
-      const id = button.dataset.id;
-      const character = characters.find((item) => item.id === id);
-      button.disabled = !(character && character.isAvailable);
-    });
-
-    updatePlayButton();
-    updateSettingsSleeveBlockedState();
+    view.syncPreviewPlaceholderState();
+    syncPlaybackUiState();
   }
 
   function stopDialogue() {
@@ -402,6 +411,7 @@ function startApp() {
     state.isPaused = false;
     state.pauseTransitionLock = false;
     resetFastForwardState();
+    syncPlaybackUiState();
 
     if (state.pauseResolve) {
       const resolve = state.pauseResolve;
@@ -414,9 +424,7 @@ function startApp() {
     spriteRenderer.frameIndex = 0;
     spriteRenderer.showFrame(spriteRenderer.speakFrames, 0);
     spriteRenderer.startIdleAfterDelay(2000);
-    view.setInputLocked(false);
     refs.statusDot.classList.remove('paused');
-    updateSettingsSleeveBlockedState();
   }
 
   function doPause() {
@@ -431,19 +439,14 @@ function startApp() {
     spriteRenderer.stop();
     spriteRenderer.smoothCloseAndIdle();
     spriteRenderer.startIdleAfterDelay(2000);
-
-    view.setActionButtonBlocked(refs.btnPlay, false);
-    refs.btnPlay.title = 'Resume';
-    view.setActionButtonBlocked(refs.btnPause, true);
     refs.statusDot.classList.remove('playing');
     refs.statusDot.classList.add('paused');
-    view.setInputLocked(true);
+    syncPlaybackUiState();
 
     setTimeout(() => {
       state.pauseTransitionLock = false;
+      syncPlaybackUiState();
     }, 140);
-
-    updateSettingsSleeveBlockedState();
   }
 
   function doResume() {
@@ -457,19 +460,14 @@ function startApp() {
     spriteRenderer.showFrame(spriteRenderer.speakFrames, 0);
     speechLoop.resume();
     resumeFromPause();
-
-    view.setActionButtonBlocked(refs.btnPlay, true);
-    refs.btnPlay.title = 'Play';
-    view.setActionButtonBlocked(refs.btnPause, false);
     refs.statusDot.classList.add('playing');
     refs.statusDot.classList.remove('paused');
-    view.setInputLocked(true);
+    syncPlaybackUiState();
 
     setTimeout(() => {
       state.pauseTransitionLock = false;
+      syncPlaybackUiState();
     }, 140);
-
-    updateSettingsSleeveBlockedState();
   }
 
   function resetPreviewAreaInlineStyles() {
@@ -488,17 +486,12 @@ function startApp() {
   function syncFrontPanelLayout(options = {}) {
     const suppressPlaceholder = options.suppressPlaceholder === true;
 
-    refs.previewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
+    refs.previewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden', 'preview-content-exiting');
     view.setPreviewPlaceholderSuppressed(suppressPlaceholder);
-
-    if (suppressPlaceholder) {
-      view.stopPlaceholderAnim();
-    } else if (!refs.dialogueContainer.classList.contains('active')) {
-      view.startPlaceholderAnim();
-    }
 
     resetPreviewAreaInlineStyles();
     clearExpandedPanelFlow();
+    view.syncPreviewPlaceholderState();
   }
 
   async function showPanel(panel) {
@@ -510,6 +503,8 @@ function startApp() {
     const previousPanel = state.activePanel;
     const hasCollapsedPreviewFlow = refs.app?.classList.contains('settings-panel-open');
     const leavingSettings = previousPanel === 'settings';
+    view.setPreviewPlaceholderPanelIntent(panel);
+    view.setPreviewPlaceholderSuppressed(panel !== 'controls');
 
     try {
       if (panel === 'settings') {
@@ -524,9 +519,8 @@ function startApp() {
         }
 
         if (large) {
-          refs.previewArea.classList.add('preview-settings-muted');
+          refs.previewArea.classList.add('preview-settings-muted', 'preview-content-hidden', 'preview-content-exiting');
           view.setPreviewPlaceholderSuppressed(true);
-          view.stopPlaceholderAnim();
         } else if (!hasCollapsedPreviewFlow) {
           refs.app?.classList.add('settings-panel-open');
           await view.collapsePreviewThenSettings();
@@ -569,6 +563,7 @@ function startApp() {
         }
       }
     } finally {
+      view.setPreviewPlaceholderPanelIntent(null);
       state.panelTransitionLock = false;
     }
   }
@@ -581,12 +576,11 @@ function startApp() {
       element.title = blocked ? blockedTitle : idleTitle;
     };
 
-    const blocked = state.isPlaying || state.isPaused;
+    const blocked = state.isPlaying || state.isPaused || state.stopRequested;
     setBlockedState(refs.sleeveSettings, blocked, 'Settings', 'Settings');
     setBlockedState(refs.sleeveBackgrounds, false, 'Backgrounds', 'Backgrounds');
     setBlockedState(refs.sleeveCharacter, blocked, 'Character', 'Character');
     setBlockedState(refs.sleeveCamera, blocked, 'Export', 'Export');
-    updateFastForwardAvailability();
   }
 
   function initN64ModeFromDom() {
@@ -637,6 +631,13 @@ function startApp() {
     refs.menuSoundsVolumeInputs.forEach((input) => {
       input.checked = Number(input.value) === level;
     });
+
+    if (refs.menuSoundsVolumeKnobButton) {
+      const nextLevel = level >= 6 ? 1 : level + 1;
+      const label = `Menu sounds volume ${level} of 6. Click to cycle clockwise to ${nextLevel}.`;
+      refs.menuSoundsVolumeKnobButton.title = label;
+      refs.menuSoundsVolumeKnobButton.setAttribute('aria-label', label);
+    }
   }
 
   function setMenuSoundsVolumeLevel(value, {
@@ -685,6 +686,7 @@ function startApp() {
     if (element.disabled || element.getAttribute('aria-disabled') === 'true') return;
     if (element.classList.contains('char-btn') || element.closest('.reel-arrow')) return;
     if (element.classList.contains('sleeve-tab') || element.closest('.uiverse-rocker-switch')) return;
+    if (element.classList.contains('menu-volume-knob-core-hit')) return;
     audioService.playMenuSound('click');
   }, true);
 
@@ -769,22 +771,120 @@ function startApp() {
 
   window.addEventListener('blur', () => {
     resetFastForwardState();
+    stopActiveReelHold(false);
   });
 
-  refs.reelLeft.addEventListener('click', () => {
-    audioService.playMenuSound('arrowLeft');
-    refs.charGrid.scrollBy({
-      left: -160,
-      behavior: 'smooth'
+  const REEL_TAP_STEP = 160;
+  const REEL_HOLD_DELAY_MS = 105;
+  const REEL_HOLD_SPEED_PX_PER_MS = 2.05;
+  let activeReelHold = null;
+
+  function stopActiveReelHold(performTapStep = false) {
+    if (!activeReelHold) return;
+
+    const holdState = activeReelHold;
+    activeReelHold = null;
+    clearTimeout(holdState.holdTimer);
+
+    if (holdState.frameId) {
+      cancelAnimationFrame(holdState.frameId);
+    }
+
+    if (performTapStep && !holdState.didStartContinuous) {
+      refs.charGrid.scrollBy({
+        left: holdState.direction * REEL_TAP_STEP,
+        behavior: 'smooth',
+      });
+    }
+
+  }
+
+  function attachReelArrowHoldControl(element, direction, soundKey) {
+    if (!element) return;
+
+    element.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0 || element.classList.contains('hidden')) return;
+
+      stopActiveReelHold(false);
+      audioService.playMenuSound(soundKey);
+      event.preventDefault();
+
+      const holdState = {
+        element,
+        direction,
+        pointerId: event.pointerId,
+        holdTimer: 0,
+        frameId: 0,
+        didStartContinuous: false,
+        lastTimestamp: 0,
+      };
+
+      activeReelHold = holdState;
+
+      const tick = (timestamp) => {
+        if (activeReelHold !== holdState) return;
+
+        holdState.didStartContinuous = true;
+        if (!holdState.lastTimestamp) {
+          holdState.lastTimestamp = timestamp;
+          holdState.frameId = requestAnimationFrame(tick);
+          return;
+        }
+
+        const deltaMs = Math.max(12, Math.min(20, timestamp - holdState.lastTimestamp));
+        holdState.lastTimestamp = timestamp;
+        refs.charGrid.scrollLeft += holdState.direction * deltaMs * REEL_HOLD_SPEED_PX_PER_MS;
+        holdState.frameId = requestAnimationFrame(tick);
+      };
+
+      holdState.holdTimer = setTimeout(() => {
+        if (activeReelHold !== holdState) return;
+        holdState.frameId = requestAnimationFrame(tick);
+      }, REEL_HOLD_DELAY_MS);
     });
+
+    element.addEventListener('pointerup', (event) => {
+      if (!activeReelHold || activeReelHold.element !== element) return;
+      if (
+        event.pointerId !== undefined
+        && activeReelHold.pointerId !== null
+        && event.pointerId !== activeReelHold.pointerId
+      ) return;
+      stopActiveReelHold(true);
+    });
+
+    element.addEventListener('pointercancel', (event) => {
+      if (!activeReelHold || activeReelHold.element !== element) return;
+      if (
+        event.pointerId !== undefined
+        && activeReelHold.pointerId !== null
+        && event.pointerId !== activeReelHold.pointerId
+      ) return;
+      stopActiveReelHold(false);
+    });
+  }
+
+  attachReelArrowHoldControl(refs.reelLeft, -1, 'arrowLeft');
+  attachReelArrowHoldControl(refs.reelRight, 1, 'arrowRight');
+
+  window.addEventListener('pointerup', (event) => {
+    if (!activeReelHold) return;
+    if (
+      event.pointerId !== undefined
+      && activeReelHold.pointerId !== null
+      && event.pointerId !== activeReelHold.pointerId
+    ) return;
+    stopActiveReelHold(true);
   });
 
-  refs.reelRight.addEventListener('click', () => {
-    audioService.playMenuSound('arrowRight');
-    refs.charGrid.scrollBy({
-      left: 160,
-      behavior: 'smooth'
-    });
+  window.addEventListener('pointercancel', (event) => {
+    if (!activeReelHold) return;
+    if (
+      event.pointerId !== undefined
+      && activeReelHold.pointerId !== null
+      && event.pointerId !== activeReelHold.pointerId
+    ) return;
+    stopActiveReelHold(false);
   });
 
   refs.charGrid.addEventListener('scroll', view.updateReelArrows);
@@ -880,19 +980,7 @@ function startApp() {
     });
   });
 
-  document.querySelectorAll('.menu-volume-knob-hit').forEach((label) => {
-    label.addEventListener('click', (event) => {
-      const level = Number(label.dataset.level || 0);
-      if (!Number.isFinite(level) || level < 1) return;
-      event.preventDefault();
-      setMenuSoundsVolumeLevel(level, {
-        persist: true,
-        playFeedback: true
-      });
-    });
-  });
-
-  document.querySelector('.menu-volume-knob-core-hit')?.addEventListener('click', (event) => {
+  refs.menuSoundsVolumeKnobButton?.addEventListener('click', (event) => {
     event.preventDefault();
     const nextLevel = state.menuSoundsVolumeLevel >= 6 ? 1 : state.menuSoundsVolumeLevel + 1;
     setMenuSoundsVolumeLevel(nextLevel, {
@@ -908,9 +996,7 @@ function startApp() {
     if (!wasActive) view.startCardSpeakThenIdle(character.id);
   });
   requestAnimationFrame(view.updateReelArrows);
-  updatePlayButton();
-
-  updateSettingsSleeveBlockedState();
+  syncPlaybackUiState();
   initN64ModeFromDom();
 
   try {
