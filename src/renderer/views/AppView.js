@@ -719,12 +719,14 @@ function createAppView(model, audioService) {
 
     const textStyle = window.getComputedStyle(refs.dialogueText);
     const areaStyle = window.getComputedStyle(refs.dialogueTextArea);
+    const effectiveLetterSpacing = state.n64ModeEnabled ? 0.5 : (Number.parseFloat(textStyle.letterSpacing) || 0);
+    const n64RightSafetyPad = state.n64ModeEnabled ? 10 : 0;
     const paddingLeft = Number.parseFloat(areaStyle.paddingLeft) || 0;
     const paddingRight = Number.parseFloat(areaStyle.paddingRight) || 0;
     const measuredWidth = Math.max(
       refs.dialogueText.clientWidth || 0,
       Math.floor(refs.dialogueTextArea.clientWidth - paddingLeft - paddingRight),
-    );
+    ) - n64RightSafetyPad;
 
     if (measuredWidth <= 0) return null;
 
@@ -740,8 +742,8 @@ function createAppView(model, audioService) {
 
     return {
       ctx: dialogueMeasureContext,
-      fontKey: `${font}|${textStyle.letterSpacing || '0px'}`,
-      letterSpacing: Number.parseFloat(textStyle.letterSpacing) || 0,
+      fontKey: `${font}|${effectiveLetterSpacing}`,
+      letterSpacing: effectiveLetterSpacing,
       maxWidth: measuredWidth,
     };
   }
@@ -750,13 +752,27 @@ function createAppView(model, audioService) {
     if (!metrics || characters.length === 0) return 0;
 
     const text = characters.map((character) => character.value).join('');
-    const cacheKey = `${metrics.fontKey}|${text}`;
+    const cacheKey = `${metrics.fontKey}|line|${text}`;
     if (dialogueMeasureCache.has(cacheKey)) {
       return dialogueMeasureCache.get(cacheKey);
     }
 
-    const width = metrics.ctx.measureText(text).width
-      + Math.max(0, characters.length - 1) * metrics.letterSpacing;
+    let width = 0;
+
+    characters.forEach((character, index) => {
+      const charCacheKey = `${metrics.fontKey}|char|${character.value}`;
+      let charWidth = dialogueMeasureCache.get(charCacheKey);
+
+      if (typeof charWidth !== 'number') {
+        charWidth = metrics.ctx.measureText(character.value).width;
+        dialogueMeasureCache.set(charCacheKey, charWidth);
+      }
+
+      width += charWidth;
+      if (index < characters.length - 1) {
+        width += metrics.letterSpacing;
+      }
+    });
 
     if (dialogueMeasureCache.size > 600) {
       dialogueMeasureCache.clear();
