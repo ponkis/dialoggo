@@ -582,10 +582,10 @@ function startApp() {
     };
 
     const blocked = state.isPlaying || state.isPaused;
-    setBlockedState(refs.sleeveSettings, blocked, 'Settings', 'Settings (available when dialogue is idle)');
+    setBlockedState(refs.sleeveSettings, blocked, 'Settings', 'Settings');
     setBlockedState(refs.sleeveBackgrounds, false, 'Backgrounds', 'Backgrounds');
-    setBlockedState(refs.sleeveCharacter, blocked, 'Character', 'Character (available when dialogue is idle)');
-    setBlockedState(refs.sleeveCamera, blocked, 'Export', 'Export (available when dialogue is idle)');
+    setBlockedState(refs.sleeveCharacter, blocked, 'Character', 'Character');
+    setBlockedState(refs.sleeveCamera, blocked, 'Export', 'Export');
     updateFastForwardAvailability();
   }
 

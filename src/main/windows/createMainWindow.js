@@ -14,9 +14,9 @@ function createMainWindow() {
 
   const window = new BrowserWindow({
     width: 800,
-    height: 600,
+    height: 800,
     minWidth: 800,
-    minHeight: 600,
+    minHeight: 800,
     backgroundColor: '#0a0c16',
     icon: paths.iconPath,
     webPreferences: {
@@ -34,6 +34,28 @@ function createMainWindow() {
 
   window.removeMenu();
   window.loadFile(paths.indexHtmlPath);
+
+  window.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown') return;
+
+    const hasPrimaryModifier = process.platform === 'darwin' ? input.meta : input.control;
+    if (!hasPrimaryModifier || !input.shift) return;
+
+    const key = String(input.key || '').toLowerCase();
+
+    if (key === 'i') {
+      event.preventDefault();
+      window.webContents.openDevTools({
+        mode: 'detach',
+      });
+      return;
+    }
+
+    if (key === 'r') {
+      event.preventDefault();
+      window.webContents.reloadIgnoringCache();
+    }
+  });
 
   window.webContents.setWindowOpenHandler(({
     url

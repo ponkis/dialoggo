@@ -1272,7 +1272,7 @@ img {
   align-items: stretch;
   position: relative;
   z-index: 1;
-  padding: 4px 8px 10px;
+  padding: 0px 8px 10px;
   width: 100%;
   max-width: 860px;
   margin: 0 auto;
@@ -1461,14 +1461,14 @@ img {
 }
 
 .menu-volume-knob-host {
-  --menu-knob-size: 30px;
+  --menu-knob-size: 50px;
   --menu-knob-hit-size: 30px;
   --menu-knob-hit-offset: 3px;
-  --menu-knob-dial-width: 15px;
+  --menu-knob-dial-width: 20px;
   --menu-knob-dial-height: 3px;
-  --menu-knob-notch-distance: 22px;
+  --menu-knob-notch-distance: 19px;
   --menu-knob-label-font-size: 10px;
-  --menu-knob-label-offset: 7px;
+  --menu-knob-label-offset: 12px;
   --menu-knob-bound-width: 78px;
   --menu-knob-bound-height: 72px;
   --menu-knob-center-x: 70%;
@@ -2816,7 +2816,7 @@ img {
   align-items: center;
   justify-content: center;
   padding: 0 18px;
-  color: rgba(231, 214, 184, 0.7);
+  color: var(--text-muted);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.8px;
