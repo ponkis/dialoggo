@@ -2749,8 +2749,8 @@ img {
 
 .character-pack-section {
   display: flex;
-  flex-direction: column;
-  gap: 7px;
+  align-items: center;
+  gap: 8px;
   flex: 0 0 auto;
   min-width: max-content;
 }
@@ -2760,23 +2760,6 @@ img {
 }
 
 .character-pack-heading {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 0 6px;
-  min-height: 26px;
-}
-
-.character-pack-kicker {
-  color: rgba(188, 171, 138, 0.64);
-  font-size: 7px;
-  font-weight: 700;
-  letter-spacing: 1.2px;
-  text-transform: uppercase;
-  line-height: 1;
-}
-
-.character-pack-label {
   color: var(--text-primary);
   font-size: 10px;
   font-weight: 800;
@@ -2784,6 +2767,23 @@ img {
   text-transform: uppercase;
   line-height: 1.1;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.character-pack-separator {
+  width: 1px;
+  align-self: stretch;
+  min-height: 52px;
+  background:
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(220, 195, 143, 0.18) 14%,
+      rgba(220, 195, 143, 0.62) 50%,
+      rgba(220, 195, 143, 0.18) 86%,
+      rgba(255, 255, 255, 0) 100%);
+  box-shadow:
+    1px 0 0 rgba(0, 0, 0, 0.38);
 }
 
 .character-pack-strip {

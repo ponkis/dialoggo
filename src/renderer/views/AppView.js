@@ -1424,20 +1424,15 @@ function createAppView(model, audioService) {
       packSection.className = 'character-pack-section';
       packSection.dataset.packId = pack.id;
 
-      const packHeading = document.createElement('div');
+      const packHeading = document.createElement('span');
       packHeading.className = 'character-pack-heading';
-
-      const packKicker = document.createElement('span');
-      packKicker.className = 'character-pack-kicker';
-      packKicker.textContent = pack.id.toUpperCase();
-
-      const packLabel = document.createElement('span');
-      packLabel.className = 'character-pack-label';
-      packLabel.textContent = pack.displayName;
-
-      packHeading.appendChild(packKicker);
-      packHeading.appendChild(packLabel);
+      packHeading.textContent = pack.displayName;
       packSection.appendChild(packHeading);
+
+      const packSeparator = document.createElement('span');
+      packSeparator.className = 'character-pack-separator';
+      packSeparator.setAttribute('aria-hidden', 'true');
+      packSection.appendChild(packSeparator);
 
       const packStrip = document.createElement('div');
       packStrip.className = 'character-pack-strip';

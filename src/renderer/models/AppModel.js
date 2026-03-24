@@ -78,6 +78,16 @@ function sortDirectoryNames(directoryNames) {
   }));
 }
 
+function sortItemsByDisplayName(items, getDisplayName) {
+  return [...items].sort((left, right) => {
+    const leftName = String(getDisplayName(left) || '').trim();
+    const rightName = String(getDisplayName(right) || '').trim();
+    return leftName.localeCompare(rightName, undefined, {
+      sensitivity: 'base',
+    });
+  });
+}
+
 function formatCharacterFolderName(folderName) {
   const sanitizedFolderName = String(folderName || '')
     .replace(/-/g, ' ')
@@ -162,7 +172,10 @@ function discoverCharacterCatalog(env) {
       ...listDirectoryNames(env, packImgDir),
       ...listDirectoryNames(env, packSndDir),
     ]);
-    const sortedCharacterNames = sortDirectoryNames(characterNames);
+    const sortedCharacterNames = sortItemsByDisplayName(characterNames, (characterName) => {
+      const characterConfig = readCharacterConfig(env, packName, characterName);
+      return getCharacterDisplayName(characterName, characterConfig?.character);
+    });
     let discoveredCharacterCount = 0;
 
     if (sortedCharacterNames.length === 0) return;
@@ -241,7 +254,7 @@ function discoverCharacterCatalog(env) {
   });
 
   return {
-    packs,
+    packs: sortItemsByDisplayName(packs, (pack) => pack.displayName),
     characters,
   };
 }
