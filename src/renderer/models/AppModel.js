@@ -29,6 +29,9 @@ const storageKeys = {
   hideBrokenChars: 'dialoggo-hide-broken-chars',
 };
 const RESERVED_PACK_DIRECTORY_NAMES = new Set(['char', 'generic', 'gui']);
+const SPECIAL_PACK_ORDER = new Map([
+  ['custom', 0],
+]);
 
 function createEnvironment() {
   const bridge = getDialoggoBridge();
@@ -83,6 +86,23 @@ function sortItemsByDisplayName(items, getDisplayName) {
     const leftName = String(getDisplayName(left) || '').trim();
     const rightName = String(getDisplayName(right) || '').trim();
     return leftName.localeCompare(rightName, undefined, {
+      sensitivity: 'base',
+    });
+  });
+}
+
+function sortPacks(packs) {
+  return [...packs].sort((left, right) => {
+    const leftId = String(left?.id || '').toLowerCase();
+    const rightId = String(right?.id || '').toLowerCase();
+    const leftPriority = SPECIAL_PACK_ORDER.has(leftId) ? SPECIAL_PACK_ORDER.get(leftId) : Number.MAX_SAFE_INTEGER;
+    const rightPriority = SPECIAL_PACK_ORDER.has(rightId) ? SPECIAL_PACK_ORDER.get(rightId) : Number.MAX_SAFE_INTEGER;
+
+    if (leftPriority !== rightPriority) {
+      return leftPriority - rightPriority;
+    }
+
+    return String(left?.displayName || '').localeCompare(String(right?.displayName || ''), undefined, {
       sensitivity: 'base',
     });
   });
@@ -254,7 +274,7 @@ function discoverCharacterCatalog(env) {
   });
 
   return {
-    packs: sortItemsByDisplayName(packs, (pack) => pack.displayName),
+    packs: sortPacks(packs),
     characters,
   };
 }
