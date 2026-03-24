@@ -508,14 +508,12 @@ function startApp() {
     state.panelTransitionLock = true;
     const large = view.isLargeScreen();
     const previousPanel = state.activePanel;
-    const previousFrontPanel = state.frontPanel;
     const hasCollapsedPreviewFlow = refs.app?.classList.contains('settings-panel-open');
     const leavingSettings = previousPanel === 'settings';
 
     try {
       if (panel === 'settings') {
         view.syncSettingsLayoutMode('settings');
-        view.setActiveBackPanel('settings');
         refs.sleeveBackgrounds.classList.remove('active');
         refs.sleeveSettings.classList.add('active');
 
@@ -535,75 +533,39 @@ function startApp() {
         }
 
         audioService.playMenuSound('settingsOpen');
-        view.setFlipCardPanel('settings');
+        await view.flipPanel(previousPanel, 'settings');
         state.activePanel = 'settings';
       } else if (panel === 'backgrounds') {
         refs.sleeveSettings.classList.remove('active');
         refs.sleeveBackgrounds.classList.add('active');
+        audioService.playMenuSound('settingsOpen');
+        await view.flipPanel(previousPanel, 'backgrounds');
+        state.frontPanel = 'backgrounds';
+        state.activePanel = 'backgrounds';
+        view.syncSettingsLayoutMode('controls');
 
-        if (leavingSettings) {
-          state.frontPanel = 'backgrounds';
-          view.setFrontPanel('backgrounds');
-          audioService.playMenuSound('settingsOpen');
-          view.setFlipCardPanel(null);
-          state.activePanel = 'backgrounds';
-
-          await model.sleep(constants.FLIP_CARD_MS);
-
-          view.setActiveBackPanel(null);
-          view.syncSettingsLayoutMode('controls');
-
-          if (hasCollapsedPreviewFlow) {
-            await view.expandPreviewAfterControls({
-              keepPlaceholderSuppressed: true,
-            });
-          } else {
-            syncFrontPanelLayout({
-              suppressPlaceholder: true,
-            });
-          }
+        if (leavingSettings && hasCollapsedPreviewFlow) {
+          await view.expandPreviewAfterControls({
+            keepPlaceholderSuppressed: true,
+          });
         } else {
-          view.setActiveBackPanel(null);
-          view.setFlipCardPanel(null);
-          view.syncSettingsLayoutMode('controls');
           syncFrontPanelLayout({
             suppressPlaceholder: true,
           });
-          audioService.playMenuSound('settingsOpen');
-          await view.swapFrontPanel(previousFrontPanel, 'backgrounds');
-          state.frontPanel = 'backgrounds';
-          state.activePanel = 'backgrounds';
         }
       } else {
         refs.sleeveSettings.classList.remove('active');
         refs.sleeveBackgrounds.classList.remove('active');
+        audioService.playMenuSound('settingsClose');
+        await view.flipPanel(previousPanel, 'controls');
+        state.frontPanel = 'controls';
+        state.activePanel = 'controls';
+        view.syncSettingsLayoutMode('controls');
 
-        if (leavingSettings) {
-          state.frontPanel = 'controls';
-          view.setFrontPanel('controls');
-          audioService.playMenuSound('settingsClose');
-          view.setFlipCardPanel(null);
-          state.activePanel = 'controls';
-
-          await model.sleep(constants.FLIP_CARD_MS);
-
-          view.setActiveBackPanel(null);
-          view.syncSettingsLayoutMode('controls');
-
-          if (hasCollapsedPreviewFlow) {
-            await view.expandPreviewAfterControls();
-          } else {
-            syncFrontPanelLayout();
-          }
+        if (leavingSettings && hasCollapsedPreviewFlow) {
+          await view.expandPreviewAfterControls();
         } else {
-          view.setActiveBackPanel(null);
-          view.setFlipCardPanel(null);
-          view.syncSettingsLayoutMode('controls');
           syncFrontPanelLayout();
-          audioService.playMenuSound('settingsClose');
-          await view.swapFrontPanel(previousFrontPanel, 'controls');
-          state.frontPanel = 'controls';
-          state.activePanel = 'controls';
         }
       }
     } finally {

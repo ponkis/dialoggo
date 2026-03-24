@@ -63,6 +63,7 @@ function createAppView(model, audioService) {
   const MAX_SPRITE_IMAGE_CACHE_ENTRIES = 120;
   const spriteImageCache = new Map();
   const cardAnimState = new Map();
+  let flipCardAnimation = null;
   const dialogueShakeSamples = [
     { x: 0, y: 0 },
     { x: -3.1, y: -2.3 },
@@ -1387,52 +1388,112 @@ function createAppView(model, audioService) {
     refs.flipCard?.classList.toggle('panel-settings', panel === 'settings');
   }
 
-  function getFrontPanelElement(panel) {
-    if (panel === 'controls') return refs.controlsPanel;
-    if (panel === 'backgrounds') return refs.backgroundsPanel;
-    return null;
-  }
-
-  function clearFrontPanelSwapClasses(element) {
-    if (!element) return;
-    element.classList.remove('front-panel-swap-out', 'front-panel-swap-in');
-  }
-
-  async function swapFrontPanel(fromPanel, toPanel) {
-    if (fromPanel === toPanel) {
-      setFrontPanel(toPanel);
+  function applyPanelState(panel) {
+    if (panel === 'settings') {
+      setActiveBackPanel('settings');
+      setFlipCardPanel('settings');
       return;
     }
 
-    const fromElement = getFrontPanelElement(fromPanel);
-    const toElement = getFrontPanelElement(toPanel);
+    setFlipCardPanel(null);
+    setActiveBackPanel(null);
+    setFrontPanel(panel);
+  }
 
-    if (!fromElement || !toElement) {
-      setFrontPanel(toPanel);
+  function getFlipPhaseAngles(fromPanel, toPanel) {
+    if (fromPanel === 'settings' && toPanel !== 'settings') {
+      return {
+        outFrom: 180,
+        outTo: 90,
+        inFrom: 90,
+        inTo: 0,
+      };
+    }
+
+    if (fromPanel !== 'settings' && toPanel === 'settings') {
+      return {
+        outFrom: 0,
+        outTo: 90,
+        inFrom: 90,
+        inTo: 180,
+      };
+    }
+
+    return {
+      outFrom: 0,
+      outTo: 90,
+      inFrom: -90,
+      inTo: 0,
+    };
+  }
+
+  async function runFlipPhase(fromDeg, toDeg, duration) {
+    if (!refs.flipCard || typeof refs.flipCard.animate !== 'function' || fromDeg === toDeg) return;
+
+    if (flipCardAnimation) {
+      flipCardAnimation.cancel();
+      flipCardAnimation = null;
+    }
+
+    const animation = refs.flipCard.animate(
+      [
+        { transform: `rotateY(${fromDeg}deg)` },
+        { transform: `rotateY(${toDeg}deg)` },
+      ],
+      {
+        duration,
+        easing: 'cubic-bezier(0.4, 0.2, 0.2, 1)',
+        fill: 'forwards',
+      },
+    );
+
+    flipCardAnimation = animation;
+
+    try {
+      await animation.finished;
+    } catch {
+      // Ignore cancellations; the final state is applied by the caller.
+    } finally {
+      if (typeof animation.commitStyles === 'function') {
+        animation.commitStyles();
+      }
+
+      animation.cancel();
+
+      if (flipCardAnimation === animation) {
+        flipCardAnimation = null;
+      }
+    }
+  }
+
+  async function flipPanel(fromPanel, toPanel) {
+    if (fromPanel === toPanel) {
+      applyPanelState(toPanel);
+      return;
+    }
+
+    if (!refs.flipCard || typeof refs.flipCard.animate !== 'function') {
+      applyPanelState(toPanel);
       return;
     }
 
     const phaseMs = Math.round(constants.FLIP_CARD_MS / 2);
+    const angles = getFlipPhaseAngles(fromPanel, toPanel);
+    refs.flipCard.classList.add('panel-flipping');
 
-    clearFrontPanelSwapClasses(fromElement);
-    clearFrontPanelSwapClasses(toElement);
-    refs.flipCard?.classList.add('front-panel-swapping');
+    try {
+      await runFlipPhase(angles.outFrom, angles.outTo, phaseMs);
+      applyPanelState(toPanel);
+      await runFlipPhase(angles.inFrom, angles.inTo, phaseMs);
+    } finally {
+      if (flipCardAnimation) {
+        flipCardAnimation.cancel();
+        flipCardAnimation = null;
+      }
 
-    fromElement.classList.add('active', 'front-panel-swap-out');
-    fromElement.setAttribute('aria-hidden', 'false');
-    await model.sleep(phaseMs);
-
-    clearFrontPanelSwapClasses(fromElement);
-    fromElement.classList.remove('active');
-    fromElement.setAttribute('aria-hidden', 'true');
-
-    toElement.classList.add('active', 'front-panel-swap-in');
-    toElement.setAttribute('aria-hidden', 'false');
-    await model.sleep(phaseMs);
-
-    clearFrontPanelSwapClasses(toElement);
-    refs.flipCard?.classList.remove('front-panel-swapping');
-    setFrontPanel(toPanel);
+      refs.flipCard.classList.remove('panel-flipping');
+      refs.flipCard.style.transform = '';
+    }
   }
 
   async function collapsePreviewThenSettings() {
@@ -1512,11 +1573,14 @@ function createAppView(model, audioService) {
   function flipToControlsInstant() {
     if (state.activePanel === 'controls') return;
 
-    refs.flipCard.style.transition = 'none';
-    setFlipCardPanel(null);
-    void refs.flipCard.offsetHeight;
-    refs.flipCard.style.transition = '';
+    if (flipCardAnimation) {
+      flipCardAnimation.cancel();
+      flipCardAnimation = null;
+    }
 
+    refs.flipCard?.classList.remove('panel-flipping');
+    if (refs.flipCard) refs.flipCard.style.transform = '';
+    setFlipCardPanel(null);
     setFrontPanel('controls');
     setActiveBackPanel(null);
     refs.sleeveBackgrounds.classList.remove('active');
@@ -1585,7 +1649,7 @@ function createAppView(model, audioService) {
     computeExpandedPreviewHeight,
     setPreviewPlaceholderSuppressed,
     setFrontPanel,
-    swapFrontPanel,
+    flipPanel,
     setActiveBackPanel,
     setFlipCardPanel,
     collapsePreviewThenSettings,

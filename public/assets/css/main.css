@@ -858,53 +858,16 @@ img {
   pointer-events: auto;
 }
 
-.flip-card.front-panel-swapping .controls-panel,
-.flip-card.front-panel-swapping .backgrounds-panel {
-  transition: none;
+.flip-card.panel-flipping {
   pointer-events: none;
-}
-
-.controls-panel.front-panel-swap-out,
-.backgrounds-panel.front-panel-swap-out,
-.controls-panel.front-panel-swap-in,
-.backgrounds-panel.front-panel-swap-in {
-  visibility: visible;
-  opacity: 1;
-  transition: none;
-  transform-origin: center center;
   will-change: transform;
+  transition: none;
 }
 
-.controls-panel.front-panel-swap-out,
-.backgrounds-panel.front-panel-swap-out {
-  z-index: 4;
-  animation: front-panel-swap-out 0.3s cubic-bezier(0.4, 0.2, 0.2, 1) both;
-}
-
-.controls-panel.front-panel-swap-in,
-.backgrounds-panel.front-panel-swap-in {
-  z-index: 5;
-  animation: front-panel-swap-in 0.3s cubic-bezier(0.4, 0.2, 0.2, 1) both;
-}
-
-@keyframes front-panel-swap-out {
-  from {
-    transform: rotateY(0deg);
-  }
-
-  to {
-    transform: rotateY(90deg);
-  }
-}
-
-@keyframes front-panel-swap-in {
-  from {
-    transform: rotateY(-90deg);
-  }
-
-  to {
-    transform: rotateY(0deg);
-  }
+.flip-card.panel-flipping .controls-panel,
+.flip-card.panel-flipping .backgrounds-panel,
+.flip-card.panel-flipping .settings-panel {
+  transition: none;
 }
 
 .flip-card.panel-settings .controls-panel.active,
@@ -1129,11 +1092,6 @@ img {
     inset 0 -1px 0 rgba(255, 255, 255, 0.04),
     inset 0 0 40px rgba(0, 0, 0, 0.28);
   overflow: visible;
-}
-
-.flip-card .flip-back.settings-panel {
-  position: absolute;
-  inset: 0;
 }
 
 .backgrounds-panel {
