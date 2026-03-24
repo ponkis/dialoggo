@@ -1114,21 +1114,19 @@ img {
 }
 
 .backgrounds-panel {
-  padding: 18px 18px 22px;
+  /* padding: 16px 18px 18px; */
   background:
-    radial-gradient(circle at 18% 18%, rgba(255, 214, 115, 0.22), transparent 16%),
-    radial-gradient(circle at 78% 20%, rgba(99, 202, 255, 0.18), transparent 18%),
-    radial-gradient(circle at 50% 110%, rgba(20, 29, 54, 0.92), rgba(10, 16, 30, 0.98) 54%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 28%),
-    linear-gradient(180deg, #163a52 0%, #102941 32%, #0b1d31 100%);
-  border-top: 1px solid rgba(203, 232, 255, 0.12);
-  border-bottom: 1px solid rgba(6, 11, 19, 0.78);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -20px 28px rgba(0, 0, 0, 0.24),
-    inset 0 0 0 1px rgba(37, 78, 103, 0.38);
+    radial-gradient(90% 75% at 50% 0%, rgba(136, 168, 208, 0.14), transparent 42%),
+    linear-gradient(180deg, #212d39 0%, #18212a 46%, #11171d 100%);
+  /* border-top: 1px solid rgba(213, 229, 248, 0.08); */
+  /* border-bottom: 1px solid rgba(8, 12, 16, 0.72); */
+  /* box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 -22px 28px rgba(0, 0, 0, 0.22),
+    inset 0 0 0 1px rgba(8, 12, 16, 0.48); */
   overflow: hidden;
 }
+
 
 .backgrounds-panel::before {
   content: '';
@@ -1136,45 +1134,51 @@ img {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 16% 24%, rgba(255, 255, 255, 0.2) 0 1.3px, transparent 1.5px),
-    radial-gradient(circle at 24% 14%, rgba(255, 255, 255, 0.14) 0 1px, transparent 1.3px),
-    radial-gradient(circle at 76% 16%, rgba(255, 255, 255, 0.16) 0 1.2px, transparent 1.4px),
-    radial-gradient(circle at 84% 28%, rgba(255, 255, 255, 0.12) 0 1px, transparent 1.2px),
-    linear-gradient(90deg, transparent 0 12%, rgba(255, 255, 255, 0.04) 12% 12.6%, transparent 12.6% 100%),
-    linear-gradient(180deg, transparent 0 66%, rgba(255, 232, 190, 0.08) 66% 67%, transparent 67% 100%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='2' seed='5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.18'/%3E%3C/svg%3E");
-  background-size: auto, auto, auto, auto, 100% 100%, 100% 100%, 180px 180px;
-  opacity: 0.9;
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.015) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.015) 0 1px, transparent 1px 4px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='2' seed='7'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.16'/%3E%3C/svg%3E");
+  background-size: 4px 4px, 4px 4px, 180px 180px;
+  opacity: 0.42;
 }
 
 .backgrounds-panel::after {
   content: '';
   position: absolute;
-  inset: auto -8% -40px -8%;
-  height: 96px;
+  inset: 0;
   background:
-    radial-gradient(circle at 18% 18%, rgba(255, 233, 191, 0.3), transparent 18%),
-    linear-gradient(180deg, rgba(255, 239, 214, 0.92), rgba(233, 215, 186, 0.96));
-  clip-path: polygon(0 42%, 8% 35%, 18% 48%, 32% 34%, 48% 54%, 61% 36%, 74% 49%, 88% 32%, 100% 46%, 100% 100%, 0 100%);
-  opacity: 0.78;
+    radial-gradient(circle at 50% -12%, rgba(255, 255, 255, 0.04), transparent 28%),
+    linear-gradient(180deg, transparent 0 76%, rgba(0, 0, 0, 0.18) 100%);
+  opacity: 1;
+  pointer-events: none;
 }
 
 .backgrounds-body {
   position: relative;
-  z-index: 1;
+  /* z-index: 1; */
   display: flex;
   flex-direction: column;
-  gap: 18px;
   height: 100%;
-  padding: 2px 6px 0;
+  padding: 12px 14px 14px;
+  width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 12%),
+    linear-gradient(180deg, rgba(14, 18, 24, 0.18), rgba(8, 11, 14, 0.18));
+  /* border: 1px solid rgba(209, 224, 238, 0.08); */
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.025),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.24);
 }
 
 .backgrounds-heading {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   text-align: center;
+  padding: 0 0 8px;
+  position: relative;
 }
 
 .backgrounds-heading-title {
@@ -1182,111 +1186,69 @@ img {
   font-weight: 800;
   letter-spacing: 3.6px;
   text-transform: uppercase;
-  color: rgba(243, 244, 248, 0.96);
+  color: rgba(236, 239, 245, 0.95);
   text-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.45),
-    0 0 18px rgba(133, 208, 255, 0.1);
+    0 2px 4px rgba(0, 0, 0, 0.45);
 }
 
 .backgrounds-heading-subtitle {
   font-size: 9px;
   letter-spacing: 0.5px;
-  color: rgba(208, 224, 236, 0.72);
+  color: rgba(186, 196, 208, 0.66);
 }
 
 .backgrounds-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 24px 18px;
-  align-items: start;
-  justify-items: center;
+  gap: 16px;
+  align-items: stretch;
+  justify-items: stretch;
   align-content: start;
-  padding: 10px 10px 18px;
 }
 
 .background-card {
   appearance: none;
   -webkit-appearance: none;
   position: relative;
-  width: min(100%, 220px);
-  border: none;
-  border-radius: 4px 4px 8px 8px;
-  padding: 14px 14px 22px;
+  width: 100%;
+  min-height: 100%;
+  /* border: 1px solid rgba(117, 102, 79, 0.55); */
+  /* border-radius: 3px; */
+  padding: 10px 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   text-align: left;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(250, 244, 236, 0.98) 56%, rgba(230, 218, 201, 0.98) 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(231, 223, 207, 0.96) 18%, rgba(205, 191, 166, 0.98) 100%);
   box-shadow:
-    0 18px 28px rgba(4, 10, 18, 0.38),
-    0 5px 10px rgba(11, 19, 30, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.82),
-    inset 0 -1px 0 rgba(147, 126, 89, 0.22);
-  color: #473221;
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    inset 0 -1px 0 rgba(94, 78, 56, 0.18),
+    0 8px 18px rgba(0, 0, 0, 0.18);
+  color: #342719;
   cursor: default;
-  transform-origin: 50% 100%;
 }
 
-.background-card::before,
-.background-card::after {
-  content: '';
-  position: absolute;
-  top: -10px;
-  width: 54px;
-  height: 18px;
-  border-radius: 2px;
-  background:
-    linear-gradient(180deg, rgba(255, 242, 200, 0.84), rgba(228, 206, 161, 0.58)),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='30'%3E%3Cfilter id='t'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23t)' opacity='0.28'/%3E%3C/svg%3E");
-  border: 1px solid rgba(170, 136, 82, 0.34);
-  box-shadow: 0 4px 8px rgba(10, 16, 24, 0.14);
-  opacity: 0.95;
-}
-
-.background-card::before {
-  left: 20px;
-  transform: rotate(-9deg);
-}
-
-.background-card::after {
-  right: 18px;
-  transform: rotate(8deg);
-}
-
-.background-card:nth-child(1) {
-  transform: rotate(-2.8deg);
-}
-
-.background-card:nth-child(2) {
-  transform: rotate(1.9deg) translateY(6px);
-}
-
-.background-card:nth-child(3) {
-  transform: rotate(-1.25deg) translateY(3px);
-}
 
 .background-card-photo {
   position: relative;
   padding: 7px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(239, 231, 217, 0.95));
-  border: 1px solid rgba(190, 168, 129, 0.66);
+    linear-gradient(180deg, rgba(246, 241, 232, 0.95), rgba(214, 203, 183, 0.96));
+  border: 1px solid rgba(123, 105, 80, 0.34);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    inset 0 -1px 0 rgba(109, 84, 45, 0.14),
-    0 2px 5px rgba(15, 20, 29, 0.12);
+    inset 0 1px 0 rgba(255, 255, 255, 0.64),
+    inset 0 -1px 0 rgba(87, 69, 44, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .background-card-preview {
   position: relative;
   aspect-ratio: 4 / 3;
-  border: 1px solid rgba(82, 66, 45, 0.28);
-  border-radius: 2px;
   box-shadow:
-    0 2px 4px rgba(0, 0, 0, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+    0 2px 4px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 0 0 1px rgba(255, 242, 221, 0.06);
   overflow: hidden;
 }
 
@@ -1338,28 +1300,28 @@ img {
 .background-card-copy {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  min-height: 58px;
-  padding: 3px 10px 0;
+  gap: 4px;
+  min-height: 0;
+  padding: 0 4px;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   text-align: center;
 }
 
 .background-card-title {
-  font-family: "Andy Bold", 'Comic Sans MS', cursive;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.45px;
-  text-transform: none;
-  color: #64462b;
-  line-height: 1.12;
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #463424;
+  line-height: 1.15;
 }
 
 .background-card-meta {
   font-size: 8px;
-  letter-spacing: 1.05px;
-  color: rgba(91, 71, 49, 0.74);
+  letter-spacing: 0.8px;
+  color: rgba(90, 72, 50, 0.64);
   text-transform: uppercase;
 }
 
