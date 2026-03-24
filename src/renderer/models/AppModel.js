@@ -167,11 +167,7 @@ function discoverCharacterCatalog(env) {
     const packSndDir = env.path.join(env.charSndDir, packName);
     const packConfig = readPackConfig(env, packName);
     const packDisplayName = getPackDisplayName(packName, packConfig);
-    const characterNames = new Set([
-      ...listDirectoryNames(env, packDataDir),
-      ...listDirectoryNames(env, packImgDir),
-      ...listDirectoryNames(env, packSndDir),
-    ]);
+    const characterNames = listDirectoryNames(env, packDataDir);
     const sortedCharacterNames = sortItemsByDisplayName(characterNames, (characterName) => {
       const characterConfig = readCharacterConfig(env, packName, characterName);
       return getCharacterDisplayName(characterName, characterConfig?.character);
@@ -181,15 +177,18 @@ function discoverCharacterCatalog(env) {
     if (sortedCharacterNames.length === 0) return;
 
     sortedCharacterNames.forEach((characterName) => {
+      const dataDir = env.path.join(packDataDir, characterName);
       const imgDir = env.path.join(packImgDir, characterName);
       const sndDir = env.path.join(packSndDir, characterName);
       const characterConfig = readCharacterConfig(env, packName, characterName);
       const soundConfig = typeof characterConfig?.sound === 'object' && characterConfig.sound !== null
         ? characterConfig.sound
         : {};
+      const hasDataDirectory = env.fs.existsSync(dataDir);
       const hasImgDirectory = env.fs.existsSync(imgDir);
       const hasSoundDirectory = env.fs.existsSync(sndDir);
 
+      if (!hasDataDirectory) return;
       if (!hasImgDirectory && !hasSoundDirectory) return;
       discoveredCharacterCount += 1;
 
@@ -237,6 +236,7 @@ function discoverCharacterCatalog(env) {
         basePitchTones: Number.isFinite(parsedBasePitchTones) ? parsedBasePitchTones : 0,
         canStretch: soundConfig?.canStretch === true,
         isAvailable: hasAllSprites && hasAnySound,
+        hasDataDirectory,
         hasAllSprites,
         hasAnySound,
         hasImgDirectory,

@@ -2786,6 +2786,10 @@ img {
     1px 0 0 rgba(0, 0, 0, 0.38);
 }
 
+.character-pack-section.first-visible-pack .character-pack-separator {
+  display: none;
+}
+
 .character-pack-strip {
   display: flex;
   gap: 5px;

@@ -962,7 +962,11 @@ function createAppView(model, audioService) {
         !button.classList.contains('search-hidden') && !button.classList.contains('hidden-broken')
       ));
       section.classList.toggle('pack-hidden', !hasVisibleButtons);
+      section.classList.remove('first-visible-pack');
     });
+
+    const firstVisiblePack = document.querySelector('.character-pack-section:not(.pack-hidden)');
+    firstVisiblePack?.classList.add('first-visible-pack');
 
     refs.characterSearchEmpty?.classList.toggle('visible', visibleCount === 0);
 
@@ -1427,12 +1431,12 @@ function createAppView(model, audioService) {
       const packHeading = document.createElement('span');
       packHeading.className = 'character-pack-heading';
       packHeading.textContent = pack.displayName;
-      packSection.appendChild(packHeading);
 
       const packSeparator = document.createElement('span');
       packSeparator.className = 'character-pack-separator';
       packSeparator.setAttribute('aria-hidden', 'true');
       packSection.appendChild(packSeparator);
+      packSection.appendChild(packHeading);
 
       const packStrip = document.createElement('div');
       packStrip.className = 'character-pack-strip';
