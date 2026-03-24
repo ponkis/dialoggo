@@ -258,7 +258,7 @@ function startApp() {
       return;
     }
 
-    const lines = model.splitStyledTextIntoLines(text);
+    const lines = view.splitDialogueTextIntoRenderLines(text);
     const isMultiLine = lines.length > 1;
     let lineIndex = 0;
 
@@ -626,52 +626,6 @@ function startApp() {
     applyHideBrokenChars();
   }
 
-  function syncMenuSoundsVolumeInputs() {
-    const level = model.clampMenuSoundsVolumeLevel(state.menuSoundsVolumeLevel);
-    refs.menuSoundsVolumeInputs.forEach((input) => {
-      input.checked = Number(input.value) === level;
-    });
-
-    if (refs.menuSoundsVolumeKnobButton) {
-      const nextLevel = level >= 6 ? 1 : level + 1;
-      const label = `Menu sounds volume ${level} of 6. Click to cycle clockwise to ${nextLevel}.`;
-      refs.menuSoundsVolumeKnobButton.title = label;
-      refs.menuSoundsVolumeKnobButton.setAttribute('aria-label', label);
-    }
-  }
-
-  function setMenuSoundsVolumeLevel(value, {
-    persist = false,
-    playFeedback = false
-  } = {}) {
-    state.menuSoundsVolumeLevel = model.clampMenuSoundsVolumeLevel(value);
-    syncMenuSoundsVolumeInputs();
-
-    if (persist) {
-      try {
-        localStorage.setItem(storageKeys.menuSoundsVolume, String(state.menuSoundsVolumeLevel));
-      } catch { }
-    }
-
-    if (playFeedback) {
-      audioService.playMenuSound('click');
-    }
-  }
-
-  function initMenuSoundsVolumeFromStorage() {
-    if (!refs.menuSoundsVolumeInputs.length) return;
-
-    let nextLevel = 6;
-    try {
-      const saved = localStorage.getItem(storageKeys.menuSoundsVolume);
-      if (saved !== null) {
-        nextLevel = model.clampMenuSoundsVolumeLevel(saved);
-      }
-    } catch { }
-
-    setMenuSoundsVolumeLevel(nextLevel);
-  }
-
   document.getElementById('btn-minimize')?.addEventListener('click', () => {
     bridge.windowControls.minimize();
   });
@@ -686,7 +640,6 @@ function startApp() {
     if (element.disabled || element.getAttribute('aria-disabled') === 'true') return;
     if (element.classList.contains('char-btn') || element.closest('.reel-arrow')) return;
     if (element.classList.contains('sleeve-tab') || element.closest('.uiverse-rocker-switch')) return;
-    if (element.classList.contains('menu-volume-knob-core-hit')) return;
     audioService.playMenuSound('click');
   }, true);
 
@@ -937,25 +890,6 @@ function startApp() {
     audioService.playMenuSound('click');
   });
 
-  refs.menuSoundsVolumeInputs.forEach((input) => {
-    input.addEventListener('change', () => {
-      if (!input.checked) return;
-      setMenuSoundsVolumeLevel(input.value, {
-        persist: true,
-        playFeedback: true
-      });
-    });
-  });
-
-  refs.menuSoundsVolumeKnobButton?.addEventListener('click', (event) => {
-    event.preventDefault();
-    const nextLevel = state.menuSoundsVolumeLevel >= 6 ? 1 : state.menuSoundsVolumeLevel + 1;
-    setMenuSoundsVolumeLevel(nextLevel, {
-      persist: true,
-      playFeedback: true
-    });
-  });
-
   view.normalizeDialogueInput();
   view.syncCharacterSearchClearButton();
   view.buildCharacterGrid((character, wasActive) => {
@@ -974,7 +908,6 @@ function startApp() {
   } catch { }
 
   initHideBrokenFromStorage();
-  initMenuSoundsVolumeFromStorage();
 
   void view.runStartupSequence();
 

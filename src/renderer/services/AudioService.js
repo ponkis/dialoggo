@@ -1,7 +1,6 @@
 function createAudioService(model) {
   const {
     env,
-    state,
     constants
   } = model;
   const MAX_AUDIO_CACHE_ENTRIES = 18;
@@ -172,19 +171,17 @@ function createAudioService(model) {
     });
   }
 
-  function getMenuSoundVolumeGain() {
-    return model.clampMenuSoundsVolumeLevel(state.menuSoundsVolumeLevel) / 6;
-  }
-
   function playMenuSound(key) {
     const filePath = menuSoundPaths[key];
     if (!filePath || !env.fs.existsSync(filePath)) return;
 
     loadAudioBuffer(filePath)
-      .then((buffer) => playAudioBuffer(buffer, {
-        volume: getMenuSoundVolumeGain()
-      }))
+      .then((buffer) => playAudioBuffer(buffer))
       .catch(() => { });
+  }
+
+  function getMenuSoundVolumeGain() {
+    return 1;
   }
 
   bindAudioUnlockListeners();

@@ -27,7 +27,6 @@ const storageKeys = {
   n64Mode: 'dialoggo-n64-mode',
   mirrorMode: 'dialoggo-mirror-mode',
   hideBrokenChars: 'dialoggo-hide-broken-chars',
-  menuSoundsVolume: 'dialoggo-menu-sounds-volume',
 };
 
 function createEnvironment() {
@@ -193,12 +192,6 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function clampMenuSoundsVolumeLevel(value) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return 6;
-  return Math.max(1, Math.min(6, Math.round(parsed)));
-}
-
 function clampDialogueInputValue(value) {
   return String(value || '').slice(0, DIALOGUE_INPUT_MAX_LENGTH);
 }
@@ -260,84 +253,43 @@ function parseDialogueMarkup(text) {
 function splitStyledTextIntoLines(text, maxCharsPerLine = 32) {
   const lines = [];
   const parsedCharacters = parseDialogueMarkup(text);
-  let manualLineCharacters = [];
+  let currentLine = [];
 
-  const flushManualLine = () => {
-    const visibleText = manualLineCharacters.map((character) => character.value).join('');
-    if (visibleText.trim() === '') {
-      lines.push('');
-      manualLineCharacters = [];
-      return;
+  function trimTrailingWhitespace(characters) {
+    let end = characters.length;
+    while (end > 0 && /\s/.test(characters[end - 1].value)) {
+      end -= 1;
     }
+    return characters.slice(0, end);
+  }
 
-    const words = [];
-    let currentWord = [];
-
-    manualLineCharacters.forEach((character) => {
-      if (/\s/.test(character.value)) {
-        if (currentWord.length > 0) {
-          words.push(currentWord);
-          currentWord = [];
-        }
-        return;
-      }
-
-      currentWord.push(character);
-    });
-
-    if (currentWord.length > 0) {
-      words.push(currentWord);
-    }
-
-    let currentLine = [];
-
-    for (const word of words) {
-      let remainingWord = word.slice();
-
-      while (remainingWord.length > maxCharsPerLine) {
-        if (currentLine.length > 0) {
-          lines.push(createLineFromCharacters(currentLine));
-          currentLine = [];
-        }
-
-        lines.push(createLineFromCharacters(remainingWord.slice(0, maxCharsPerLine)));
-        remainingWord = remainingWord.slice(maxCharsPerLine);
-      }
-
-      if (remainingWord.length === 0) continue;
-
-      if (currentLine.length === 0) {
-        currentLine = remainingWord.slice();
-      } else if (currentLine.length + 1 + remainingWord.length <= maxCharsPerLine) {
-        const previousChar = currentLine[currentLine.length - 1];
-        const nextChar = remainingWord[0];
-        currentLine.push(createDialogueCharacter(' ', !!(previousChar?.emphasis && nextChar?.emphasis)));
-        currentLine.push(...remainingWord);
-      } else {
-        lines.push(createLineFromCharacters(currentLine));
-        currentLine = remainingWord.slice();
-      }
-    }
-
-    if (currentLine.length > 0) {
-      lines.push(createLineFromCharacters(currentLine));
-    }
-
-    manualLineCharacters = [];
-  };
+  function pushCurrentLine() {
+    lines.push(createLineFromCharacters(trimTrailingWhitespace(currentLine)));
+    currentLine = [];
+  }
 
   parsedCharacters.forEach((character) => {
     if (character.value === '\n') {
-      flushManualLine();
+      pushCurrentLine();
       return;
     }
 
-    manualLineCharacters.push(character);
+    if (currentLine.length >= maxCharsPerLine) {
+      pushCurrentLine();
+    }
+
+    if (/\s/.test(character.value) && currentLine.length === 0) {
+      return;
+    }
+
+    currentLine.push(character);
   });
 
-  flushManualLine();
+  if (currentLine.length > 0 || lines.length === 0 || parsedCharacters[parsedCharacters.length - 1]?.value === '\n') {
+    pushCurrentLine();
+  }
 
-  return lines.map((line) => (typeof line === 'string' ? createLineFromCharacters([]) : line));
+  return lines;
 }
 
 function splitTextIntoLines(text, maxCharsPerLine = 32) {
@@ -422,7 +374,6 @@ function createAppModel() {
       dialogueMirrored: false,
       n64ModeEnabled: false,
       hideBrokenChars: false,
-      menuSoundsVolumeLevel: 6,
       frontPanel: 'controls',
       activePanel: 'controls',
       panelTransitionLock: false,
@@ -452,7 +403,6 @@ function createAppModel() {
     storageKeys,
     pick,
     sleep,
-    clampMenuSoundsVolumeLevel,
     clampDialogueInputValue,
     normalizeCharacterSearch,
     getPairedDialogueMarkerStarts,

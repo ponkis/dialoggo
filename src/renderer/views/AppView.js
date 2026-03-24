@@ -49,8 +49,6 @@ function createAppView(model, audioService) {
     sleeveCharacter: document.getElementById('sleeve-tab-character'),
     sleeveSettings: document.getElementById('sleeve-tab-settings'),
     inputMirrored: document.getElementById('input-mirrored-dialogue'),
-    menuSoundsVolumeInputs: Array.from(document.querySelectorAll('input[name="menu-sounds-volume"]')),
-    menuSoundsVolumeKnobButton: document.querySelector('.menu-volume-knob-core-hit'),
     inputN64: document.getElementById('input-n64-mode'),
     inputHideBroken: document.getElementById('input-hide-broken-chars'),
   };
@@ -60,10 +58,12 @@ function createAppView(model, audioService) {
   let n64DialogueTextSmall = null;
   let n64TextResizeRaf = 0;
   let n64ShakeAnimationRaf = 0;
+  let dialogueMeasureContext = null;
   const DIALOGUE_SHAKE_CYCLE_MS = 280;
 
   const MAX_SPRITE_IMAGE_CACHE_ENTRIES = 120;
   const spriteImageCache = new Map();
+  const dialogueMeasureCache = new Map();
   const cardAnimState = new Map();
   let flipCardAnimation = null;
   let previewPlaceholderExplicitSuppression = false;
@@ -705,6 +705,116 @@ function createAppView(model, audioService) {
     if (!lineElement) return;
     lineElement.appendChild(createDialogueCharacterElement(character, index));
     syncN64ShakeLoop();
+  }
+
+  function createDialogueLine(characters) {
+    return {
+      text: characters.map((character) => character.value).join(''),
+      characters,
+    };
+  }
+
+  function getDialogueWrapMetrics() {
+    if (!refs.dialogueTextArea || !refs.dialogueText) return null;
+
+    const textStyle = window.getComputedStyle(refs.dialogueText);
+    const areaStyle = window.getComputedStyle(refs.dialogueTextArea);
+    const paddingLeft = Number.parseFloat(areaStyle.paddingLeft) || 0;
+    const paddingRight = Number.parseFloat(areaStyle.paddingRight) || 0;
+    const measuredWidth = Math.max(
+      refs.dialogueText.clientWidth || 0,
+      Math.floor(refs.dialogueTextArea.clientWidth - paddingLeft - paddingRight),
+    );
+
+    if (measuredWidth <= 0) return null;
+
+    if (!dialogueMeasureContext) {
+      const canvas = document.createElement('canvas');
+      dialogueMeasureContext = canvas.getContext('2d');
+    }
+
+    if (!dialogueMeasureContext) return null;
+
+    const font = textStyle.font || constants.N64_TEXT_FONT;
+    dialogueMeasureContext.font = font;
+
+    return {
+      ctx: dialogueMeasureContext,
+      fontKey: `${font}|${textStyle.letterSpacing || '0px'}`,
+      letterSpacing: Number.parseFloat(textStyle.letterSpacing) || 0,
+      maxWidth: measuredWidth,
+    };
+  }
+
+  function measureDialogueCharactersWidth(characters, metrics) {
+    if (!metrics || characters.length === 0) return 0;
+
+    const text = characters.map((character) => character.value).join('');
+    const cacheKey = `${metrics.fontKey}|${text}`;
+    if (dialogueMeasureCache.has(cacheKey)) {
+      return dialogueMeasureCache.get(cacheKey);
+    }
+
+    const width = metrics.ctx.measureText(text).width
+      + Math.max(0, characters.length - 1) * metrics.letterSpacing;
+
+    if (dialogueMeasureCache.size > 600) {
+      dialogueMeasureCache.clear();
+    }
+
+    dialogueMeasureCache.set(cacheKey, width);
+    return width;
+  }
+
+  function splitDialogueTextIntoRenderLines(text) {
+    const metrics = getDialogueWrapMetrics();
+    if (!metrics) {
+      return model.splitStyledTextIntoLines(text);
+    }
+
+    const lines = [];
+    const parsedCharacters = model.parseDialogueMarkup(text);
+    let currentLine = [];
+
+    function trimTrailingWhitespace(characters) {
+      let end = characters.length;
+      while (end > 0 && /\s/.test(characters[end - 1].value)) {
+        end -= 1;
+      }
+      return characters.slice(0, end);
+    }
+
+    function pushCurrentLine() {
+      lines.push(createDialogueLine(trimTrailingWhitespace(currentLine)));
+      currentLine = [];
+    }
+
+    parsedCharacters.forEach((character) => {
+      if (character.value === '\n') {
+        pushCurrentLine();
+        return;
+      }
+
+      const candidateLine = currentLine.concat(character);
+      const exceedsWidth = currentLine.length > 0
+        && measureDialogueCharactersWidth(candidateLine, metrics) > metrics.maxWidth;
+
+      if (exceedsWidth) {
+        pushCurrentLine();
+      }
+
+      if (/\s/.test(character.value) && currentLine.length === 0) {
+        return;
+      }
+
+      currentLine.push(character);
+    });
+
+    if (currentLine.length > 0 || lines.length === 0 || parsedCharacters[parsedCharacters.length - 1]?.value === '\n') {
+      pushCurrentLine();
+    }
+
+    return lines;
   }
 
   function buildDialogueInputHighlightMarkup(value) {
@@ -1654,6 +1764,7 @@ function createAppView(model, audioService) {
     updateSelectedCharacterCard,
     updateReelArrows,
     dialogueBoxExtraClasses,
+    splitDialogueTextIntoRenderLines,
     syncN64ClassOnDialogueBox,
     redrawSpriteForN64Toggle,
     computeExpandedPreviewHeight,
