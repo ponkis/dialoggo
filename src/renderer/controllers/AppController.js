@@ -21,6 +21,7 @@ function startApp() {
     state,
     constants,
     characters,
+    backgrounds,
     genericSounds,
     storageKeys
   } = model;
@@ -169,6 +170,16 @@ function startApp() {
     }
 
     updatePlayButton();
+  }
+
+  function selectBackground(background) {
+    if (!background?.isAvailable) return;
+    if (state.selectedBackground?.id === background.id) return;
+
+    state.selectedBackground = background;
+    view.updateSelectedBackgroundCard(background);
+    view.applySelectedBackground(background);
+    audioService.playMenuSound('select');
   }
 
   function handleDialogueInputChange() {
@@ -638,7 +649,7 @@ function startApp() {
     const element = event.target.closest('button, .reel-arrow, a, .powered-link');
     if (!element) return;
     if (element.disabled || element.getAttribute('aria-disabled') === 'true') return;
-    if (element.classList.contains('char-btn') || element.closest('.reel-arrow')) return;
+    if (element.classList.contains('char-btn') || element.classList.contains('background-card') || element.closest('.reel-arrow')) return;
     if (element.classList.contains('sleeve-tab') || element.closest('.uiverse-rocker-switch')) return;
     audioService.playMenuSound('click');
   }, true);
@@ -896,6 +907,9 @@ function startApp() {
     selectCharacter(character);
     if (!wasActive) view.startCardSpeakThenIdle(character.id);
   });
+  view.buildBackgroundGrid((background) => {
+    selectBackground(background);
+  });
   requestAnimationFrame(view.updateReelArrows);
   syncPlaybackUiState();
   initN64ModeFromDom();
@@ -914,9 +928,10 @@ function startApp() {
   bridge.log.info('Renderer started', {
     version: model.env.appVersion,
     characters: characters.length,
+    backgrounds: backgrounds.length,
     genericSounds: genericSounds.length,
   });
-  console.log(`[Dialoggo] v${model.env.appVersion} - ${characters.length} characters, ${genericSounds.length} generic sounds`);
+  console.log(`[Dialoggo] v${model.env.appVersion} - ${characters.length} characters, ${backgrounds.length} backgrounds, ${genericSounds.length} generic sounds`);
 }
 
 module.exports = {

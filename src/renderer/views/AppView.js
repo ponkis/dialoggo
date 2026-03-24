@@ -4,6 +4,8 @@ function createAppView(model, audioService) {
     state,
     characters,
     packs,
+    backgrounds,
+    backgroundPacks,
     constants
   } = model;
 
@@ -43,6 +45,7 @@ function createAppView(model, audioService) {
     controlsPanel: document.getElementById('controls-panel'),
     settingsPanel: document.getElementById('settings-panel'),
     backgroundsPanel: document.getElementById('backgrounds-panel'),
+    backgroundsSections: document.getElementById('backgrounds-sections'),
     flipCard: document.getElementById('flip-card'),
     sleeveCamera: document.getElementById('sleeve-tab-camera'),
     sleeveBackgrounds: document.getElementById('sleeve-tab-backgrounds'),
@@ -1535,6 +1538,118 @@ function createAppView(model, audioService) {
     applyCharacterFilters();
   }
 
+  function buildBackgroundGrid(onBackgroundSelected) {
+    if (!refs.backgroundsSections) return;
+
+    refs.backgroundsSections.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    const backgroundsByPack = new Map();
+
+    backgrounds.forEach((background) => {
+      if (!backgroundsByPack.has(background.packId)) {
+        backgroundsByPack.set(background.packId, {
+          id: background.packId,
+          displayName: background.packDisplayName,
+          backgrounds: [],
+        });
+      }
+
+      backgroundsByPack.get(background.packId).backgrounds.push(background);
+    });
+
+    const orderedPacks = Array.isArray(backgroundPacks) && backgroundPacks.length > 0
+      ? backgroundPacks
+        .map((pack) => ({
+          id: pack.id,
+          displayName: pack.displayName,
+          backgrounds: backgroundsByPack.get(pack.id)?.backgrounds || [],
+        }))
+        .filter((pack) => pack.backgrounds.length > 0)
+      : Array.from(backgroundsByPack.values());
+
+    orderedPacks.forEach((pack) => {
+      const packSection = document.createElement('section');
+      packSection.className = 'background-pack-section';
+      packSection.dataset.packId = pack.id;
+
+      const packHeader = document.createElement('div');
+      packHeader.className = 'background-pack-header';
+
+      const packHeading = document.createElement('span');
+      packHeading.className = 'background-pack-heading';
+      packHeading.textContent = pack.displayName;
+
+      const packCount = document.createElement('span');
+      packCount.className = 'background-pack-count';
+      packCount.textContent = `${pack.backgrounds.length} background${pack.backgrounds.length === 1 ? '' : 's'}`;
+
+      const packDivider = document.createElement('span');
+      packDivider.className = 'background-pack-divider';
+      packDivider.setAttribute('aria-hidden', 'true');
+
+      packHeader.appendChild(packHeading);
+      packHeader.appendChild(packCount);
+      packSection.appendChild(packHeader);
+      packSection.appendChild(packDivider);
+
+      const packGrid = document.createElement('div');
+      packGrid.className = 'background-pack-grid';
+
+      pack.backgrounds.forEach((background, index) => {
+        const button = document.createElement('button');
+        button.className = 'background-card';
+        button.dataset.id = background.id;
+        button.dataset.packId = background.packId;
+        button.type = 'button';
+        button.title = background.displayName;
+        button.disabled = !background.isAvailable;
+        if (!background.isAvailable) button.classList.add('unavailable');
+        if (index === 0 && pack.backgrounds.length > 2) button.classList.add('background-card-featured');
+        if (!background.hasBuiltImage) button.classList.add('background-card-fallback');
+
+        const photo = document.createElement('div');
+        photo.className = 'background-card-photo';
+
+        const image = document.createElement('img');
+        image.className = 'background-card-image';
+        image.alt = background.displayName;
+        image.loading = 'lazy';
+        if (background.previewImagePath) image.src = fileToSrc(background.previewImagePath);
+        photo.appendChild(image);
+
+        const copy = document.createElement('div');
+        copy.className = 'background-card-copy';
+
+        const title = document.createElement('span');
+        title.className = 'background-card-title';
+        title.textContent = background.displayName;
+
+        const meta = document.createElement('span');
+        meta.className = 'background-card-meta';
+        meta.textContent = background.packDisplayName;
+
+        copy.appendChild(title);
+        copy.appendChild(meta);
+        button.appendChild(photo);
+        button.appendChild(copy);
+
+        button.addEventListener('click', () => {
+          if (button.disabled) return;
+          const wasActive = state.selectedBackground?.id === background.id;
+          onBackgroundSelected(background, wasActive);
+        });
+
+        packGrid.appendChild(button);
+      });
+
+      packSection.appendChild(packGrid);
+      fragment.appendChild(packSection);
+    });
+
+    refs.backgroundsSections.appendChild(fragment);
+    updateSelectedBackgroundCard(state.selectedBackground);
+  }
+
   function updateSelectedCharacterCard(character) {
     document.querySelectorAll('.char-btn').forEach((button) => {
       button.classList.toggle('active', button.dataset.id === character?.id);
@@ -1552,6 +1667,12 @@ function createAppView(model, audioService) {
       stopCardAnim(buttonCharacterId);
       const previewPath = cardState.char.idleFrames[0] || cardState.char.speakFrames[0];
       if (previewPath) cardState.img.src = fileToSrc(previewPath);
+    });
+  }
+
+  function updateSelectedBackgroundCard(background) {
+    document.querySelectorAll('.background-card').forEach((button) => {
+      button.classList.toggle('active', button.dataset.id === background?.id);
     });
   }
 
@@ -1584,6 +1705,17 @@ function createAppView(model, audioService) {
     }
 
     startPlaceholderAnim();
+  }
+
+  function applySelectedBackground(background) {
+    if (!refs.previewArea) return;
+
+    const hasPreviewImage = Boolean(background?.previewImagePath);
+    refs.previewArea.style.setProperty(
+      '--preview-scene-image',
+      hasPreviewImage ? `url("${fileToSrc(background.previewImagePath)}")` : 'none',
+    );
+    refs.previewArea.classList.toggle('has-selected-background', hasPreviewImage);
   }
 
   function setPreviewPlaceholderSuppressed(suppressed) {
@@ -1819,6 +1951,7 @@ function createAppView(model, audioService) {
   setFrontPanel(state.frontPanel || 'controls');
   setActiveBackPanel(state.activePanel === 'settings' ? 'settings' : null);
   setFlipCardPanel(state.activePanel === 'settings' ? 'settings' : null);
+  applySelectedBackground(state.selectedBackground);
   window.addEventListener('resize', syncDialogueInputHighlight);
   syncDialogueInputHighlightMetrics();
   syncPreviewPlaceholderState();
@@ -1852,7 +1985,10 @@ function createAppView(model, audioService) {
     stopPlaceholderAnim,
     runStartupSequence,
     buildCharacterGrid,
+    buildBackgroundGrid,
     updateSelectedCharacterCard,
+    updateSelectedBackgroundCard,
+    applySelectedBackground,
     updateReelArrows,
     dialogueBoxExtraClasses,
     splitDialogueTextIntoRenderLines,

@@ -32,6 +32,7 @@ const RESERVED_PACK_DIRECTORY_NAMES = new Set(['char', 'generic', 'gui']);
 const SPECIAL_PACK_ORDER = new Map([
   ['custom', 0],
 ]);
+const BACKGROUND_FILE_NAMES = ['bg.jpg', 'bg.png'];
 
 function createEnvironment() {
   const bridge = getDialoggoBridge();
@@ -49,9 +50,12 @@ function createEnvironment() {
     dataDir: paths.dataDir,
     sndDir: paths.sndDir,
     imgDir: paths.imgDir,
-    charDataDir: paths.charDataDir,
-    charImgDir: paths.charImgDir,
-    charSndDir: paths.charSndDir,
+    packDataDir: paths.packDataDir,
+    packImgDir: paths.packImgDir,
+    packSndDir: paths.packSndDir,
+    backgroundDataDir: paths.backgroundDataDir,
+    backgroundImgDir: paths.backgroundImgDir,
+    genericImgDir: paths.genericImgDir,
     guiImgDir: paths.guiImgDir,
     guiAnimDir: paths.guiAnimDir,
     startupRevealSoundPath: bridge.path.join(paths.sndDir, 'gui', '6.wav'),
@@ -108,68 +112,89 @@ function sortPacks(packs) {
   });
 }
 
-function formatCharacterFolderName(folderName) {
+function formatAssetFolderName(folderName) {
   const sanitizedFolderName = String(folderName || '')
-    .replace(/-/g, ' ')
+    .replace(/[_-]+/g, ' ')
     .trim();
 
   if (!sanitizedFolderName) return '';
 
-  return sanitizedFolderName.charAt(0).toUpperCase() + sanitizedFolderName.slice(1);
+  return sanitizedFolderName
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 }
 
 function getCharacterDisplayName(folderName, characterConfig) {
   const configuredName = String(characterConfig?.name || '').trim();
   if (configuredName) return configuredName;
-  return formatCharacterFolderName(folderName);
+  return formatAssetFolderName(folderName);
+}
+
+function getBackgroundDisplayName(folderName, backgroundConfig) {
+  const configuredName = String(backgroundConfig?.name || '').trim();
+  if (configuredName) return configuredName;
+  return formatAssetFolderName(folderName);
 }
 
 function getPackDisplayName(folderName, packConfig) {
   const configuredName = String(packConfig?.name || '').trim();
   if (configuredName) return configuredName;
-  return formatCharacterFolderName(folderName);
+  return formatAssetFolderName(folderName);
+}
+
+function readConfigFile(env, configPath, label) {
+  if (!env.fs.existsSync(configPath)) return {};
+  try {
+    const value = env.fs.readJsonFile(configPath, {
+      fallback: {},
+      label,
+      maxBytes: 16 * 1024,
+    });
+    return typeof value === 'object' && value !== null ? value : {};
+  } catch {
+    return {};
+  }
 }
 
 function readPackConfig(env, packName) {
-  const configPath = env.path.join(env.charDataDir, packName, 'config.json');
-  if (!env.fs.existsSync(configPath)) return {};
-
-  try {
-    return env.fs.readJsonFile(configPath, {
-      fallback: {},
-      label: `Pack config for ${packName}`,
-      maxBytes: 16 * 1024,
-    }) || {};
-  } catch {
-    return {};
-  }
+  return readConfigFile(
+    env,
+    env.path.join(env.packDataDir, packName, 'config.json'),
+    `Pack config for ${packName}`,
+  );
 }
 
 function readCharacterConfig(env, packName, characterName) {
-  const configPath = env.path.join(env.charDataDir, packName, characterName, 'config.json');
-  if (!env.fs.existsSync(configPath)) return {};
-
-  try {
-    return env.fs.readJsonFile(configPath, {
-      fallback: {},
-      label: `Character config for ${packName}/${characterName}`,
-      maxBytes: 16 * 1024,
-    }) || {};
-  } catch {
-    return {};
-  }
+  return readConfigFile(
+    env,
+    env.path.join(env.packDataDir, packName, characterName, 'config.json'),
+    `Character config for ${packName}/${characterName}`,
+  );
 }
 
-function listPackDirectoryNames(env) {
+function readBackgroundPackConfig(env, packName) {
+  return readConfigFile(
+    env,
+    env.path.join(env.backgroundDataDir, packName, 'config.json'),
+    `Background pack config for ${packName}`,
+  );
+}
+
+function readBackgroundConfig(env, packName, backgroundName) {
+  return readConfigFile(
+    env,
+    env.path.join(env.backgroundDataDir, packName, backgroundName, 'config.json'),
+    `Background config for ${packName}/${backgroundName}`,
+  );
+}
+
+function listDirectoryNamesFromRoots(env, rootDirs, reservedNames = null) {
   const packNames = new Set();
 
-  [
-    env.charDataDir,
-    env.charImgDir,
-    env.charSndDir,
-  ].forEach((rootDir) => {
+  rootDirs.forEach((rootDir) => {
     listDirectoryNames(env, rootDir).forEach((directoryName) => {
-      if (RESERVED_PACK_DIRECTORY_NAMES.has(String(directoryName).toLowerCase())) return;
+      if (reservedNames?.has(String(directoryName).toLowerCase())) return;
       packNames.add(directoryName);
     });
   });
@@ -181,13 +206,21 @@ function discoverCharacterCatalog(env) {
   const packs = [];
   const characters = [];
 
-  listPackDirectoryNames(env).forEach((packName) => {
-    const packDataDir = env.path.join(env.charDataDir, packName);
-    const packImgDir = env.path.join(env.charImgDir, packName);
-    const packSndDir = env.path.join(env.charSndDir, packName);
+  listDirectoryNamesFromRoots(env, [
+    env.packDataDir,
+    env.packImgDir,
+    env.packSndDir,
+  ], RESERVED_PACK_DIRECTORY_NAMES).forEach((packName) => {
+    const packDataDir = env.path.join(env.packDataDir, packName);
+    const packImgDir = env.path.join(env.packImgDir, packName);
+    const packSndDir = env.path.join(env.packSndDir, packName);
     const packConfig = readPackConfig(env, packName);
     const packDisplayName = getPackDisplayName(packName, packConfig);
-    const characterNames = listDirectoryNames(env, packDataDir);
+    const characterNames = listDirectoryNamesFromRoots(env, [
+      packDataDir,
+      packImgDir,
+      packSndDir,
+    ]);
     const sortedCharacterNames = sortItemsByDisplayName(characterNames, (characterName) => {
       const characterConfig = readCharacterConfig(env, packName, characterName);
       return getCharacterDisplayName(characterName, characterConfig?.character);
@@ -197,18 +230,15 @@ function discoverCharacterCatalog(env) {
     if (sortedCharacterNames.length === 0) return;
 
     sortedCharacterNames.forEach((characterName) => {
-      const dataDir = env.path.join(packDataDir, characterName);
       const imgDir = env.path.join(packImgDir, characterName);
       const sndDir = env.path.join(packSndDir, characterName);
       const characterConfig = readCharacterConfig(env, packName, characterName);
       const soundConfig = typeof characterConfig?.sound === 'object' && characterConfig.sound !== null
         ? characterConfig.sound
         : {};
-      const hasDataDirectory = env.fs.existsSync(dataDir);
       const hasImgDirectory = env.fs.existsSync(imgDir);
       const hasSoundDirectory = env.fs.existsSync(sndDir);
 
-      if (!hasDataDirectory) return;
       if (!hasImgDirectory && !hasSoundDirectory) return;
       discoveredCharacterCount += 1;
 
@@ -256,7 +286,6 @@ function discoverCharacterCatalog(env) {
         basePitchTones: Number.isFinite(parsedBasePitchTones) ? parsedBasePitchTones : 0,
         canStretch: soundConfig?.canStretch === true,
         isAvailable: hasAllSprites && hasAnySound,
-        hasDataDirectory,
         hasAllSprites,
         hasAnySound,
         hasImgDirectory,
@@ -276,6 +305,86 @@ function discoverCharacterCatalog(env) {
   return {
     packs: sortPacks(packs),
     characters,
+  };
+}
+
+function resolveBackgroundPreviewPath(env, imageDirectory) {
+  if (env.fs.existsSync(imageDirectory)) {
+    for (const fileName of BACKGROUND_FILE_NAMES) {
+      const candidatePath = env.path.join(imageDirectory, fileName);
+      if (env.fs.existsSync(candidatePath)) return candidatePath;
+    }
+  }
+
+  const fallbackPath = env.path.join(env.genericImgDir, '1.jpg');
+  return env.fs.existsSync(fallbackPath) ? fallbackPath : null;
+}
+
+function discoverBackgroundCatalog(env) {
+  const packs = [];
+  const backgrounds = [];
+
+  listDirectoryNamesFromRoots(env, [
+    env.backgroundDataDir,
+    env.backgroundImgDir,
+  ]).forEach((packName) => {
+    const packDataDir = env.path.join(env.backgroundDataDir, packName);
+    const packImgDir = env.path.join(env.backgroundImgDir, packName);
+    const packConfig = readBackgroundPackConfig(env, packName);
+    const packDisplayName = getPackDisplayName(packName, packConfig);
+    const backgroundNames = listDirectoryNamesFromRoots(env, [
+      packDataDir,
+      packImgDir,
+    ]);
+    const sortedBackgroundNames = sortItemsByDisplayName(backgroundNames, (backgroundName) => {
+      const backgroundConfig = readBackgroundConfig(env, packName, backgroundName);
+      return getBackgroundDisplayName(backgroundName, backgroundConfig?.background);
+    });
+    let discoveredBackgroundCount = 0;
+
+    if (sortedBackgroundNames.length === 0) return;
+
+    sortedBackgroundNames.forEach((backgroundName) => {
+      const imageDirectory = env.path.join(packImgDir, backgroundName);
+      const dataDirectory = env.path.join(packDataDir, backgroundName);
+      const hasDataDirectory = env.fs.existsSync(dataDirectory);
+      const hasImgDirectory = env.fs.existsSync(imageDirectory);
+
+      if (!hasDataDirectory && !hasImgDirectory) return;
+
+      const backgroundConfig = readBackgroundConfig(env, packName, backgroundName);
+      const previewImagePath = resolveBackgroundPreviewPath(env, imageDirectory);
+      const hasBuiltImage = hasImgDirectory && BACKGROUND_FILE_NAMES.some((fileName) => (
+        env.fs.existsSync(env.path.join(imageDirectory, fileName))
+      ));
+
+      discoveredBackgroundCount += 1;
+      backgrounds.push({
+        id: `${packName}/${backgroundName}`,
+        packId: packName,
+        packDisplayName,
+        folderName: backgroundName,
+        displayName: getBackgroundDisplayName(backgroundName, backgroundConfig?.background),
+        previewImagePath,
+        hasDataDirectory,
+        hasImgDirectory,
+        hasBuiltImage,
+        isAvailable: Boolean(previewImagePath),
+      });
+    });
+
+    if (discoveredBackgroundCount > 0) {
+      packs.push({
+        id: packName,
+        displayName: packDisplayName,
+        backgroundCount: discoveredBackgroundCount,
+      });
+    }
+  });
+
+  return {
+    packs: sortPacks(packs),
+    backgrounds,
   };
 }
 
@@ -462,14 +571,18 @@ function getCharacterPlaybackConfig(bufferDuration, character, desiredDuration, 
 function createAppModel() {
   const env = createEnvironment();
   const characterCatalog = discoverCharacterCatalog(env);
+  const backgroundCatalog = discoverBackgroundCatalog(env);
 
   return {
     env,
     packs: characterCatalog.packs,
     characters: characterCatalog.characters,
+    backgroundPacks: backgroundCatalog.packs,
+    backgrounds: backgroundCatalog.backgrounds,
     genericSounds: discoverGenericSounds(env),
     state: {
       selectedCharacter: null,
+      selectedBackground: null,
       isPlaying: false,
       isPaused: false,
       stopRequested: false,
