@@ -2719,11 +2719,11 @@ img {
 
 .character-grid {
   display: flex;
-  gap: 5px;
+  gap: 12px;
   flex-wrap: nowrap;
   overflow-x: auto;
   align-items: flex-start;
-  padding: 4px 8px;
+  padding: 6px 8px 8px;
   padding-right: 30px;
   scroll-behavior: smooth;
   scrollbar-width: none;
@@ -2745,6 +2745,51 @@ img {
 
 .character-grid.is-dragging .char-btn {
   pointer-events: none;
+}
+
+.character-pack-section {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  flex: 0 0 auto;
+  min-width: max-content;
+}
+
+.character-pack-section.pack-hidden {
+  display: none !important;
+}
+
+.character-pack-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 6px;
+  min-height: 26px;
+}
+
+.character-pack-kicker {
+  color: rgba(188, 171, 138, 0.64);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.character-pack-label {
+  color: var(--text-primary);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  line-height: 1.1;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
+}
+
+.character-pack-strip {
+  display: flex;
+  gap: 5px;
+  align-items: flex-start;
 }
 
 /* Character Card */

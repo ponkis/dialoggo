@@ -28,6 +28,7 @@ const storageKeys = {
   mirrorMode: 'dialoggo-mirror-mode',
   hideBrokenChars: 'dialoggo-hide-broken-chars',
 };
+const RESERVED_PACK_DIRECTORY_NAMES = new Set(['char', 'generic', 'gui']);
 
 function createEnvironment() {
   const bridge = getDialoggoBridge();
@@ -61,7 +62,7 @@ function isDirectoryEntry(entry) {
   return !!entry && (entry.isDirectory === true || typeof entry.isDirectory === 'function' && entry.isDirectory());
 }
 
-function listCharacterDirectoryNames(env, rootDir) {
+function listDirectoryNames(env, rootDir) {
   if (!env.fs.existsSync(rootDir)) return [];
 
   return env.fs.readdirSync(rootDir, {
@@ -69,6 +70,12 @@ function listCharacterDirectoryNames(env, rootDir) {
   })
     .filter((entry) => isDirectoryEntry(entry))
     .map((entry) => entry.name);
+}
+
+function sortDirectoryNames(directoryNames) {
+  return [...directoryNames].sort((left, right) => left.localeCompare(right, undefined, {
+    sensitivity: 'base',
+  }));
 }
 
 function formatCharacterFolderName(folderName) {
@@ -87,14 +94,20 @@ function getCharacterDisplayName(folderName, characterConfig) {
   return formatCharacterFolderName(folderName);
 }
 
-function readCharacterConfig(env, characterName) {
-  const configPath = env.path.join(env.charDataDir, characterName, 'config.json');
+function getPackDisplayName(folderName, packConfig) {
+  const configuredName = String(packConfig?.name || '').trim();
+  if (configuredName) return configuredName;
+  return formatCharacterFolderName(folderName);
+}
+
+function readPackConfig(env, packName) {
+  const configPath = env.path.join(env.charDataDir, packName, 'config.json');
   if (!env.fs.existsSync(configPath)) return {};
 
   try {
     return env.fs.readJsonFile(configPath, {
       fallback: {},
-      label: `Character config for ${characterName}`,
+      label: `Pack config for ${packName}`,
       maxBytes: 16 * 1024,
     }) || {};
   } catch {
@@ -102,77 +115,135 @@ function readCharacterConfig(env, characterName) {
   }
 }
 
-function discoverCharacters(env) {
+function readCharacterConfig(env, packName, characterName) {
+  const configPath = env.path.join(env.charDataDir, packName, characterName, 'config.json');
+  if (!env.fs.existsSync(configPath)) return {};
+
+  try {
+    return env.fs.readJsonFile(configPath, {
+      fallback: {},
+      label: `Character config for ${packName}/${characterName}`,
+      maxBytes: 16 * 1024,
+    }) || {};
+  } catch {
+    return {};
+  }
+}
+
+function listPackDirectoryNames(env) {
+  const packNames = new Set();
+
+  [
+    env.charDataDir,
+    env.charImgDir,
+    env.charSndDir,
+  ].forEach((rootDir) => {
+    listDirectoryNames(env, rootDir).forEach((directoryName) => {
+      if (RESERVED_PACK_DIRECTORY_NAMES.has(String(directoryName).toLowerCase())) return;
+      packNames.add(directoryName);
+    });
+  });
+
+  return sortDirectoryNames(packNames);
+}
+
+function discoverCharacterCatalog(env) {
+  const packs = [];
   const characters = [];
-  const names = new Set([
-    ...listCharacterDirectoryNames(env, env.charDataDir),
-    ...listCharacterDirectoryNames(env, env.charImgDir),
-    ...listCharacterDirectoryNames(env, env.charSndDir),
-  ]);
 
-  if (names.size === 0) return characters;
+  listPackDirectoryNames(env).forEach((packName) => {
+    const packDataDir = env.path.join(env.charDataDir, packName);
+    const packImgDir = env.path.join(env.charImgDir, packName);
+    const packSndDir = env.path.join(env.charSndDir, packName);
+    const packConfig = readPackConfig(env, packName);
+    const packDisplayName = getPackDisplayName(packName, packConfig);
+    const characterNames = new Set([
+      ...listDirectoryNames(env, packDataDir),
+      ...listDirectoryNames(env, packImgDir),
+      ...listDirectoryNames(env, packSndDir),
+    ]);
+    const sortedCharacterNames = sortDirectoryNames(characterNames);
+    let discoveredCharacterCount = 0;
 
-  for (const name of names) {
-    const imgDir = env.path.join(env.charImgDir, name);
-    const sndDir = env.path.join(env.charSndDir, name);
-    const characterConfig = readCharacterConfig(env, name);
-    const soundConfig = typeof characterConfig?.sound === 'object' && characterConfig.sound !== null
-      ? characterConfig.sound
-      : {};
-    const hasImgDirectory = env.fs.existsSync(imgDir);
-    const hasSoundDirectory = env.fs.existsSync(sndDir);
+    if (sortedCharacterNames.length === 0) return;
 
-    if (!hasImgDirectory && !hasSoundDirectory) continue;
+    sortedCharacterNames.forEach((characterName) => {
+      const imgDir = env.path.join(packImgDir, characterName);
+      const sndDir = env.path.join(packSndDir, characterName);
+      const characterConfig = readCharacterConfig(env, packName, characterName);
+      const soundConfig = typeof characterConfig?.sound === 'object' && characterConfig.sound !== null
+        ? characterConfig.sound
+        : {};
+      const hasImgDirectory = env.fs.existsSync(imgDir);
+      const hasSoundDirectory = env.fs.existsSync(sndDir);
 
-    const speakFrames = [];
-    const idleFrames = [];
-    const displaySpritePath = env.path.join(imgDir, 'i1.png');
+      if (!hasImgDirectory && !hasSoundDirectory) return;
+      discoveredCharacterCount += 1;
 
-    if (hasImgDirectory) {
-      for (let i = 1; i <= SPEAK_FRAME_COUNT; i += 1) {
-        const spritePath = env.path.join(imgDir, `s${i}.png`);
-        if (env.fs.existsSync(spritePath)) speakFrames.push(spritePath);
+      const speakFrames = [];
+      const idleFrames = [];
+      const displaySpritePath = env.path.join(imgDir, 'i1.png');
+
+      if (hasImgDirectory) {
+        for (let i = 1; i <= SPEAK_FRAME_COUNT; i += 1) {
+          const spritePath = env.path.join(imgDir, `s${i}.png`);
+          if (env.fs.existsSync(spritePath)) speakFrames.push(spritePath);
+        }
+
+        for (let i = 1; i <= IDLE_FRAME_COUNT; i += 1) {
+          const spritePath = env.path.join(imgDir, `i${i}.png`);
+          if (env.fs.existsSync(spritePath)) idleFrames.push(spritePath);
+        }
       }
 
-      for (let i = 1; i <= IDLE_FRAME_COUNT; i += 1) {
-        const spritePath = env.path.join(imgDir, `i${i}.png`);
-        if (env.fs.existsSync(spritePath)) idleFrames.push(spritePath);
+      const soundFiles = [];
+
+      if (hasSoundDirectory) {
+        const files = env.fs.readdirSync(sndDir).filter((file) => /\.(wav|mp3|ogg)$/i.test(file));
+        files.forEach((file) => {
+          soundFiles.push(env.path.join(sndDir, file));
+        });
       }
-    }
 
-    const soundFiles = [];
+      const parsedBasePitchTones = Number(soundConfig?.pitch);
+      const hasAllSprites = speakFrames.length === SPEAK_FRAME_COUNT && idleFrames.length === IDLE_FRAME_COUNT;
+      const hasAnySound = soundFiles.length > 0;
+      const hasDisplaySprite = hasImgDirectory && env.fs.existsSync(displaySpritePath);
 
-    if (hasSoundDirectory) {
-      const files = env.fs.readdirSync(sndDir).filter((file) => /\.(wav|mp3|ogg)$/i.test(file));
-      files.forEach((file) => {
-        soundFiles.push(env.path.join(sndDir, file));
+      characters.push({
+        id: `${packName}/${characterName}`,
+        packId: packName,
+        packDisplayName,
+        folderName: characterName,
+        displayName: getCharacterDisplayName(characterName, characterConfig?.character),
+        speakFrames,
+        idleFrames,
+        previewSpritePath: hasDisplaySprite ? displaySpritePath : null,
+        sounds: soundFiles,
+        hasVariablePitch: soundConfig?.hasVariablePitch === true,
+        basePitchTones: Number.isFinite(parsedBasePitchTones) ? parsedBasePitchTones : 0,
+        canStretch: soundConfig?.canStretch === true,
+        isAvailable: hasAllSprites && hasAnySound,
+        hasAllSprites,
+        hasAnySound,
+        hasImgDirectory,
+        hasSoundDirectory,
+      });
+    });
+
+    if (discoveredCharacterCount > 0) {
+      packs.push({
+        id: packName,
+        displayName: packDisplayName,
+        characterCount: discoveredCharacterCount,
       });
     }
+  });
 
-    const parsedBasePitchTones = Number(soundConfig?.pitch);
-    const hasAllSprites = speakFrames.length === SPEAK_FRAME_COUNT && idleFrames.length === IDLE_FRAME_COUNT;
-    const hasAnySound = soundFiles.length > 0;
-    const hasDisplaySprite = hasImgDirectory && env.fs.existsSync(displaySpritePath);
-
-    characters.push({
-      id: name,
-      displayName: getCharacterDisplayName(name, characterConfig?.character),
-      speakFrames,
-      idleFrames,
-      previewSpritePath: hasDisplaySprite ? displaySpritePath : null,
-      sounds: soundFiles,
-      hasVariablePitch: soundConfig?.hasVariablePitch === true,
-      basePitchTones: Number.isFinite(parsedBasePitchTones) ? parsedBasePitchTones : 0,
-      canStretch: soundConfig?.canStretch === true,
-      isAvailable: hasAllSprites && hasAnySound,
-      hasAllSprites,
-      hasAnySound,
-      hasImgDirectory,
-      hasSoundDirectory,
-    });
-  }
-
-  return characters;
+  return {
+    packs,
+    characters,
+  };
 }
 
 function discoverGenericSounds(env) {
@@ -357,10 +428,12 @@ function getCharacterPlaybackConfig(bufferDuration, character, desiredDuration, 
 
 function createAppModel() {
   const env = createEnvironment();
+  const characterCatalog = discoverCharacterCatalog(env);
 
   return {
     env,
-    characters: discoverCharacters(env),
+    packs: characterCatalog.packs,
+    characters: characterCatalog.characters,
     genericSounds: discoverGenericSounds(env),
     state: {
       selectedCharacter: null,

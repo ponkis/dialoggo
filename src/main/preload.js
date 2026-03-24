@@ -22,9 +22,9 @@ const assetsPaths = {
   dataDir: path.join(appPaths.publicDir, 'assets', 'data'),
   imgDir: path.join(appPaths.publicDir, 'assets', 'img'),
   sndDir: path.join(appPaths.publicDir, 'assets', 'snd'),
-  charDataDir: path.join(appPaths.publicDir, 'assets', 'data', 'char'),
-  charImgDir: path.join(appPaths.publicDir, 'assets', 'img', 'char'),
-  charSndDir: path.join(appPaths.publicDir, 'assets', 'snd', 'char'),
+  charDataDir: path.join(appPaths.publicDir, 'assets', 'data'),
+  charImgDir: path.join(appPaths.publicDir, 'assets', 'img'),
+  charSndDir: path.join(appPaths.publicDir, 'assets', 'snd'),
   guiImgDir: path.join(appPaths.publicDir, 'assets', 'img', 'gui'),
   guiAnimDir: path.join(appPaths.publicDir, 'assets', 'img', 'gui', 'anim'),
 };

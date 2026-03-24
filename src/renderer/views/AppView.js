@@ -3,6 +3,7 @@ function createAppView(model, audioService) {
     env,
     state,
     characters,
+    packs,
     constants
   } = model;
 
@@ -956,6 +957,13 @@ function createAppView(model, audioService) {
       if (visible) visibleCount += 1;
     });
 
+    document.querySelectorAll('.character-pack-section').forEach((section) => {
+      const hasVisibleButtons = Array.from(section.querySelectorAll('.char-btn')).some((button) => (
+        !button.classList.contains('search-hidden') && !button.classList.contains('hidden-broken')
+      ));
+      section.classList.toggle('pack-hidden', !hasVisibleButtons);
+    });
+
     refs.characterSearchEmpty?.classList.toggle('visible', visibleCount === 0);
 
     if (refs.charGrid) {
@@ -1379,88 +1387,151 @@ function createAppView(model, audioService) {
   function buildCharacterGrid(onCharacterSelected) {
     refs.charGrid.innerHTML = '';
     cardAnimState.clear();
+    const fragment = document.createDocumentFragment();
+    const fallbackPreviewPath = characters.find((character) => (
+      character.previewSpritePath || character.idleFrames[0] || character.speakFrames[0]
+    ));
+    const fallbackSpritePath = fallbackPreviewPath?.previewSpritePath
+      || fallbackPreviewPath?.idleFrames?.[0]
+      || fallbackPreviewPath?.speakFrames?.[0]
+      || null;
+    const charactersByPack = new Map();
 
     characters.forEach((character) => {
-      const button = document.createElement('button');
-      button.className = 'char-btn';
-      button.dataset.id = character.id;
-      button.dataset.searchIndex = model.normalizeCharacterSearch(`${character.displayName} ${character.id}`);
-      button.disabled = !character.isAvailable;
-      if (!character.isAvailable) button.classList.add('unavailable');
+      if (!charactersByPack.has(character.packId)) {
+        charactersByPack.set(character.packId, {
+          id: character.packId,
+          displayName: character.packDisplayName,
+          characters: [],
+        });
+      }
 
-      const spriteWrap = document.createElement('div');
-      spriteWrap.className = 'char-btn-sprite';
+      charactersByPack.get(character.packId).characters.push(character);
+    });
 
-      const spriteImage = document.createElement('img');
-      const previewPath = character.previewSpritePath || null;
-      if (previewPath) {
-        spriteImage.src = fileToSrc(previewPath);
-      } else {
-        const placeholderPath = env.path.join(env.charImgDir, 'tooty', 's5.png');
-        if (env.fs.existsSync(placeholderPath)) {
-          spriteImage.src = fileToSrc(placeholderPath);
+    const orderedPacks = Array.isArray(packs) && packs.length > 0
+      ? packs
+        .map((pack) => ({
+          id: pack.id,
+          displayName: pack.displayName,
+          characters: charactersByPack.get(pack.id)?.characters || [],
+        }))
+        .filter((pack) => pack.characters.length > 0)
+      : Array.from(charactersByPack.values());
+
+    orderedPacks.forEach((pack) => {
+      const packSection = document.createElement('section');
+      packSection.className = 'character-pack-section';
+      packSection.dataset.packId = pack.id;
+
+      const packHeading = document.createElement('div');
+      packHeading.className = 'character-pack-heading';
+
+      const packKicker = document.createElement('span');
+      packKicker.className = 'character-pack-kicker';
+      packKicker.textContent = pack.id.toUpperCase();
+
+      const packLabel = document.createElement('span');
+      packLabel.className = 'character-pack-label';
+      packLabel.textContent = pack.displayName;
+
+      packHeading.appendChild(packKicker);
+      packHeading.appendChild(packLabel);
+      packSection.appendChild(packHeading);
+
+      const packStrip = document.createElement('div');
+      packStrip.className = 'character-pack-strip';
+
+      pack.characters.forEach((character) => {
+        const button = document.createElement('button');
+        button.className = 'char-btn';
+        button.dataset.id = character.id;
+        button.dataset.packId = character.packId;
+        button.dataset.searchIndex = model.normalizeCharacterSearch([
+          character.displayName,
+          character.folderName,
+          character.packDisplayName,
+          character.packId,
+        ].join(' '));
+        button.disabled = !character.isAvailable;
+        if (!character.isAvailable) button.classList.add('unavailable');
+
+        const spriteWrap = document.createElement('div');
+        spriteWrap.className = 'char-btn-sprite';
+
+        const spriteImage = document.createElement('img');
+        const previewPath = character.previewSpritePath || null;
+        if (previewPath) {
+          spriteImage.src = fileToSrc(previewPath);
+        } else if (fallbackSpritePath) {
+          spriteImage.src = fileToSrc(fallbackSpritePath);
           spriteImage.classList.add('missing-char-icon');
         }
-      }
 
-      spriteImage.alt = character.displayName;
-      spriteWrap.appendChild(spriteImage);
+        spriteImage.alt = character.displayName;
+        spriteWrap.appendChild(spriteImage);
 
-      const label = document.createElement('span');
-      label.textContent = character.displayName;
+        const label = document.createElement('span');
+        label.textContent = character.displayName;
 
-      button.appendChild(spriteWrap);
-      button.appendChild(label);
+        button.appendChild(spriteWrap);
+        button.appendChild(label);
 
-      if (!character.isAvailable) {
-        const warningPath = env.path.join(env.guiImgDir, '1.png');
-        if (env.fs.existsSync(warningPath)) {
-          const badge = document.createElement('img');
-          badge.className = 'warning-badge';
-          badge.src = fileToSrc(warningPath);
-          badge.alt = 'Unavailable';
-          badge.title = (!character.hasAllSprites && !character.hasAnySound) ?
-            'Missing sprite frames and no usable sounds' :
-            (!character.hasAllSprites ? 'Missing sprite frames' : 'No usable sounds found');
-          button.appendChild(badge);
-        }
-      }
-
-      cardAnimState.set(character.id, {
-        timer: null,
-        frameIndex: 0,
-        direction: 1,
-        mode: 'idle',
-        img: spriteImage,
-        char: character,
-      });
-
-      button.addEventListener('mouseenter', () => {
-        if (button.disabled) return;
-        startCardIdleAnim(character.id);
-      });
-
-      button.addEventListener('mouseleave', () => {
-        if (button.disabled) return;
-
-        if (state.selectedCharacter?.id === character.id) {
-          const cardState = cardAnimState.get(character.id);
-          if (cardState?.mode !== 'speak') startCardIdleAnim(character.id);
-          return;
+        if (!character.isAvailable) {
+          const warningPath = env.path.join(env.guiImgDir, '1.png');
+          if (env.fs.existsSync(warningPath)) {
+            const badge = document.createElement('img');
+            badge.className = 'warning-badge';
+            badge.src = fileToSrc(warningPath);
+            badge.alt = 'Unavailable';
+            badge.title = (!character.hasAllSprites && !character.hasAnySound) ?
+              'Missing sprite frames and no usable sounds' :
+              (!character.hasAllSprites ? 'Missing sprite frames' : 'No usable sounds found');
+            button.appendChild(badge);
+          }
         }
 
-        stopCardAnim(character.id);
-        if (previewPath) spriteImage.src = fileToSrc(previewPath);
+        cardAnimState.set(character.id, {
+          timer: null,
+          frameIndex: 0,
+          direction: 1,
+          mode: 'idle',
+          img: spriteImage,
+          char: character,
+        });
+
+        button.addEventListener('mouseenter', () => {
+          if (button.disabled) return;
+          startCardIdleAnim(character.id);
+        });
+
+        button.addEventListener('mouseleave', () => {
+          if (button.disabled) return;
+
+          if (state.selectedCharacter?.id === character.id) {
+            const cardState = cardAnimState.get(character.id);
+            if (cardState?.mode !== 'speak') startCardIdleAnim(character.id);
+            return;
+          }
+
+          stopCardAnim(character.id);
+          if (previewPath) spriteImage.src = fileToSrc(previewPath);
+        });
+
+        button.addEventListener('click', () => {
+          if (button.disabled) return;
+          const wasActive = state.selectedCharacter?.id === character.id;
+          onCharacterSelected(character, wasActive);
+        });
+
+        packStrip.appendChild(button);
       });
 
-      button.addEventListener('click', () => {
-        if (button.disabled) return;
-        const wasActive = state.selectedCharacter?.id === character.id;
-        onCharacterSelected(character, wasActive);
-      });
-
-      refs.charGrid.appendChild(button);
+      packSection.appendChild(packStrip);
+      fragment.appendChild(packSection);
     });
+
+    refs.charGrid.appendChild(fragment);
 
     applyCharacterFilters();
   }
@@ -1740,7 +1811,12 @@ function createAppView(model, audioService) {
   }
 
   refs.versionLabel.textContent = `v${env.appVersion}`;
-  refs.charCount.textContent = `${characters.length} chars`;
+  const packCount = Array.isArray(packs) && packs.length > 0
+    ? packs.filter((pack) => Number(pack?.characterCount) > 0).length
+    : new Set(characters.map((character) => character.packId)).size;
+  refs.charCount.textContent = packCount > 0
+    ? `${characters.length} chars / ${packCount} packs`
+    : `${characters.length} chars`;
   setFrontPanel(state.frontPanel || 'controls');
   setActiveBackPanel(state.activePanel === 'settings' ? 'settings' : null);
   setFlipCardPanel(state.activePanel === 'settings' ? 'settings' : null);
