@@ -771,121 +771,108 @@ function startApp() {
 
   window.addEventListener('blur', () => {
     resetFastForwardState();
-    stopActiveReelHold(false);
   });
 
   const REEL_TAP_STEP = 160;
-  const REEL_HOLD_DELAY_MS = 105;
-  const REEL_HOLD_SPEED_PX_PER_MS = 2.05;
-  let activeReelHold = null;
+  const REEL_DRAG_THRESHOLD_PX = 6;
+  let reelDragState = null;
+  let suppressCharacterGridClick = false;
 
-  function stopActiveReelHold(performTapStep = false) {
-    if (!activeReelHold) return;
-
-    const holdState = activeReelHold;
-    activeReelHold = null;
-    clearTimeout(holdState.holdTimer);
-
-    if (holdState.frameId) {
-      cancelAnimationFrame(holdState.frameId);
-    }
-
-    if (performTapStep && !holdState.didStartContinuous) {
-      refs.charGrid.scrollBy({
-        left: holdState.direction * REEL_TAP_STEP,
-        behavior: 'smooth',
-      });
-    }
-
-  }
-
-  function attachReelArrowHoldControl(element, direction, soundKey) {
-    if (!element) return;
-
-    element.addEventListener('pointerdown', (event) => {
-      if (event.button !== 0 || element.classList.contains('hidden')) return;
-
-      stopActiveReelHold(false);
-      audioService.playMenuSound(soundKey);
-      event.preventDefault();
-
-      const holdState = {
-        element,
-        direction,
-        pointerId: event.pointerId,
-        holdTimer: 0,
-        frameId: 0,
-        didStartContinuous: false,
-        lastTimestamp: 0,
-      };
-
-      activeReelHold = holdState;
-
-      const tick = (timestamp) => {
-        if (activeReelHold !== holdState) return;
-
-        holdState.didStartContinuous = true;
-        if (!holdState.lastTimestamp) {
-          holdState.lastTimestamp = timestamp;
-          holdState.frameId = requestAnimationFrame(tick);
-          return;
-        }
-
-        const deltaMs = Math.max(12, Math.min(20, timestamp - holdState.lastTimestamp));
-        holdState.lastTimestamp = timestamp;
-        refs.charGrid.scrollLeft += holdState.direction * deltaMs * REEL_HOLD_SPEED_PX_PER_MS;
-        holdState.frameId = requestAnimationFrame(tick);
-      };
-
-      holdState.holdTimer = setTimeout(() => {
-        if (activeReelHold !== holdState) return;
-        holdState.frameId = requestAnimationFrame(tick);
-      }, REEL_HOLD_DELAY_MS);
+  refs.reelLeft?.addEventListener('click', () => {
+    if (refs.reelLeft.classList.contains('hidden')) return;
+    audioService.playMenuSound('arrowLeft');
+    refs.charGrid.scrollBy({
+      left: -REEL_TAP_STEP,
+      behavior: 'smooth',
     });
-
-    element.addEventListener('pointerup', (event) => {
-      if (!activeReelHold || activeReelHold.element !== element) return;
-      if (
-        event.pointerId !== undefined
-        && activeReelHold.pointerId !== null
-        && event.pointerId !== activeReelHold.pointerId
-      ) return;
-      stopActiveReelHold(true);
-    });
-
-    element.addEventListener('pointercancel', (event) => {
-      if (!activeReelHold || activeReelHold.element !== element) return;
-      if (
-        event.pointerId !== undefined
-        && activeReelHold.pointerId !== null
-        && event.pointerId !== activeReelHold.pointerId
-      ) return;
-      stopActiveReelHold(false);
-    });
-  }
-
-  attachReelArrowHoldControl(refs.reelLeft, -1, 'arrowLeft');
-  attachReelArrowHoldControl(refs.reelRight, 1, 'arrowRight');
-
-  window.addEventListener('pointerup', (event) => {
-    if (!activeReelHold) return;
-    if (
-      event.pointerId !== undefined
-      && activeReelHold.pointerId !== null
-      && event.pointerId !== activeReelHold.pointerId
-    ) return;
-    stopActiveReelHold(true);
   });
 
-  window.addEventListener('pointercancel', (event) => {
-    if (!activeReelHold) return;
-    if (
-      event.pointerId !== undefined
-      && activeReelHold.pointerId !== null
-      && event.pointerId !== activeReelHold.pointerId
-    ) return;
-    stopActiveReelHold(false);
+  refs.reelRight?.addEventListener('click', () => {
+    if (refs.reelRight.classList.contains('hidden')) return;
+    audioService.playMenuSound('arrowRight');
+    refs.charGrid.scrollBy({
+      left: REEL_TAP_STEP,
+      behavior: 'smooth',
+    });
   });
+
+  function stopCharacterGridDrag() {
+    if (!reelDragState) return;
+    const { pointerId } = reelDragState;
+    reelDragState = null;
+    refs.charGrid.classList.remove('is-dragging');
+
+    if (pointerId !== null) {
+      try {
+        refs.charGrid.releasePointerCapture(pointerId);
+      } catch { }
+    }
+  }
+
+  refs.charGrid?.addEventListener('pointerdown', (event) => {
+    if (event.button !== 0) return;
+
+    reelDragState = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startScrollLeft: refs.charGrid.scrollLeft,
+      moved: false,
+    };
+
+    suppressCharacterGridClick = false;
+
+    try {
+      refs.charGrid.setPointerCapture(event.pointerId);
+    } catch { }
+  });
+
+  refs.charGrid?.addEventListener('pointermove', (event) => {
+    if (!reelDragState || event.pointerId !== reelDragState.pointerId) return;
+
+    const deltaX = event.clientX - reelDragState.startX;
+    if (!reelDragState.moved && Math.abs(deltaX) >= REEL_DRAG_THRESHOLD_PX) {
+      reelDragState.moved = true;
+      suppressCharacterGridClick = true;
+      refs.charGrid.classList.add('is-dragging');
+    }
+
+    if (!reelDragState.moved) return;
+
+    event.preventDefault();
+    refs.charGrid.scrollLeft = reelDragState.startScrollLeft - deltaX;
+  });
+
+  refs.charGrid?.addEventListener('pointerup', (event) => {
+    if (!reelDragState || event.pointerId !== reelDragState.pointerId) return;
+    stopCharacterGridDrag();
+    if (suppressCharacterGridClick) {
+      window.setTimeout(() => {
+        suppressCharacterGridClick = false;
+      }, 0);
+    }
+  });
+
+  refs.charGrid?.addEventListener('pointercancel', (event) => {
+    if (!reelDragState || event.pointerId !== reelDragState.pointerId) return;
+    stopCharacterGridDrag();
+    suppressCharacterGridClick = false;
+  });
+
+  window.addEventListener('pointerup', () => {
+    stopCharacterGridDrag();
+  });
+
+  window.addEventListener('pointercancel', () => {
+    stopCharacterGridDrag();
+    suppressCharacterGridClick = false;
+  });
+
+  refs.charGrid?.addEventListener('click', (event) => {
+    if (!suppressCharacterGridClick) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressCharacterGridClick = false;
+  }, true);
 
   refs.charGrid.addEventListener('scroll', view.updateReelArrows);
   refs.characterSearchInput?.addEventListener('input', () => {

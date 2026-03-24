@@ -2803,10 +2803,23 @@ img {
   scroll-behavior: smooth;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: pan-y;
 }
 
 .character-grid::-webkit-scrollbar {
   display: none;
+}
+
+.character-grid.is-dragging {
+  cursor: grabbing;
+  scroll-behavior: auto;
+}
+
+.character-grid.is-dragging .char-btn {
+  pointer-events: none;
 }
 
 /* Character Card */
