@@ -423,6 +423,7 @@ function createAppModel() {
       n64ModeEnabled: false,
       hideBrokenChars: false,
       menuSoundsVolumeLevel: 6,
+      frontPanel: 'controls',
       activePanel: 'controls',
       panelTransitionLock: false,
       pauseResolve: null,

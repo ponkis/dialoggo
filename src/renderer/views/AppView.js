@@ -1370,17 +1370,69 @@ function createAppView(model, audioService) {
     refs.previewArea?.classList.toggle('preview-placeholder-suppressed', suppressed);
   }
 
-  function setActiveBackPanel(panel) {
-    refs.settingsPanel?.classList.toggle('active', panel === 'settings');
+  function setFrontPanel(panel) {
+    refs.controlsPanel?.classList.toggle('active', panel === 'controls');
     refs.backgroundsPanel?.classList.toggle('active', panel === 'backgrounds');
 
-    refs.settingsPanel?.setAttribute('aria-hidden', panel !== 'settings' ? 'true' : 'false');
+    refs.controlsPanel?.setAttribute('aria-hidden', panel !== 'controls' ? 'true' : 'false');
     refs.backgroundsPanel?.setAttribute('aria-hidden', panel !== 'backgrounds' ? 'true' : 'false');
+  }
+
+  function setActiveBackPanel(panel) {
+    refs.settingsPanel?.classList.toggle('active', panel === 'settings');
+    refs.settingsPanel?.setAttribute('aria-hidden', panel !== 'settings' ? 'true' : 'false');
   }
 
   function setFlipCardPanel(panel) {
     refs.flipCard?.classList.toggle('panel-settings', panel === 'settings');
-    refs.flipCard?.classList.toggle('panel-backgrounds', panel === 'backgrounds');
+  }
+
+  function getFrontPanelElement(panel) {
+    if (panel === 'controls') return refs.controlsPanel;
+    if (panel === 'backgrounds') return refs.backgroundsPanel;
+    return null;
+  }
+
+  function clearFrontPanelSwapClasses(element) {
+    if (!element) return;
+    element.classList.remove('front-panel-swap-out', 'front-panel-swap-in');
+  }
+
+  async function swapFrontPanel(fromPanel, toPanel) {
+    if (fromPanel === toPanel) {
+      setFrontPanel(toPanel);
+      return;
+    }
+
+    const fromElement = getFrontPanelElement(fromPanel);
+    const toElement = getFrontPanelElement(toPanel);
+
+    if (!fromElement || !toElement) {
+      setFrontPanel(toPanel);
+      return;
+    }
+
+    const phaseMs = Math.round(constants.FLIP_CARD_MS / 2);
+
+    clearFrontPanelSwapClasses(fromElement);
+    clearFrontPanelSwapClasses(toElement);
+    refs.flipCard?.classList.add('front-panel-swapping');
+
+    fromElement.classList.add('active', 'front-panel-swap-out');
+    fromElement.setAttribute('aria-hidden', 'false');
+    await model.sleep(phaseMs);
+
+    clearFrontPanelSwapClasses(fromElement);
+    fromElement.classList.remove('active');
+    fromElement.setAttribute('aria-hidden', 'true');
+
+    toElement.classList.add('active', 'front-panel-swap-in');
+    toElement.setAttribute('aria-hidden', 'false');
+    await model.sleep(phaseMs);
+
+    clearFrontPanelSwapClasses(toElement);
+    refs.flipCard?.classList.remove('front-panel-swapping');
+    setFrontPanel(toPanel);
   }
 
   async function collapsePreviewThenSettings() {
@@ -1465,9 +1517,11 @@ function createAppView(model, audioService) {
     void refs.flipCard.offsetHeight;
     refs.flipCard.style.transition = '';
 
+    setFrontPanel('controls');
     setActiveBackPanel(null);
     refs.sleeveBackgrounds.classList.remove('active');
     refs.sleeveSettings.classList.remove('active');
+    state.frontPanel = 'controls';
     state.activePanel = 'controls';
     refs.previewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
     setPreviewPlaceholderSuppressed(false);
@@ -1487,6 +1541,9 @@ function createAppView(model, audioService) {
 
   refs.versionLabel.textContent = `v${env.appVersion}`;
   refs.charCount.textContent = `${characters.length} chars`;
+  setFrontPanel(state.frontPanel || 'controls');
+  setActiveBackPanel(state.activePanel === 'settings' ? 'settings' : null);
+  setFlipCardPanel(state.activePanel === 'settings' ? 'settings' : null);
   window.addEventListener('resize', syncDialogueInputHighlight);
   syncDialogueInputHighlightMetrics();
   startPlaceholderAnim();
@@ -1527,6 +1584,8 @@ function createAppView(model, audioService) {
     redrawSpriteForN64Toggle,
     computeExpandedPreviewHeight,
     setPreviewPlaceholderSuppressed,
+    setFrontPanel,
+    swapFrontPanel,
     setActiveBackPanel,
     setFlipCardPanel,
     collapsePreviewThenSettings,

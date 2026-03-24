@@ -472,20 +472,50 @@ function startApp() {
     updateSettingsSleeveBlockedState();
   }
 
+  function resetPreviewAreaInlineStyles() {
+    refs.previewArea.style.height = '';
+    refs.previewArea.style.flex = '';
+    refs.previewArea.style.minHeight = '';
+    refs.previewArea.style.overflow = '';
+    refs.previewArea.style.transition = '';
+  }
+
+  function clearExpandedPanelFlow() {
+    refs.app?.classList.remove('settings-panel-open');
+    if (refs.panelWrapper) delete refs.panelWrapper.dataset.naturalPanelHeight;
+  }
+
+  function syncFrontPanelLayout(options = {}) {
+    const suppressPlaceholder = options.suppressPlaceholder === true;
+
+    refs.previewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
+    view.setPreviewPlaceholderSuppressed(suppressPlaceholder);
+
+    if (suppressPlaceholder) {
+      view.stopPlaceholderAnim();
+    } else if (!refs.dialogueContainer.classList.contains('active')) {
+      view.startPlaceholderAnim();
+    }
+
+    resetPreviewAreaInlineStyles();
+    clearExpandedPanelFlow();
+  }
+
   async function showPanel(panel) {
     if (state.panelTransitionLock || panel === state.activePanel) return;
-    if ((panel === 'settings' || panel === 'backgrounds') && (state.isPlaying || state.isPaused)) return;
+    if (panel === 'settings' && (state.isPlaying || state.isPaused)) return;
 
     state.panelTransitionLock = true;
     const large = view.isLargeScreen();
     const previousPanel = state.activePanel;
+    const previousFrontPanel = state.frontPanel;
     const hasCollapsedPreviewFlow = refs.app?.classList.contains('settings-panel-open');
     const leavingSettings = previousPanel === 'settings';
 
     try {
       if (panel === 'settings') {
-        view.setActiveBackPanel('settings');
         view.syncSettingsLayoutMode('settings');
+        view.setActiveBackPanel('settings');
         refs.sleeveBackgrounds.classList.remove('active');
         refs.sleeveSettings.classList.add('active');
 
@@ -508,70 +538,72 @@ function startApp() {
         view.setFlipCardPanel('settings');
         state.activePanel = 'settings';
       } else if (panel === 'backgrounds') {
-        view.setActiveBackPanel('backgrounds');
-        view.syncSettingsLayoutMode('controls');
         refs.sleeveSettings.classList.remove('active');
         refs.sleeveBackgrounds.classList.add('active');
 
-        if (leavingSettings && hasCollapsedPreviewFlow) {
-          await view.expandPreviewAfterControls({
-            keepPlaceholderSuppressed: true,
-          });
+        if (leavingSettings) {
+          state.frontPanel = 'backgrounds';
+          view.setFrontPanel('backgrounds');
+          audioService.playMenuSound('settingsOpen');
+          view.setFlipCardPanel(null);
+          state.activePanel = 'backgrounds';
+
+          await model.sleep(constants.FLIP_CARD_MS);
+
+          view.setActiveBackPanel(null);
+          view.syncSettingsLayoutMode('controls');
+
+          if (hasCollapsedPreviewFlow) {
+            await view.expandPreviewAfterControls({
+              keepPlaceholderSuppressed: true,
+            });
+          } else {
+            syncFrontPanelLayout({
+              suppressPlaceholder: true,
+            });
+          }
         } else {
-          refs.previewArea.classList.remove('preview-settings-muted');
-          refs.previewArea.classList.remove('preview-strip-collapsed', 'preview-content-hidden');
-          view.setPreviewPlaceholderSuppressed(true);
-          view.stopPlaceholderAnim();
-          refs.previewArea.style.height = '';
-          refs.previewArea.style.flex = '';
-          refs.previewArea.style.minHeight = '';
-          refs.previewArea.style.overflow = '';
-          refs.previewArea.style.transition = '';
-          refs.app?.classList.remove('settings-panel-open');
-          if (refs.panelWrapper) delete refs.panelWrapper.dataset.naturalPanelHeight;
-        }
-
-        audioService.playMenuSound('settingsOpen');
-        view.setFlipCardPanel('backgrounds');
-        state.activePanel = 'backgrounds';
-      } else {
-        if (large && !hasCollapsedPreviewFlow) {
-          requestAnimationFrame(() => {
-            refs.previewArea.classList.remove('preview-settings-muted');
-            view.setPreviewPlaceholderSuppressed(false);
-            if (!refs.dialogueContainer.classList.contains('active')) {
-              view.startPlaceholderAnim();
-            }
+          view.setActiveBackPanel(null);
+          view.setFlipCardPanel(null);
+          view.syncSettingsLayoutMode('controls');
+          syncFrontPanelLayout({
+            suppressPlaceholder: true,
           });
+          audioService.playMenuSound('settingsOpen');
+          await view.swapFrontPanel(previousFrontPanel, 'backgrounds');
+          state.frontPanel = 'backgrounds';
+          state.activePanel = 'backgrounds';
         }
-
-        audioService.playMenuSound('settingsClose');
-        view.setFlipCardPanel(null);
+      } else {
         refs.sleeveSettings.classList.remove('active');
         refs.sleeveBackgrounds.classList.remove('active');
-        state.activePanel = 'controls';
 
-        await model.sleep(constants.FLIP_CARD_MS);
-        view.setActiveBackPanel(null);
-        view.syncSettingsLayoutMode('controls');
+        if (leavingSettings) {
+          state.frontPanel = 'controls';
+          view.setFrontPanel('controls');
+          audioService.playMenuSound('settingsClose');
+          view.setFlipCardPanel(null);
+          state.activePanel = 'controls';
 
-        if (leavingSettings && hasCollapsedPreviewFlow) {
-          await view.expandPreviewAfterControls();
+          await model.sleep(constants.FLIP_CARD_MS);
+
+          view.setActiveBackPanel(null);
+          view.syncSettingsLayoutMode('controls');
+
+          if (hasCollapsedPreviewFlow) {
+            await view.expandPreviewAfterControls();
+          } else {
+            syncFrontPanelLayout();
+          }
         } else {
-          if (!large) {
-            refs.previewArea.classList.remove('preview-settings-muted', 'preview-strip-collapsed', 'preview-content-hidden');
-            view.setPreviewPlaceholderSuppressed(false);
-          }
-
-          refs.previewArea.style.height = '';
-          refs.previewArea.style.flex = '';
-          refs.previewArea.style.minHeight = '';
-          refs.previewArea.style.overflow = '';
-          refs.previewArea.style.transition = '';
-
-          if (!refs.dialogueContainer.classList.contains('active')) {
-            view.startPlaceholderAnim();
-          }
+          view.setActiveBackPanel(null);
+          view.setFlipCardPanel(null);
+          view.syncSettingsLayoutMode('controls');
+          syncFrontPanelLayout();
+          audioService.playMenuSound('settingsClose');
+          await view.swapFrontPanel(previousFrontPanel, 'controls');
+          state.frontPanel = 'controls';
+          state.activePanel = 'controls';
         }
       }
     } finally {
@@ -589,7 +621,8 @@ function startApp() {
 
     const blocked = state.isPlaying || state.isPaused;
     setBlockedState(refs.sleeveSettings, blocked, 'Settings', 'Settings (available when dialogue is idle)');
-    setBlockedState(refs.sleeveBackgrounds, blocked, 'Backgrounds', 'Backgrounds (available when dialogue is idle)');
+    setBlockedState(refs.sleeveBackgrounds, false, 'Backgrounds', 'Backgrounds');
+    setBlockedState(refs.sleeveCharacter, blocked, 'Character', 'Character (available when dialogue is idle)');
     setBlockedState(refs.sleeveCamera, blocked, 'Export', 'Export (available when dialogue is idle)');
     updateFastForwardAvailability();
   }
@@ -825,7 +858,7 @@ function startApp() {
   });
 
   refs.sleeveSettings.addEventListener('click', () => {
-    if (state.isPlaying || state.isPaused) return;
+    if (refs.sleeveSettings.getAttribute('aria-disabled') === 'true') return;
     audioService.playMenuSound('click');
     void showPanel(state.activePanel === 'settings' ? 'controls' : 'settings');
   });
@@ -836,7 +869,7 @@ function startApp() {
   });
 
   refs.sleeveBackgrounds?.addEventListener('click', () => {
-    if (state.isPlaying || state.isPaused) return;
+    if (refs.sleeveBackgrounds.getAttribute('aria-disabled') === 'true') return;
     audioService.playMenuSound('click');
     void showPanel(state.activePanel === 'backgrounds' ? 'controls' : 'backgrounds');
   });
@@ -846,6 +879,7 @@ function startApp() {
   });
 
   refs.sleeveCharacter?.addEventListener('click', () => {
+    if (refs.sleeveCharacter.getAttribute('aria-disabled') === 'true') return;
     audioService.playMenuSound('forbidden');
   });
 
@@ -912,14 +946,14 @@ function startApp() {
   bridge.windowControls.onMaximized(() => {
     document.body.classList.add('maximized');
     if (state.activePanel === 'settings' && !state.panelTransitionLock) {
-      void showPanel('controls');
+      void showPanel(state.frontPanel);
     }
   });
 
   bridge.windowControls.onUnmaximized(() => {
     document.body.classList.remove('maximized');
     if (state.activePanel === 'settings' && !state.panelTransitionLock) {
-      void showPanel('controls');
+      void showPanel(state.frontPanel);
     }
   });
 
