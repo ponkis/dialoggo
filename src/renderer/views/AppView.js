@@ -24,6 +24,8 @@ function createAppView(model, audioService) {
     btnUpload: document.getElementById('btn-upload'),
     app: document.querySelector('.app'),
     previewArea: document.getElementById('preview-area'),
+    previewBackgroundCurrent: document.getElementById('preview-background-current'),
+    previewBackgroundNext: document.getElementById('preview-background-next'),
     panelWrapper: document.querySelector('.panel-wrapper'),
     bottombar: document.querySelector('.bottombar'),
     placeholder: document.getElementById('preview-placeholder'),
@@ -72,6 +74,10 @@ function createAppView(model, audioService) {
   let flipCardAnimation = null;
   let previewPlaceholderExplicitSuppression = false;
   let previewPlaceholderPanelIntent = null;
+  let previewBackgroundTransitionTimer = 0;
+  let previewBackgroundPendingImage = 'none';
+  let previewBackgroundPendingHasImage = false;
+  const PREVIEW_BACKGROUND_TRANSITION_MS = 760;
   const dialogueShakeSamples = [
     { x: 0, y: 0 },
     { x: -3.1, y: -2.3 },
@@ -110,6 +116,10 @@ function createAppView(model, audioService) {
 
   function fileToSrc(filePath) {
     return env.fs.toFileUrl(filePath);
+  }
+
+  function prefersReducedMotion() {
+    return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
   }
 
   function loadSpriteImage(filePath) {
@@ -1597,6 +1607,7 @@ function createAppView(model, audioService) {
 
       pack.backgrounds.forEach((background, index) => {
         const button = document.createElement('button');
+        let backgroundCardClickTimer = 0;
         button.className = 'background-card';
         button.dataset.id = background.id;
         button.dataset.packId = background.packId;
@@ -1633,8 +1644,33 @@ function createAppView(model, audioService) {
         button.appendChild(photo);
         button.appendChild(copy);
 
+        const clearPressedState = () => {
+          button.classList.remove('is-pressing');
+        };
+
+        const replayClickAnimation = () => {
+          window.clearTimeout(backgroundCardClickTimer);
+          button.classList.remove('is-clicked');
+          void button.offsetWidth;
+          button.classList.add('is-clicked');
+          backgroundCardClickTimer = window.setTimeout(() => {
+            button.classList.remove('is-clicked');
+          }, 420);
+        };
+
+        button.addEventListener('pointerdown', (event) => {
+          if (button.disabled || event.button !== 0) return;
+          button.classList.add('is-pressing');
+        });
+
+        ['pointerup', 'pointerleave', 'pointercancel', 'blur'].forEach((eventName) => {
+          button.addEventListener(eventName, clearPressedState);
+        });
+
         button.addEventListener('click', () => {
           if (button.disabled) return;
+          clearPressedState();
+          replayClickAnimation();
           const wasActive = state.selectedBackground?.id === background.id;
           onBackgroundSelected(background, wasActive);
         });
@@ -1676,6 +1712,30 @@ function createAppView(model, audioService) {
     });
   }
 
+  function setPreviewBackgroundLayer(layer, imageValue, hasImage) {
+    if (!layer) return;
+
+    layer.style.setProperty('--preview-layer-image', hasImage ? imageValue : 'none');
+    layer.classList.toggle('has-image', hasImage);
+  }
+
+  function commitPreviewBackground(imageValue, hasImage) {
+    setPreviewBackgroundLayer(refs.previewBackgroundCurrent, imageValue, hasImage);
+    setPreviewBackgroundLayer(refs.previewBackgroundNext, 'none', false);
+    refs.previewArea?.classList.remove('is-transitioning-background');
+    refs.previewArea?.classList.toggle('has-selected-background', hasImage);
+    previewBackgroundPendingImage = imageValue;
+    previewBackgroundPendingHasImage = hasImage;
+  }
+
+  function flushPreviewBackgroundTransition() {
+    if (!refs.previewArea?.classList.contains('is-transitioning-background')) return;
+
+    window.clearTimeout(previewBackgroundTransitionTimer);
+    previewBackgroundTransitionTimer = 0;
+    commitPreviewBackground(previewBackgroundPendingImage, previewBackgroundPendingHasImage);
+  }
+
   function computeExpandedPreviewHeight() {
     if (!refs.app || !refs.bottombar) return 280;
 
@@ -1711,11 +1771,44 @@ function createAppView(model, audioService) {
     if (!refs.previewArea) return;
 
     const hasPreviewImage = Boolean(background?.previewImagePath);
-    refs.previewArea.style.setProperty(
-      '--preview-scene-image',
-      hasPreviewImage ? `url("${fileToSrc(background.previewImagePath)}")` : 'none',
-    );
-    refs.previewArea.classList.toggle('has-selected-background', hasPreviewImage);
+    const nextImageValue = hasPreviewImage ? `url("${fileToSrc(background.previewImagePath)}")` : 'none';
+
+    if (!refs.previewBackgroundCurrent || !refs.previewBackgroundNext) {
+      refs.previewArea.style.setProperty('--preview-scene-image', nextImageValue);
+      refs.previewArea.classList.toggle('has-selected-background', hasPreviewImage);
+      return;
+    }
+
+    flushPreviewBackgroundTransition();
+
+    const currentHasImage = refs.previewBackgroundCurrent.classList.contains('has-image');
+    const currentImageValue = currentHasImage
+      ? (refs.previewBackgroundCurrent.style.getPropertyValue('--preview-layer-image').trim() || 'none')
+      : 'none';
+
+    if (currentHasImage === hasPreviewImage && currentImageValue === nextImageValue) {
+      refs.previewArea.classList.toggle('has-selected-background', hasPreviewImage);
+      return;
+    }
+
+    if (prefersReducedMotion()) {
+      commitPreviewBackground(nextImageValue, hasPreviewImage);
+      return;
+    }
+
+    previewBackgroundPendingImage = nextImageValue;
+    previewBackgroundPendingHasImage = hasPreviewImage;
+    setPreviewBackgroundLayer(refs.previewBackgroundCurrent, currentImageValue, currentHasImage);
+    setPreviewBackgroundLayer(refs.previewBackgroundNext, nextImageValue, hasPreviewImage);
+    refs.previewArea.classList.toggle('has-selected-background', currentHasImage || hasPreviewImage);
+    refs.previewArea.classList.remove('is-transitioning-background');
+    void refs.previewArea.offsetWidth;
+    refs.previewArea.classList.add('is-transitioning-background');
+
+    previewBackgroundTransitionTimer = window.setTimeout(() => {
+      previewBackgroundTransitionTimer = 0;
+      commitPreviewBackground(previewBackgroundPendingImage, previewBackgroundPendingHasImage);
+    }, PREVIEW_BACKGROUND_TRANSITION_MS + 40);
   }
 
   function setPreviewPlaceholderSuppressed(suppressed) {

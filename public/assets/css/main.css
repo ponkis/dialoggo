@@ -373,15 +373,104 @@ img {
   transition: filter 0.42s var(--ease-out);
 }
 
-.preview-area.has-selected-background {
+.preview-background-stack {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.preview-background-stack::before {
+  content: '';
+  position: absolute;
+  inset: -12%;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.28), transparent 32%),
+    linear-gradient(112deg, transparent 18%, rgba(255, 255, 255, 0.58) 48%, transparent 78%);
+  mix-blend-mode: screen;
+  transform: translate3d(-28%, 0, 0) scale(1.08);
+}
+
+.preview-background-layer {
+  --preview-layer-image: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0;
   background:
     linear-gradient(180deg, rgba(8, 16, 28, 0.08) 0%, rgba(7, 14, 25, 0.22) 52%, rgba(6, 10, 18, 0.58) 100%),
     radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.18), transparent 40%),
-    var(--preview-scene-image),
+    var(--preview-layer-image),
     linear-gradient(180deg, #0a1a2e 0%, #0e2240 40%, #0a1a30 100%);
   background-position: center, center, center, center;
   background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
   background-size: cover, cover, cover, cover;
+  transform-origin: 50% 50%;
+  will-change: opacity, transform, filter;
+}
+
+.preview-background-layer.has-image {
+  opacity: 1;
+}
+
+.preview-area.is-transitioning-background .preview-background-current {
+  animation: preview-background-out 0.76s cubic-bezier(0.22, 0.8, 0.2, 1) both;
+}
+
+.preview-area.is-transitioning-background .preview-background-next {
+  animation: preview-background-in 0.76s cubic-bezier(0.16, 0.86, 0.2, 1) both;
+}
+
+.preview-area.is-transitioning-background .preview-background-stack::before {
+  animation: preview-background-flash 0.76s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes preview-background-in {
+  0% {
+    opacity: 0;
+    transform: scale(1.14);
+    filter: blur(18px) saturate(1.28) brightness(1.2);
+  }
+
+  48% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0) saturate(1) brightness(1);
+  }
+}
+
+@keyframes preview-background-out {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0) saturate(1) brightness(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.95);
+    filter: blur(12px) saturate(0.84) brightness(0.84);
+  }
+}
+
+@keyframes preview-background-flash {
+  0% {
+    opacity: 0;
+    transform: translate3d(-28%, 0, 0) scale(1.08);
+  }
+
+  20% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(20%, 0, 0) scale(1);
+  }
 }
 
 .preview-area-content {
@@ -444,6 +533,25 @@ img {
 @media (prefers-reduced-motion: reduce) {
   .preview-area::before {
     animation: none;
+  }
+
+  .preview-area.is-transitioning-background .preview-background-current,
+  .preview-area.is-transitioning-background .preview-background-next,
+  .preview-area.is-transitioning-background .preview-background-stack::before {
+    animation: none;
+  }
+
+  .background-card.is-clicked:not(:disabled),
+  .background-card.is-clicked:not(:disabled)::after {
+    animation: none;
+  }
+
+  .background-card,
+  .background-card::before,
+  .background-card::after,
+  .background-card-photo,
+  .background-card-image {
+    transition: none;
   }
 }
 
@@ -1179,7 +1287,7 @@ img {
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: #6c8ba7 rgba(14, 20, 28, 0.62);
-  align-items: center;
+  align-items: flex-start;
 }
 
 .backgrounds-heading {
@@ -1213,8 +1321,10 @@ img {
 .backgrounds-sections {
   display: flex;
   flex-direction: column;
+  flex: 1 1 0;
   gap: 20px;
   min-height: 0;
+  min-width: 0;
   padding-right: 4px;
 }
 
@@ -1279,6 +1389,7 @@ img {
   appearance: none;
   -webkit-appearance: none;
   position: relative;
+  isolation: isolate;
   width: 100%;
   min-height: 0;
   padding: 10px;
@@ -1296,31 +1407,110 @@ img {
     0 12px 22px rgba(0, 0, 0, 0.16);
   color: #243445;
   cursor: pointer;
+  overflow: hidden;
+  transform-origin: 50% 100%;
   transition:
-    transform 0.16s ease,
-    box-shadow 0.16s ease,
-    border-color 0.16s ease,
-    filter 0.16s ease;
+    transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 0.22s ease,
+    filter 0.22s ease,
+    background-position 0.32s ease;
+}
+
+.background-card::before,
+.background-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.background-card::before {
+  inset: -12%;
+  opacity: 0;
+  background: linear-gradient(116deg, transparent 26%, rgba(255, 255, 255, 0.72) 48%, transparent 70%);
+  mix-blend-mode: screen;
+  transform: translate3d(-130%, 0, 0) skewX(-16deg);
+  transition:
+    transform 0.68s cubic-bezier(0.16, 0.86, 0.2, 1),
+    opacity 0.24s ease;
+}
+
+.background-card::after {
+  inset: -1px;
+  opacity: 0;
+  border: 1px solid rgba(123, 174, 214, 0.32);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 0 0 0 rgba(116, 180, 232, 0.26);
 }
 
 .background-card:hover:not(:disabled):not(.active) {
-  transform: translateY(-2px);
+  transform: scale(1.015);
   border-color: rgba(119, 170, 211, 0.56);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.8),
     inset 0 -1px 0 rgba(70, 95, 116, 0.24),
-    0 14px 26px rgba(0, 0, 0, 0.2);
+    0 18px 30px rgba(0, 0, 0, 0.24);
+}
+
+.background-card:hover:not(:disabled):not(.active)::before {
+  opacity: 0.82;
+  transform: translate3d(126%, 0, 0) skewX(-16deg);
+}
+
+.background-card:hover:not(:disabled):not(.active)::after {
+  opacity: 1;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 0 0 5px rgba(116, 180, 232, 0.14);
+}
+
+.background-card:hover:not(:disabled) .background-card-photo {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.54),
+    inset 0 -1px 0 rgba(53, 75, 93, 0.12),
+    0 10px 18px rgba(0, 0, 0, 0.16);
+}
+
+.background-card:hover:not(:disabled) .background-card-image {
+  transform: scale(1.06);
+  filter: saturate(1.08) contrast(1.04);
+}
+
+.background-card.is-pressing:not(:disabled),
+.background-card:active:not(:disabled) {
+  transform: translateY(-1px) scale(0.985);
+  transition-duration: 0.08s;
+}
+
+.background-card.is-clicked:not(:disabled) {
+  animation: background-card-click-burst 0.42s cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.background-card.is-clicked:not(:disabled)::after {
+  animation: background-card-click-ring 0.42s ease-out;
 }
 
 .background-card.active,
 .background-card.active:hover {
-  transform: translateY(-1px);
+  transform: scale(1.01);
   border-color: rgba(245, 200, 66, 0.78);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.82),
     inset 0 -1px 0 rgba(70, 95, 116, 0.26),
     0 0 0 2px rgba(245, 200, 66, 0.18),
-    0 16px 30px rgba(0, 0, 0, 0.22);
+    0 18px 32px rgba(0, 0, 0, 0.24);
+}
+
+.background-card.active::after,
+.background-card.active:hover::after {
+  opacity: 1;
+  border-color: rgba(245, 200, 66, 0.54);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 248, 212, 0.28),
+    0 0 0 6px rgba(245, 200, 66, 0.12);
 }
 
 .background-card:disabled,
@@ -1342,6 +1532,9 @@ img {
     inset 0 1px 0 rgba(255, 255, 255, 0.54),
     inset 0 -1px 0 rgba(53, 75, 93, 0.12),
     0 1px 3px rgba(0, 0, 0, 0.12);
+  transition:
+    transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .background-card-photo::after {
@@ -1359,6 +1552,10 @@ img {
   height: 100%;
   display: block;
   object-fit: cover;
+  transform: scale(1);
+  transition:
+    transform 0.42s cubic-bezier(0.16, 0.86, 0.2, 1),
+    filter 0.32s ease;
 }
 
 .background-card-fallback .background-card-image {
@@ -1391,6 +1588,36 @@ img {
   letter-spacing: 1px;
   color: rgba(57, 76, 94, 0.72);
   text-transform: uppercase;
+}
+
+@keyframes background-card-click-burst {
+  0% {
+    transform: scale(0.985);
+  }
+
+  46% {
+    transform: scale(1.018);
+  }
+
+  100% {
+    transform: scale(1.01);
+  }
+}
+
+@keyframes background-card-click-ring {
+  0% {
+    opacity: 0.9;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.34),
+      0 0 0 0 rgba(116, 180, 232, 0.28);
+  }
+
+  100% {
+    opacity: 0;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0),
+      0 0 0 14px rgba(116, 180, 232, 0);
+  }
 }
 
 .backgrounds-body::-webkit-scrollbar {

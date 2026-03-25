@@ -174,7 +174,14 @@ function startApp() {
 
   function selectBackground(background) {
     if (!background?.isAvailable) return;
-    if (state.selectedBackground?.id === background.id) return;
+
+    if (state.selectedBackground?.id === background.id) {
+      state.selectedBackground = null;
+      view.updateSelectedBackgroundCard(null);
+      view.applySelectedBackground(null);
+      audioService.playMenuSound('select');
+      return;
+    }
 
     state.selectedBackground = background;
     view.updateSelectedBackgroundCard(background);
@@ -908,6 +915,7 @@ function startApp() {
     if (!wasActive) view.startCardSpeakThenIdle(character.id);
   });
   view.buildBackgroundGrid((background) => {
+    audioService.playMenuSound('click');
     selectBackground(background);
   });
   requestAnimationFrame(view.updateReelArrows);
