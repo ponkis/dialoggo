@@ -1722,14 +1722,17 @@ function createAppView(model, audioService) {
   function commitPreviewBackground(imageValue, hasImage) {
     setPreviewBackgroundLayer(refs.previewBackgroundCurrent, imageValue, hasImage);
     setPreviewBackgroundLayer(refs.previewBackgroundNext, 'none', false);
-    refs.previewArea?.classList.remove('is-transitioning-background');
+    refs.previewArea?.classList.remove('is-transitioning-background', 'is-clearing-background');
     refs.previewArea?.classList.toggle('has-selected-background', hasImage);
     previewBackgroundPendingImage = imageValue;
     previewBackgroundPendingHasImage = hasImage;
   }
 
   function flushPreviewBackgroundTransition() {
-    if (!refs.previewArea?.classList.contains('is-transitioning-background')) return;
+    if (
+      !refs.previewArea?.classList.contains('is-transitioning-background')
+      && !refs.previewArea?.classList.contains('is-clearing-background')
+    ) return;
 
     window.clearTimeout(previewBackgroundTransitionTimer);
     previewBackgroundTransitionTimer = 0;
@@ -1801,9 +1804,10 @@ function createAppView(model, audioService) {
     setPreviewBackgroundLayer(refs.previewBackgroundCurrent, currentImageValue, currentHasImage);
     setPreviewBackgroundLayer(refs.previewBackgroundNext, nextImageValue, hasPreviewImage);
     refs.previewArea.classList.toggle('has-selected-background', currentHasImage || hasPreviewImage);
-    refs.previewArea.classList.remove('is-transitioning-background');
+    const isClearingBackground = currentHasImage && !hasPreviewImage;
+    refs.previewArea.classList.remove('is-transitioning-background', 'is-clearing-background');
     void refs.previewArea.offsetWidth;
-    refs.previewArea.classList.add('is-transitioning-background');
+    refs.previewArea.classList.add(isClearingBackground ? 'is-clearing-background' : 'is-transitioning-background');
 
     previewBackgroundTransitionTimer = window.setTimeout(() => {
       previewBackgroundTransitionTimer = 0;
