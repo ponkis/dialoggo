@@ -1309,7 +1309,7 @@ img {
 .backgrounds-heading {
   display: flex;
   flex-direction: column;
-  flex: 0 0 132px;
+  flex: 0 0 118px;
   align-self: stretch;
   align-items: center;
   justify-content: center;
@@ -1320,9 +1320,9 @@ img {
 }
 
 .backgrounds-heading-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 3.4px;
+  letter-spacing: 3px;
   text-transform: uppercase;
   color: rgba(236, 239, 245, 0.95);
   text-shadow:
@@ -1330,10 +1330,10 @@ img {
 }
 
 .backgrounds-heading-subtitle {
-  max-width: 122px;
-  font-size: 8px;
+  max-width: 108px;
+  font-size: 7px;
   line-height: 1.45;
-  letter-spacing: 0.35px;
+  letter-spacing: 0.2px;
   color: rgba(186, 196, 208, 0.72);
 }
 
@@ -1402,8 +1402,8 @@ img {
 
 .background-pack-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
   grid-auto-flow: row dense;
   align-items: stretch;
 }
@@ -1415,10 +1415,10 @@ img {
   isolation: isolate;
   width: 100%;
   min-height: 0;
-  padding: 10px;
+  padding: 7px;
   display: grid;
   grid-template-rows: auto 1fr;
-  gap: 10px;
+  gap: 7px;
   text-align: left;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(226, 234, 242, 0.96) 18%, rgba(192, 206, 218, 0.98) 100%);
@@ -1532,7 +1532,7 @@ img {
 
 .background-card-photo {
   position: relative;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1 / 1;
   overflow: hidden;
   /* border-radius: 10px; */
   background:
@@ -1575,9 +1575,9 @@ img {
 .background-card-copy {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   min-height: 0;
-  padding: 0 2px 2px;
+  padding: 0 1px 1px;
   align-items: flex-start;
   justify-content: flex-start;
   text-align: left;
@@ -1585,17 +1585,17 @@ img {
 
 .background-card-title {
   font-family: 'Outfit', sans-serif;
-  font-size: 11px;
+  font-size: 9px;
   font-weight: 800;
-  letter-spacing: 0.9px;
+  letter-spacing: 0.65px;
   text-transform: uppercase;
   color: #263748;
-  line-height: 1.18;
+  line-height: 1.12;
 }
 
 .background-card-meta {
-  font-size: 8px;
-  letter-spacing: 1px;
+  font-size: 6px;
+  letter-spacing: 0.8px;
   color: rgba(57, 76, 94, 0.72);
   text-transform: uppercase;
 }
@@ -1651,15 +1651,15 @@ img {
 
 @media (min-width: 880px) {
   .background-card-featured {
-    grid-column: span 2;
+    grid-column: span 1;
   }
 
   .background-card-featured .background-card-photo {
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 4 / 3;
   }
 
   .background-card-featured .background-card-title {
-    font-size: 12px;
+    font-size: 9px;
   }
 }
 
@@ -1692,6 +1692,12 @@ img {
   .background-pack-section {
     padding: 12px;
     border-radius: 14px;
+  }
+}
+
+@media (max-width: 560px) {
+  .background-pack-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
