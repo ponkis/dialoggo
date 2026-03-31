@@ -312,14 +312,15 @@ function discoverCharacterCatalog(env) {
 }
 
 function resolveBackgroundPreviewPath(env, imageDirectory) {
-  if (!env.fs.existsSync(imageDirectory)) return null;
-
-  for (const fileName of BACKGROUND_FILE_NAMES) {
-    const candidatePath = env.path.join(imageDirectory, fileName);
-    if (env.fs.existsSync(candidatePath)) return candidatePath;
+  if (env.fs.existsSync(imageDirectory)) {
+    for (const fileName of BACKGROUND_FILE_NAMES) {
+      const candidatePath = env.path.join(imageDirectory, fileName);
+      if (env.fs.existsSync(candidatePath)) return candidatePath;
+    }
   }
 
-  return null;
+  const fallbackPath = env.path.join(env.genericImgDir, '1.jpg');
+  return env.fs.existsSync(fallbackPath) ? fallbackPath : null;
 }
 
 function discoverBackgroundCatalog(env) {
