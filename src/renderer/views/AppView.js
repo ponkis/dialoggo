@@ -57,6 +57,7 @@ function createAppView(model, audioService) {
     inputMirrored: document.getElementById('input-mirrored-dialogue'),
     inputN64: document.getElementById('input-n64-mode'),
     inputHideBroken: document.getElementById('input-hide-broken-chars'),
+    inputHideBrokenBackgrounds: document.getElementById('input-hide-broken-backgrounds'),
   };
 
   let n64PixelScratch = null;
@@ -1003,6 +1004,19 @@ function createAppView(model, audioService) {
     requestAnimationFrame(updateReelArrows);
   }
 
+  function applyBackgroundFilters() {
+    document.querySelectorAll('.background-card.unavailable').forEach((button) => {
+      button.classList.toggle('hidden-broken', state.hideBrokenBackgrounds);
+    });
+
+    document.querySelectorAll('.background-pack-section').forEach((section) => {
+      const hasVisibleButtons = Array.from(section.querySelectorAll('.background-card')).some((button) => (
+        !button.classList.contains('hidden-broken')
+      ));
+      section.classList.toggle('pack-hidden', !hasVisibleButtons);
+    });
+  }
+
   function stopCardAnim(characterId) {
     const cardState = cardAnimState.get(characterId);
     if (!cardState) return;
@@ -1567,6 +1581,40 @@ function createAppView(model, audioService) {
       backgroundsByPack.get(background.packId).backgrounds.push(background);
     });
 
+    function attachBackgroundCardInteractions(button, onActivate) {
+      let backgroundCardClickTimer = 0;
+
+      const clearPressedState = () => {
+        button.classList.remove('is-pressing');
+      };
+
+      const replayClickAnimation = () => {
+        window.clearTimeout(backgroundCardClickTimer);
+        button.classList.remove('is-clicked');
+        void button.offsetWidth;
+        button.classList.add('is-clicked');
+        backgroundCardClickTimer = window.setTimeout(() => {
+          button.classList.remove('is-clicked');
+        }, 420);
+      };
+
+      button.addEventListener('pointerdown', (event) => {
+        if (button.disabled || event.button !== 0) return;
+        button.classList.add('is-pressing');
+      });
+
+      ['pointerup', 'pointerleave', 'pointercancel', 'blur'].forEach((eventName) => {
+        button.addEventListener(eventName, clearPressedState);
+      });
+
+      button.addEventListener('click', () => {
+        if (button.disabled) return;
+        clearPressedState();
+        replayClickAnimation();
+        onActivate();
+      });
+    }
+
     const orderedPacks = Array.isArray(backgroundPacks) && backgroundPacks.length > 0
       ? backgroundPacks
         .map((pack) => ({
@@ -1574,10 +1622,14 @@ function createAppView(model, audioService) {
           displayName: pack.displayName,
           backgrounds: backgroundsByPack.get(pack.id)?.backgrounds || [],
         }))
-        .filter((pack) => pack.backgrounds.length > 0)
+        .filter((pack) => (
+          pack.backgrounds.length > 0
+          || String(pack.id || '').toLowerCase() === 'custom'
+        ))
       : Array.from(backgroundsByPack.values());
 
     orderedPacks.forEach((pack) => {
+      const isCustomPack = String(pack.id || '').toLowerCase() === 'custom';
       const packSection = document.createElement('section');
       packSection.className = 'background-pack-section';
       packSection.dataset.packId = pack.id;
@@ -1605,14 +1657,57 @@ function createAppView(model, audioService) {
       const packGrid = document.createElement('div');
       packGrid.className = 'background-pack-grid';
 
+      if (isCustomPack) {
+        const uploadButton = document.createElement('button');
+        uploadButton.className = 'background-card background-card-upload';
+        uploadButton.dataset.packId = pack.id;
+        uploadButton.type = 'button';
+        uploadButton.title = 'Upload background';
+
+        const photo = document.createElement('div');
+        photo.className = 'background-card-photo';
+
+        const icon = document.createElement('div');
+        icon.className = 'background-card-upload-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 7v10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+            <path d="M7 12h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
+          </svg>
+        `;
+        photo.appendChild(icon);
+
+        const copy = document.createElement('div');
+        copy.className = 'background-card-copy';
+
+        const title = document.createElement('span');
+        title.className = 'background-card-title';
+        title.textContent = 'Upload';
+
+        const meta = document.createElement('span');
+        meta.className = 'background-card-meta';
+        meta.textContent = pack.displayName;
+
+        copy.appendChild(title);
+        copy.appendChild(meta);
+        uploadButton.appendChild(photo);
+        uploadButton.appendChild(copy);
+        attachBackgroundCardInteractions(uploadButton, () => {
+          audioService.playMenuSound('click');
+        });
+        packGrid.appendChild(uploadButton);
+      }
+
       pack.backgrounds.forEach((background, index) => {
         const button = document.createElement('button');
-        let backgroundCardClickTimer = 0;
         button.className = 'background-card';
         button.dataset.id = background.id;
         button.dataset.packId = background.packId;
         button.type = 'button';
-        button.title = background.displayName;
+        button.title = background.isAvailable
+          ? background.displayName
+          : `${background.displayName} (missing image)`;
         button.disabled = !background.isAvailable;
         if (!background.isAvailable) button.classList.add('unavailable');
         if (index === 0 && pack.backgrounds.length > 2) button.classList.add('background-card-featured');
@@ -1644,33 +1739,7 @@ function createAppView(model, audioService) {
         button.appendChild(photo);
         button.appendChild(copy);
 
-        const clearPressedState = () => {
-          button.classList.remove('is-pressing');
-        };
-
-        const replayClickAnimation = () => {
-          window.clearTimeout(backgroundCardClickTimer);
-          button.classList.remove('is-clicked');
-          void button.offsetWidth;
-          button.classList.add('is-clicked');
-          backgroundCardClickTimer = window.setTimeout(() => {
-            button.classList.remove('is-clicked');
-          }, 420);
-        };
-
-        button.addEventListener('pointerdown', (event) => {
-          if (button.disabled || event.button !== 0) return;
-          button.classList.add('is-pressing');
-        });
-
-        ['pointerup', 'pointerleave', 'pointercancel', 'blur'].forEach((eventName) => {
-          button.addEventListener(eventName, clearPressedState);
-        });
-
-        button.addEventListener('click', () => {
-          if (button.disabled) return;
-          clearPressedState();
-          replayClickAnimation();
+        attachBackgroundCardInteractions(button, () => {
           const wasActive = state.selectedBackground?.id === background.id;
           onBackgroundSelected(background, wasActive);
         });
@@ -1684,6 +1753,7 @@ function createAppView(model, audioService) {
 
     refs.backgroundsSections.appendChild(fragment);
     updateSelectedBackgroundCard(state.selectedBackground);
+    applyBackgroundFilters();
   }
 
   function updateSelectedCharacterCard(character) {
@@ -1707,8 +1777,9 @@ function createAppView(model, audioService) {
   }
 
   function updateSelectedBackgroundCard(background) {
+    const selectedBackgroundId = background?.id || null;
     document.querySelectorAll('.background-card').forEach((button) => {
-      button.classList.toggle('active', button.dataset.id === background?.id);
+      button.classList.toggle('active', Boolean(selectedBackgroundId) && button.dataset.id === selectedBackgroundId);
     });
   }
 
@@ -2075,6 +2146,7 @@ function createAppView(model, audioService) {
     syncCharacterSearchClearButton,
     updateFastForwardAvailability,
     applyCharacterFilters,
+    applyBackgroundFilters,
     stopCardAnim,
     startCardIdleAnim,
     startCardSpeakThenIdle,

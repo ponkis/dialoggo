@@ -179,6 +179,7 @@ function startApp() {
       state.selectedBackground = null;
       view.updateSelectedBackgroundCard(null);
       view.applySelectedBackground(null);
+      persistSelectedBackground();
       audioService.playMenuSound('select');
       return;
     }
@@ -186,6 +187,7 @@ function startApp() {
     state.selectedBackground = background;
     view.updateSelectedBackgroundCard(background);
     view.applySelectedBackground(background);
+    persistSelectedBackground();
     audioService.playMenuSound('select');
   }
 
@@ -619,11 +621,25 @@ function startApp() {
     view.syncN64ClassOnDialogueBox();
   }
 
+  function persistSelectedBackground() {
+    try {
+      if (state.selectedBackground?.id) {
+        localStorage.setItem(storageKeys.selectedBackground, state.selectedBackground.id);
+      } else {
+        localStorage.removeItem(storageKeys.selectedBackground);
+      }
+    } catch { }
+  }
+
   function applyHideBrokenChars() {
     document.querySelectorAll('.char-btn.unavailable').forEach((button) => {
       button.classList.toggle('hidden-broken', state.hideBrokenChars);
     });
     view.applyCharacterFilters();
+  }
+
+  function applyHideBrokenBackgrounds() {
+    view.applyBackgroundFilters();
   }
 
   function initHideBrokenFromStorage() {
@@ -642,6 +658,41 @@ function startApp() {
     }
 
     applyHideBrokenChars();
+  }
+
+  function initHideBrokenBackgroundsFromStorage() {
+    if (!refs.inputHideBrokenBackgrounds) return;
+
+    try {
+      const saved = localStorage.getItem(storageKeys.hideBrokenBackgrounds);
+      if (saved !== null) {
+        state.hideBrokenBackgrounds = saved === 'true';
+        refs.inputHideBrokenBackgrounds.checked = state.hideBrokenBackgrounds;
+      } else {
+        state.hideBrokenBackgrounds = refs.inputHideBrokenBackgrounds.checked;
+      }
+    } catch {
+      state.hideBrokenBackgrounds = refs.inputHideBrokenBackgrounds.checked;
+    }
+
+    applyHideBrokenBackgrounds();
+  }
+
+  function initSelectedBackgroundFromStorage() {
+    try {
+      const saved = localStorage.getItem(storageKeys.selectedBackground);
+      if (!saved) return;
+
+      const background = backgrounds.find((item) => item.id === saved && item.isAvailable);
+      if (!background) {
+        localStorage.removeItem(storageKeys.selectedBackground);
+        return;
+      }
+
+      state.selectedBackground = background;
+      view.updateSelectedBackgroundCard(background);
+      view.applySelectedBackground(background);
+    } catch { }
   }
 
   document.getElementById('btn-minimize')?.addEventListener('click', () => {
@@ -908,6 +959,15 @@ function startApp() {
     audioService.playMenuSound('click');
   });
 
+  refs.inputHideBrokenBackgrounds?.addEventListener('change', () => {
+    state.hideBrokenBackgrounds = refs.inputHideBrokenBackgrounds.checked;
+    try {
+      localStorage.setItem(storageKeys.hideBrokenBackgrounds, String(state.hideBrokenBackgrounds));
+    } catch { }
+    applyHideBrokenBackgrounds();
+    audioService.playMenuSound('click');
+  });
+
   view.normalizeDialogueInput();
   view.syncCharacterSearchClearButton();
   view.buildCharacterGrid((character, wasActive) => {
@@ -921,6 +981,7 @@ function startApp() {
   requestAnimationFrame(view.updateReelArrows);
   syncPlaybackUiState();
   initN64ModeFromDom();
+  initSelectedBackgroundFromStorage();
 
   try {
     const savedMirror = localStorage.getItem(storageKeys.mirrorMode);
@@ -930,6 +991,7 @@ function startApp() {
   } catch { }
 
   initHideBrokenFromStorage();
+  initHideBrokenBackgroundsFromStorage();
 
   void view.runStartupSequence();
 

@@ -27,10 +27,13 @@ const storageKeys = {
   n64Mode: 'dialoggo-n64-mode',
   mirrorMode: 'dialoggo-mirror-mode',
   hideBrokenChars: 'dialoggo-hide-broken-chars',
+  hideBrokenBackgrounds: 'dialoggo-hide-broken-backgrounds',
+  selectedBackground: 'dialoggo-selected-background',
 };
 const RESERVED_PACK_DIRECTORY_NAMES = new Set(['char', 'generic', 'gui']);
+const CUSTOM_PACK_ID = 'custom';
 const SPECIAL_PACK_ORDER = new Map([
-  ['custom', 0],
+  [CUSTOM_PACK_ID, 0],
 ]);
 const BACKGROUND_FILE_NAMES = ['bg.jpg', 'bg.png'];
 
@@ -309,25 +312,30 @@ function discoverCharacterCatalog(env) {
 }
 
 function resolveBackgroundPreviewPath(env, imageDirectory) {
-  if (env.fs.existsSync(imageDirectory)) {
-    for (const fileName of BACKGROUND_FILE_NAMES) {
-      const candidatePath = env.path.join(imageDirectory, fileName);
-      if (env.fs.existsSync(candidatePath)) return candidatePath;
-    }
+  if (!env.fs.existsSync(imageDirectory)) return null;
+
+  for (const fileName of BACKGROUND_FILE_NAMES) {
+    const candidatePath = env.path.join(imageDirectory, fileName);
+    if (env.fs.existsSync(candidatePath)) return candidatePath;
   }
 
-  const fallbackPath = env.path.join(env.genericImgDir, '1.jpg');
-  return env.fs.existsSync(fallbackPath) ? fallbackPath : null;
+  return null;
 }
 
 function discoverBackgroundCatalog(env) {
   const packs = [];
   const backgrounds = [];
 
-  listDirectoryNamesFromRoots(env, [
+  const discoveredPackNames = listDirectoryNamesFromRoots(env, [
     env.backgroundDataDir,
     env.backgroundImgDir,
-  ]).forEach((packName) => {
+  ]);
+
+  if (!discoveredPackNames.some((packName) => String(packName).toLowerCase() === CUSTOM_PACK_ID)) {
+    discoveredPackNames.push(CUSTOM_PACK_ID);
+  }
+
+  discoveredPackNames.forEach((packName) => {
     const packDataDir = env.path.join(env.backgroundDataDir, packName);
     const packImgDir = env.path.join(env.backgroundImgDir, packName);
     const packConfig = readBackgroundPackConfig(env, packName);
@@ -342,7 +350,16 @@ function discoverBackgroundCatalog(env) {
     });
     let discoveredBackgroundCount = 0;
 
-    if (sortedBackgroundNames.length === 0) return;
+    if (sortedBackgroundNames.length === 0) {
+      if (String(packName).toLowerCase() === CUSTOM_PACK_ID) {
+        packs.push({
+          id: packName,
+          displayName: packDisplayName,
+          backgroundCount: 0,
+        });
+      }
+      return;
+    }
 
     sortedBackgroundNames.forEach((backgroundName) => {
       const imageDirectory = env.path.join(packImgDir, backgroundName);
@@ -357,6 +374,7 @@ function discoverBackgroundCatalog(env) {
       const hasBuiltImage = hasImgDirectory && BACKGROUND_FILE_NAMES.some((fileName) => (
         env.fs.existsSync(env.path.join(imageDirectory, fileName))
       ));
+      const isAvailable = hasBuiltImage && Boolean(previewImagePath);
 
       discoveredBackgroundCount += 1;
       backgrounds.push({
@@ -369,7 +387,8 @@ function discoverBackgroundCatalog(env) {
         hasDataDirectory,
         hasImgDirectory,
         hasBuiltImage,
-        isAvailable: Boolean(previewImagePath),
+        isAvailable,
+        isBroken: !isAvailable,
       });
     });
 
@@ -381,6 +400,15 @@ function discoverBackgroundCatalog(env) {
       });
     }
   });
+
+  if (!packs.some((pack) => String(pack?.id).toLowerCase() === CUSTOM_PACK_ID)) {
+    const customPackConfig = readBackgroundPackConfig(env, CUSTOM_PACK_ID);
+    packs.push({
+      id: CUSTOM_PACK_ID,
+      displayName: getPackDisplayName(CUSTOM_PACK_ID, customPackConfig),
+      backgroundCount: 0,
+    });
+  }
 
   return {
     packs: sortPacks(packs),
@@ -593,6 +621,7 @@ function createAppModel() {
       dialogueMirrored: false,
       n64ModeEnabled: false,
       hideBrokenChars: false,
+      hideBrokenBackgrounds: false,
       frontPanel: 'controls',
       activePanel: 'controls',
       panelTransitionLock: false,
