@@ -1,0 +1,10 @@
+{
+    "character":  {
+                      "name":  "Luna"
+                  },
+    "sound":  {
+        "pitch":  4.0,
+                  "hasVariablePitch":  true,
+                  "canStretch":  true
+              }
+}
