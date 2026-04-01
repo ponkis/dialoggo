@@ -24,6 +24,7 @@ function createAppView(model, audioService) {
     btnUpload: document.getElementById('btn-upload'),
     app: document.querySelector('.app'),
     previewArea: document.getElementById('preview-area'),
+    previewAreaContent: document.getElementById('preview-area-content'),
     previewBackgroundCurrent: document.getElementById('preview-background-current'),
     previewBackgroundNext: document.getElementById('preview-background-next'),
     panelWrapper: document.querySelector('.panel-wrapper'),
@@ -2213,7 +2214,7 @@ function createAppView(model, audioService) {
     refs.previewArea.style.overflow = 'hidden';
     void refs.previewArea.offsetHeight;
 
-    refs.previewArea.style.transition = `height ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}, filter ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}`;
+    refs.previewArea.style.transition = `height ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}`;
     refs.previewArea.classList.add('preview-strip-collapsed', 'preview-settings-muted', 'preview-content-hidden', 'preview-content-exiting');
     setPreviewPlaceholderSuppressed(true);
 
@@ -2227,13 +2228,16 @@ function createAppView(model, audioService) {
   async function expandPreviewAfterControls(options = {}) {
     const keepPlaceholderSuppressed = options.keepPlaceholderSuppressed === true;
     const targetHeight = computeExpandedPreviewHeight();
+    const revealPlaceholderOnly = !keepPlaceholderSuppressed
+      && !refs.dialogueContainer?.classList.contains('active')
+      && !prefersReducedMotion();
     refs.previewArea.style.flex = '0 0 auto';
     refs.previewArea.style.minHeight = '0';
     refs.previewArea.style.height = `${constants.PREVIEW_STRIP_HEIGHT}px`;
     refs.previewArea.style.overflow = 'hidden';
     void refs.previewArea.offsetHeight;
 
-    refs.previewArea.style.transition = `height ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}, filter ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}`;
+    refs.previewArea.style.transition = `height ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}`;
     setPreviewPlaceholderSuppressed(true);
 
     requestAnimationFrame(() => {
@@ -2243,6 +2247,10 @@ function createAppView(model, audioService) {
 
     await model.sleep(constants.PREVIEW_COLLAPSE_MS + 50);
 
+    if (revealPlaceholderOnly && refs.previewAreaContent) {
+      refs.previewAreaContent.style.transition = 'none';
+    }
+
     refs.previewArea.classList.remove('preview-strip-collapsed', 'preview-content-hidden');
     refs.previewArea.style.height = '';
     refs.previewArea.style.flex = '';
@@ -2251,6 +2259,12 @@ function createAppView(model, audioService) {
     refs.previewArea.style.transition = '';
     refs.app?.classList.remove('settings-panel-open');
     if (refs.panelWrapper) delete refs.panelWrapper.dataset.naturalPanelHeight;
+
+    if (revealPlaceholderOnly && refs.previewAreaContent) {
+      void refs.previewAreaContent.offsetWidth;
+      refs.previewAreaContent.style.transition = '';
+    }
+
     if (!keepPlaceholderSuppressed) {
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     }

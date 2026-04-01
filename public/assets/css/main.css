@@ -371,7 +371,6 @@ img {
   position: relative;
   overflow: hidden;
   min-height: 180px;
-  transition: filter 0.42s var(--ease-out);
 }
 
 .preview-background-stack {
@@ -587,12 +586,12 @@ img {
   text-transform: uppercase;
   opacity: 0.82;
   position: relative;
+  background: rgb(0 0 0 / 28%);
   z-index: 1;
   padding: 18px 26px;
-  border-radius: 28px;
-  background: rgb(0 0 0 / 56%);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   transition: opacity 0.35s ease;
 }
 
