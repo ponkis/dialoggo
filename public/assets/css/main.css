@@ -1323,43 +1323,101 @@ img {
 }
 
 .backgrounds-sections {
-  display: flex;
-  flex-direction: column;
+  position: relative;
   flex: 1 1 0;
-  gap: 20px;
   min-height: 0;
   min-width: 0;
+  overflow: hidden;
+}
+
+.background-pack-section {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
   overflow-y: auto;
   overflow-x: hidden;
-  padding-right: 4px;
+  background: transparent;
   scrollbar-width: thin;
   scrollbar-color: rgba(122, 176, 229, 0.88) rgba(10, 25, 41, 0.72);
 }
 
-.background-pack-section {
+.background-pack-section.pack-active {
   display: flex;
-  gap: 12px;
-  padding: 14px 16px 18px;
-  background:
-    linear-gradient(165deg, rgba(12, 32, 51, 0.82) 0%, rgba(18, 50, 80, 0.92) 100%);
-  border: 1px solid rgba(142, 188, 233, 0.24);
-  box-shadow:
-    inset 0 1px 0 rgba(232, 242, 255, 0.08),
-    inset 0 -2px 12px rgba(0, 0, 0, 0.32),
-    0 2px 8px rgba(0, 0, 0, 0.3);
-  flex-direction: column;
 }
 
 .background-pack-section.pack-hidden {
   display: none !important;
 }
 
+.background-pack-top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  background:
+    linear-gradient(180deg, rgba(36, 68, 106, 0.94) 0%, rgba(28, 56, 88, 0.88) 100%);
+  box-shadow: 0 2px 8px rgba(6, 16, 28, 0.3);
+  border-bottom: 1px solid rgba(120, 175, 230, 0.12);
+}
+
 .background-pack-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.background-pack-header-info {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.background-pack-nav-arrow {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: rgba(170, 206, 242, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color 0.16s ease, background 0.16s ease, transform 0.16s ease, opacity 0.2s ease;
+}
+
+.background-pack-nav-arrow svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4));
+}
+
+.background-pack-nav-arrow:hover {
+  color: rgba(230, 244, 255, 0.95);
+  background: rgba(255, 255, 255, 0.08);
+  transform: scale(1.12);
+}
+
+.background-pack-nav-arrow:active {
+  transform: scale(0.9);
+  transition-duration: 0.06s;
+}
+
+.background-pack-nav-arrow.hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .background-pack-heading {
@@ -1369,24 +1427,19 @@ img {
   letter-spacing: 2.8px;
   text-transform: uppercase;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+  white-space: nowrap;
 }
 
 .background-pack-count {
-  color: rgba(173, 201, 232, 0.68);
-  font-size: 8px;
-  letter-spacing: 1.1px;
+  color: rgba(173, 201, 232, 0.5);
+  font-size: 7.5px;
+  letter-spacing: 0.8px;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .background-pack-divider {
-  width: 100%;
-  height: 1px;
-  background:
-    linear-gradient(90deg,
-      rgba(180, 210, 240, 0) 0%,
-      rgba(128, 177, 228, 0.56) 12%,
-      rgba(86, 125, 172, 0.2) 54%,
-      rgba(180, 210, 240, 0) 100%);
+  display: none;
 }
 
 .background-pack-grid {
@@ -1395,6 +1448,7 @@ img {
   gap: 10px;
   grid-auto-flow: row dense;
   align-items: stretch;
+  padding: 12px 16px 18px;
 }
 
 .background-card {
@@ -1664,22 +1718,22 @@ img {
   }
 }
 
-.backgrounds-sections::-webkit-scrollbar {
+.background-pack-section::-webkit-scrollbar {
   width: 8px;
 }
 
-.backgrounds-sections::-webkit-scrollbar-track {
+.background-pack-section::-webkit-scrollbar-track {
   background: linear-gradient(180deg, rgba(11, 28, 45, 0.84), rgba(8, 20, 34, 0.84));
   border-radius: 999px;
 }
 
-.backgrounds-sections::-webkit-scrollbar-thumb {
+.background-pack-section::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #88b4e2 0%, #4e7fb8 55%, #294b75 100%);
   border-radius: 999px;
   border: 1px solid rgba(8, 21, 35, 0.88);
 }
 
-.backgrounds-sections::-webkit-scrollbar-thumb:hover {
+.background-pack-section::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #9dc2ea 0%, #628ec3 55%, #33557d 100%);
 }
 
@@ -1699,7 +1753,6 @@ img {
 
 @media (max-width: 720px) {
   .backgrounds-body {
-    overflow-y: auto;
     padding: 12px 12px 16px;
     flex-direction: column;
   }
@@ -1717,14 +1770,12 @@ img {
     max-width: none;
   }
 
-  .backgrounds-sections {
-    overflow: visible;
-    padding-right: 0;
-    scrollbar-width: auto;
+  .background-pack-top {
+    padding: 12px 12px 10px;
   }
 
-  .background-pack-section {
-    padding: 12px;
+  .background-pack-grid {
+    padding: 10px 12px 16px;
   }
 }
 

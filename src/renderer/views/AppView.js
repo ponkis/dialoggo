@@ -1004,6 +1004,50 @@ function createAppView(model, audioService) {
     requestAnimationFrame(updateReelArrows);
   }
 
+  let backgroundPackSections = [];
+  let activeBackgroundPackIdx = 0;
+
+  function getVisibleBackgroundPackIndices() {
+    return backgroundPackSections
+      .map((_section, i) => i)
+      .filter((i) => !backgroundPackSections[i].classList.contains('pack-hidden'));
+  }
+
+  function updateBackgroundPackNavArrows() {
+    const visibleIndices = getVisibleBackgroundPackIndices();
+    const currentPos = visibleIndices.indexOf(activeBackgroundPackIdx);
+    const isFirst = currentPos <= 0;
+    const isLast = currentPos >= visibleIndices.length - 1;
+
+    backgroundPackSections.forEach((section) => {
+      const prev = section.querySelector('.pack-nav-prev');
+      const next = section.querySelector('.pack-nav-next');
+      if (prev) prev.classList.toggle('hidden', isFirst);
+      if (next) next.classList.toggle('hidden', isLast);
+    });
+  }
+
+  function showBackgroundPack(index) {
+    backgroundPackSections.forEach((section, i) => {
+      section.classList.toggle('pack-active', i === index);
+    });
+    activeBackgroundPackIdx = index;
+    updateBackgroundPackNavArrows();
+  }
+
+  function navigateBackgroundPack(direction) {
+    const visibleIndices = getVisibleBackgroundPackIndices();
+    if (visibleIndices.length === 0) return;
+
+    const currentPos = visibleIndices.indexOf(activeBackgroundPackIdx);
+    const nextPos = currentPos + direction;
+
+    if (nextPos >= 0 && nextPos < visibleIndices.length) {
+      audioService.playMenuSound('click');
+      showBackgroundPack(visibleIndices[nextPos]);
+    }
+  }
+
   function applyBackgroundFilters() {
     document.querySelectorAll('.background-card.unavailable').forEach((button) => {
       button.classList.toggle('hidden-broken', state.hideBrokenBackgrounds);
@@ -1015,6 +1059,13 @@ function createAppView(model, audioService) {
       ));
       section.classList.toggle('pack-hidden', !hasVisibleButtons);
     });
+
+    const visibleIndices = getVisibleBackgroundPackIndices();
+    if (visibleIndices.length > 0 && !visibleIndices.includes(activeBackgroundPackIdx)) {
+      showBackgroundPack(visibleIndices[0]);
+    } else {
+      updateBackgroundPackNavArrows();
+    }
   }
 
   function stopCardAnim(characterId) {
@@ -1566,6 +1617,8 @@ function createAppView(model, audioService) {
     if (!refs.backgroundsSections) return;
 
     refs.backgroundsSections.innerHTML = '';
+    backgroundPackSections = [];
+    activeBackgroundPackIdx = 0;
     const fragment = document.createDocumentFragment();
     const backgroundsByPack = new Map();
 
@@ -1634,8 +1687,21 @@ function createAppView(model, audioService) {
       packSection.className = 'background-pack-section';
       packSection.dataset.packId = pack.id;
 
+      const packTop = document.createElement('div');
+      packTop.className = 'background-pack-top';
+
       const packHeader = document.createElement('div');
       packHeader.className = 'background-pack-header';
+
+      const prevArrow = document.createElement('button');
+      prevArrow.className = 'background-pack-nav-arrow pack-nav-prev';
+      prevArrow.type = 'button';
+      prevArrow.title = 'Previous pack';
+      prevArrow.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      prevArrow.addEventListener('click', () => navigateBackgroundPack(-1));
+
+      const headerInfo = document.createElement('div');
+      headerInfo.className = 'background-pack-header-info';
 
       const packHeading = document.createElement('span');
       packHeading.className = 'background-pack-heading';
@@ -1645,14 +1711,25 @@ function createAppView(model, audioService) {
       packCount.className = 'background-pack-count';
       packCount.textContent = `${pack.backgrounds.length} background${pack.backgrounds.length === 1 ? '' : 's'}`;
 
+      const nextArrow = document.createElement('button');
+      nextArrow.className = 'background-pack-nav-arrow pack-nav-next';
+      nextArrow.type = 'button';
+      nextArrow.title = 'Next pack';
+      nextArrow.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      nextArrow.addEventListener('click', () => navigateBackgroundPack(1));
+
       const packDivider = document.createElement('span');
       packDivider.className = 'background-pack-divider';
       packDivider.setAttribute('aria-hidden', 'true');
 
-      packHeader.appendChild(packHeading);
-      packHeader.appendChild(packCount);
-      packSection.appendChild(packHeader);
-      packSection.appendChild(packDivider);
+      headerInfo.appendChild(packHeading);
+      headerInfo.appendChild(packCount);
+      packHeader.appendChild(prevArrow);
+      packHeader.appendChild(headerInfo);
+      packHeader.appendChild(nextArrow);
+      packTop.appendChild(packHeader);
+      packTop.appendChild(packDivider);
+      packSection.appendChild(packTop);
 
       const packGrid = document.createElement('div');
       packGrid.className = 'background-pack-grid';
@@ -1747,9 +1824,11 @@ function createAppView(model, audioService) {
 
       packSection.appendChild(packGrid);
       fragment.appendChild(packSection);
+      backgroundPackSections.push(packSection);
     });
 
     refs.backgroundsSections.appendChild(fragment);
+    showBackgroundPack(0);
     updateSelectedBackgroundCard(state.selectedBackground);
     applyBackgroundFilters();
   }
