@@ -1526,12 +1526,14 @@ img {
 
 .bg-scroll-arrow-left {
   left: 0;
-  width: 22px;
+  width: 32px;
+  background: linear-gradient(90deg, rgba(30, 62, 96, 0.95) 20%, transparent 100%);
 }
 
 .bg-scroll-arrow-right {
   right: 0;
-  width: 22px;
+  width: 32px;
+  background: linear-gradient(90deg, transparent 0%, rgba(30, 62, 96, 0.95) 80%);
 }
 
 .background-pack-grid::-webkit-scrollbar {

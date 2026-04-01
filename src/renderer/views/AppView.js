@@ -91,6 +91,30 @@ function createAppView(model, audioService) {
     { x: -2.5, y: -1.5 },
   ];
 
+  const _truncCtx = document.createElement('canvas').getContext('2d');
+
+  function truncateTextToFit(text, maxWidth, fontStyle = '800 9px Outfit', letterSpacing = 0.65) {
+    if (!text) return text;
+    _truncCtx.font = fontStyle;
+
+    const measure = (str) => {
+      const upper = str.toUpperCase();
+      return _truncCtx.measureText(upper).width + (upper.length - 1) * letterSpacing;
+    };
+
+    if (measure(text) <= maxWidth) return text;
+
+    const words = text.split(' ');
+    const suffix = '...';
+
+    for (let count = words.length - 1; count >= 1; count--) {
+      const candidate = words.slice(0, count).join(' ') + suffix;
+      if (measure(candidate) <= maxWidth) return candidate;
+    }
+
+    return text;
+  }
+
   function getDialogueShakeSample(elapsed, index, scale = 1) {
     const sampleDuration = DIALOGUE_SHAKE_CYCLE_MS / dialogueShakeSamples.length;
     const sampleIndex = Math.floor((elapsed + (index * sampleDuration)) / sampleDuration) % dialogueShakeSamples.length;
@@ -1555,6 +1579,7 @@ function createAppView(model, audioService) {
         ].join(' '));
         button.disabled = !character.isAvailable;
         if (!character.isAvailable) button.classList.add('unavailable');
+        button.title = character.displayName;
 
         const spriteWrap = document.createElement('div');
         spriteWrap.className = 'char-btn-sprite';
@@ -1800,7 +1825,7 @@ function createAppView(model, audioService) {
 
         const title = document.createElement('span');
         title.className = 'background-card-title';
-        title.textContent = background.displayName;
+        title.textContent = truncateTextToFit(background.displayName, 124);
 
         const meta = document.createElement('span');
         meta.className = 'background-card-meta';
