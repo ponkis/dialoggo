@@ -1705,9 +1705,7 @@ function createAppView(model, audioService) {
         button.dataset.id = background.id;
         button.dataset.packId = background.packId;
         button.type = 'button';
-        button.title = background.isAvailable
-          ? background.displayName
-          : `${background.displayName} (missing image)`;
+        button.title = background.displayName;
         button.disabled = !background.isAvailable;
         if (!background.isAvailable) button.classList.add('unavailable');
         if (index === 0 && pack.backgrounds.length > 2) button.classList.add('background-card-featured');
