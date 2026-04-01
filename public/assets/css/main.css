@@ -1254,7 +1254,7 @@ img {
   flex-direction: column;
   min-height: 0;
   gap: 10px;
-  padding: 14px 18px;
+  padding: 14px 0 14px 18px;
   background:
     radial-gradient(120% 90% at 50% 36%, rgba(106, 158, 214, 0.28), transparent 58%),
     linear-gradient(170deg, #416d9f 0%, #2e5a8a 32%, #1f446c 64%, #16304d 100%);
@@ -1283,7 +1283,7 @@ img {
   flex: 1 1 auto;
   min-height: 0;
   gap: 14px;
-  padding: 0px 8px 10px;
+  padding: 0 0 0 8px;
   width: 100%;
   max-width: 980px;
   margin: 0 auto;
@@ -1328,6 +1328,7 @@ img {
   min-height: 0;
   min-width: 0;
   overflow: hidden;
+  border-left: 1px solid rgba(140, 190, 240, 0.14);
 }
 
 .background-pack-section {
@@ -1436,6 +1437,12 @@ img {
   display: none;
 }
 
+.background-pack-grid-wrapper {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+}
+
 .background-pack-grid {
   display: flex;
   gap: 10px;
@@ -1443,15 +1450,55 @@ img {
   overflow-x: auto;
   align-items: flex-start;
   padding: 10px 16px 14px;
-  padding-right: 32px;
-  flex: 1 1 0;
-  min-height: 0;
+  padding-right: 0;
   scroll-behavior: smooth;
   scrollbar-width: none;
   -ms-overflow-style: none;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
+}
+
+.bg-scroll-arrow {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  cursor: pointer;
+  color: rgba(196, 220, 244, 0.7);
+  transition: color 0.15s ease, opacity 0.2s ease;
+}
+
+.bg-scroll-arrow:hover {
+  color: rgba(234, 248, 255, 0.95);
+}
+
+.bg-scroll-arrow.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bg-scroll-arrow svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bg-scroll-arrow-left {
+  left: 0;
+  width: 22px;
+}
+
+.bg-scroll-arrow-right {
+  right: 0;
+  width: 22px;
 }
 
 .background-pack-grid::-webkit-scrollbar {
@@ -1773,11 +1820,7 @@ img {
   }
 }
 
-@media (max-width: 560px) {
-  .background-pack-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
+/* 560px breakpoint removed — horizontal scroll layout */
 
 .settings-panel::before {
   content: '';

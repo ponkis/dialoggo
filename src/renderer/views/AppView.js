@@ -1822,7 +1822,41 @@ function createAppView(model, audioService) {
         packGrid.appendChild(button);
       });
 
-      packSection.appendChild(packGrid);
+      const gridWrapper = document.createElement('div');
+      gridWrapper.className = 'background-pack-grid-wrapper';
+
+      const scrollArrowLeft = document.createElement('div');
+      scrollArrowLeft.className = 'bg-scroll-arrow bg-scroll-arrow-left hidden';
+      scrollArrowLeft.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>';
+
+      const scrollArrowRight = document.createElement('div');
+      scrollArrowRight.className = 'bg-scroll-arrow bg-scroll-arrow-right';
+      scrollArrowRight.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
+
+      function updateBgScrollArrows() {
+        const atStart = packGrid.scrollLeft <= 2;
+        const atEnd = packGrid.scrollLeft + packGrid.clientWidth >= packGrid.scrollWidth - 2;
+        scrollArrowLeft.classList.toggle('hidden', atStart);
+        scrollArrowRight.classList.toggle('hidden', atEnd);
+      }
+
+      packGrid.addEventListener('scroll', updateBgScrollArrows);
+      requestAnimationFrame(updateBgScrollArrows);
+
+      const BG_SCROLL_STEP = 180;
+      scrollArrowLeft.addEventListener('click', () => {
+        audioService.playMenuSound('arrowLeft');
+        packGrid.scrollBy({ left: -BG_SCROLL_STEP, behavior: 'smooth' });
+      });
+      scrollArrowRight.addEventListener('click', () => {
+        audioService.playMenuSound('arrowRight');
+        packGrid.scrollBy({ left: BG_SCROLL_STEP, behavior: 'smooth' });
+      });
+
+      gridWrapper.appendChild(scrollArrowLeft);
+      gridWrapper.appendChild(packGrid);
+      gridWrapper.appendChild(scrollArrowRight);
+      packSection.appendChild(gridWrapper);
       fragment.appendChild(packSection);
       backgroundPackSections.push(packSection);
     });
