@@ -1380,7 +1380,7 @@ img {
 .background-pack-top {
   display: flex;
   align-items: center;
-  padding: 10px 16px 6px;
+  padding: 16px 16px 6px;
   flex-shrink: 0;
 }
 
@@ -1497,7 +1497,7 @@ img {
 .bg-scroll-arrow {
   position: absolute;
   top: 0;
-  bottom: 0;
+  bottom: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
