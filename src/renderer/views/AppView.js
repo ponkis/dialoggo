@@ -1875,10 +1875,10 @@ function createAppView(model, audioService) {
         packGrid.scrollBy({ left: BG_SCROLL_STEP, behavior: 'smooth' });
       });
 
-      gridWrapper.appendChild(scrollArrowLeft);
       gridWrapper.appendChild(packGrid);
-      gridWrapper.appendChild(scrollArrowRight);
       packSection.appendChild(gridWrapper);
+      packSection.appendChild(scrollArrowLeft);
+      packSection.appendChild(scrollArrowRight);
       fragment.appendChild(packSection);
       backgroundPackSections.push(packSection);
     });
