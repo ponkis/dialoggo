@@ -580,14 +580,20 @@ img {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  color: lightgray;
+  color: rgba(233, 233, 233, 0.94);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  opacity: 0.45;
+  opacity: 0.82;
   position: relative;
   z-index: 1;
+  padding: 18px 26px;
+  /* border-radius: 28px; */
+  background: rgb(0 0 0 / 28%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   transition: opacity 0.35s ease;
 }
 
@@ -669,22 +675,6 @@ img {
   overflow: visible;
 }
 
-.dialogue-box.n64-mode::before {
-  content: '';
-  position: absolute;
-  left: -8px;
-  right: -8px;
-  top: -10px;
-  bottom: -10px;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: 48px;
-  background: radial-gradient(ellipse 100% 100% at 50% 50%, rgb(0 0 0 / 56%) 0%, rgb(0 0 0 / 32%) 70%, rgb(0 0 0 / 16%) 92%, transparent 100%);
-  filter: blur(6px);
-  opacity: 1;
-}
-
-
 .dialogue-box.n64-mode::after {
   content: '';
   position: absolute;
@@ -695,8 +685,8 @@ img {
   z-index: 0;
   pointer-events: none;
   border-radius: 44px;
-  background: rgb(0 0 0 / 22%);
-  filter: blur(10px);
+  background: rgb(0 0 0 / 50%);
+  filter: blur(3px);
   opacity: 1;
 }
 
@@ -809,11 +799,13 @@ img {
 }
 
 .dialogue-text {
+  --dialogue-letter-spacing: 0.5px;
   font-family: "Andy Bold", 'Comic Sans MS', cursive;
   font-weight: bold;
   font-size: 30px;
   color: #ffffff;
   text-transform: uppercase;
+  letter-spacing: var(--dialogue-letter-spacing);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: clip;
@@ -844,6 +836,11 @@ img {
 .dialogue-char {
   display: inline-block;
   white-space: pre;
+  margin-right: var(--dialogue-letter-spacing, 0.5px);
+}
+
+.dialogue-text .line>.dialogue-char:last-child {
+  margin-right: 0;
 }
 
 .dialogue-char-emphasis {}
@@ -861,35 +858,35 @@ img {
   }
 
   11% {
-    transform: translate(-3.1px, -2.3px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -1.1));
+    transform: translate(-1.1px, -1.6px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -1));
   }
 
   22% {
-    transform: translate(3.8px, 1.8px) rotate(var(--dialogue-char-shake-rotate, 0deg));
+    transform: translate(1.2px, 0.9px) rotate(var(--dialogue-char-shake-rotate, 0deg));
   }
 
   33% {
-    transform: translate(-2.4px, 3.4px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.8));
+    transform: translate(-0.8px, 1.7px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.82));
   }
 
   44% {
-    transform: translate(3.1px, -2.8px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.95));
+    transform: translate(1.1px, -1.4px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.92));
   }
 
   55% {
-    transform: translate(-3.6px, 1.5px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -1));
+    transform: translate(-1.2px, 0.7px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.9));
   }
 
   66% {
-    transform: translate(2.1px, 3.7px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.72));
+    transform: translate(0.8px, 1.8px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.72));
   }
 
   77% {
-    transform: translate(3.3px, -3.2px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.58));
+    transform: translate(1px, -1.6px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * -0.56));
   }
 
   88% {
-    transform: translate(-2.5px, -1.5px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.86));
+    transform: translate(-0.7px, -0.8px) rotate(calc(var(--dialogue-char-shake-rotate, 0deg) * 0.8));
   }
 
   100% {
@@ -1503,7 +1500,7 @@ img {
   z-index: 3;
   color: rgba(196, 220, 244, 0.7);
   transition: color 0.15s ease, opacity 0.2s ease;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .bg-scroll-arrow:hover {
@@ -1523,8 +1520,8 @@ img {
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
-  cursor: pointer;
-  pointer-events: auto;
+  cursor: inherit;
+  pointer-events: none;
 }
 
 .bg-scroll-arrow-left {
@@ -2448,11 +2445,12 @@ img {
   font: inherit;
   line-height: 1.4;
   letter-spacing: normal;
+  white-space: pre-wrap;
   tab-size: 4;
   overflow-x: hidden;
   overflow-y: auto;
-  overflow-wrap: anywhere;
-  word-break: break-all;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .text-input-highlight {

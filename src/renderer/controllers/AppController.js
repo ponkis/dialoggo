@@ -29,6 +29,7 @@ function startApp() {
   const spriteRenderer = view.spriteRenderer;
   const speechLoop = audioService.createSpeechLoop(spriteRenderer);
   const pauseChars = new Set(['.', ',', '!', '?', ':', ';']);
+  let dialogueClosePromise = null;
 
   function canFastForward() {
     return state.isPlaying && !state.isPaused && !state.stopRequested;
@@ -117,6 +118,75 @@ function startApp() {
     state.fastForwardKeyHeld = false;
     state.fastForwardButtonHeld = false;
     syncFastForwardState();
+  }
+
+  function closeDialoguePlaybackToIdle({
+    stopLoop = false,
+    scheduleIdle = false,
+  } = {}) {
+    if (stopLoop) speechLoop.stop();
+    else speechLoop.pause();
+
+    speechLoop._killCurrentAudio();
+    spriteRenderer.stop();
+
+    if (!dialogueClosePromise) {
+      const closePromise = spriteRenderer.smoothCloseAndIdle()
+        .catch(() => { })
+        .finally(() => {
+          if (dialogueClosePromise === closePromise) {
+            dialogueClosePromise = null;
+          }
+        });
+      dialogueClosePromise = closePromise;
+    }
+
+    if (scheduleIdle) {
+      dialogueClosePromise.then(() => {
+        if (state.isPlaying && state.isPaused && !state.stopRequested) {
+          spriteRenderer.startIdleAfterDelay(2000);
+        }
+      }).catch(() => { });
+    }
+
+    return dialogueClosePromise;
+  }
+
+  async function waitForDialoguePlaybackToIdle() {
+    if (!dialogueClosePromise) return;
+    await dialogueClosePromise;
+  }
+
+  function isTextEntryElement(element) {
+    if (!(element instanceof HTMLElement)) return false;
+
+    if (element instanceof HTMLTextAreaElement) {
+      return !element.readOnly && !element.disabled;
+    }
+
+    if (element instanceof HTMLInputElement) {
+      const type = String(element.type || 'text').toLowerCase();
+      const textLikeTypes = new Set([
+        'text',
+        'search',
+        'url',
+        'tel',
+        'email',
+        'password',
+        'number',
+      ]);
+
+      return textLikeTypes.has(type) && !element.readOnly && !element.disabled;
+    }
+
+    return element.isContentEditable;
+  }
+
+  function shouldIgnorePlaybackShortcut(target) {
+    const activeTarget = target instanceof Element ? target : document.activeElement;
+    if (!(activeTarget instanceof HTMLElement)) return false;
+    const editable = activeTarget.closest('textarea, input, [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]');
+    return isTextEntryElement(editable);
   }
 
   function waitWhilePaused() {
@@ -208,6 +278,7 @@ function startApp() {
     state.isPaused = false;
     state.stopRequested = false;
     state.pauseTransitionLock = false;
+    dialogueClosePromise = null;
     resetFastForwardState();
     syncPlaybackUiState();
 
@@ -252,8 +323,9 @@ function startApp() {
     ]);
 
     if (state.stopRequested) {
-      speechLoop.stop();
-      spriteRenderer.startIdleAfterDelay(2000);
+      await closeDialoguePlaybackToIdle({
+        stopLoop: true,
+      });
       await finishDialogue();
       return;
     }
@@ -272,8 +344,9 @@ function startApp() {
     ]);
 
     if (state.stopRequested) {
-      speechLoop.stop();
-      spriteRenderer.startIdleAfterDelay(2000);
+      await closeDialoguePlaybackToIdle({
+        stopLoop: true,
+      });
       await finishDialogue();
       return;
     }
@@ -363,8 +436,9 @@ function startApp() {
         lineIndex += 1;
       }
 
-      await speechLoop.gracefulStop();
-      spriteRenderer.startIdleAfterDelay(2000);
+      await closeDialoguePlaybackToIdle({
+        stopLoop: true,
+      });
 
       if (!state.stopRequested) {
         await sleepPlaybackPaced(500);
@@ -376,15 +450,16 @@ function startApp() {
         message: error?.message,
         stack: error?.stack,
       });
-      speechLoop.stop();
-      spriteRenderer.stop();
-      spriteRenderer.startIdleAfterDelay(2000);
+      await closeDialoguePlaybackToIdle({
+        stopLoop: true,
+      });
     }
 
     await finishDialogue();
   }
 
   async function finishDialogue() {
+    await waitForDialoguePlaybackToIdle();
     speechLoop.stop();
     spriteRenderer.stop();
 
@@ -419,6 +494,7 @@ function startApp() {
     state.isPaused = false;
     state.stopRequested = false;
     state.pauseTransitionLock = false;
+    dialogueClosePromise = null;
     resetFastForwardState();
     refs.statusDot.classList.remove('playing');
     refs.statusDot.classList.remove('paused');
@@ -439,11 +515,9 @@ function startApp() {
       resolve();
     }
 
-    speechLoop.stop();
-    spriteRenderer.stop();
-    spriteRenderer.frameIndex = 0;
-    spriteRenderer.showFrame(spriteRenderer.speakFrames, 0);
-    spriteRenderer.startIdleAfterDelay(2000);
+    closeDialoguePlaybackToIdle({
+      stopLoop: true,
+    });
     refs.statusDot.classList.remove('paused');
   }
 
@@ -454,11 +528,9 @@ function startApp() {
     state.isPaused = true;
     resetFastForwardState();
 
-    speechLoop.pause();
-    speechLoop._killCurrentAudio();
-    spriteRenderer.stop();
-    spriteRenderer.smoothCloseAndIdle();
-    spriteRenderer.startIdleAfterDelay(2000);
+    closeDialoguePlaybackToIdle({
+      scheduleIdle: true,
+    });
     refs.statusDot.classList.remove('playing');
     refs.statusDot.classList.add('paused');
     syncPlaybackUiState();
@@ -778,11 +850,39 @@ function startApp() {
   });
 
   window.addEventListener('keydown', (event) => {
-    if (event.code !== 'Space' || event.repeat || !canFastForward()) return;
+    if (event.code !== 'Space' || shouldIgnorePlaybackShortcut(event.target) || event.altKey || event.metaKey) return;
+
+    if (event.ctrlKey) {
+      if (view.isActionButtonBlocked(refs.btnStop) || event.repeat) return;
+      event.preventDefault();
+      blurPlaybackButtonFocus();
+      stopDialogue();
+      return;
+    }
+
+    if (event.shiftKey) {
+      if (event.repeat || !canFastForward()) return;
+      event.preventDefault();
+      blurPlaybackButtonFocus();
+      state.fastForwardKeyHeld = true;
+      syncFastForwardState();
+      return;
+    }
+
+    if (event.repeat) return;
+
+    if (state.isPlaying && !state.isPaused) {
+      if (view.isActionButtonBlocked(refs.btnPause)) return;
+      event.preventDefault();
+      blurPlaybackButtonFocus();
+      doPause();
+      return;
+    }
+
+    if (view.isActionButtonBlocked(refs.btnPlay)) return;
     event.preventDefault();
     blurPlaybackButtonFocus();
-    state.fastForwardKeyHeld = true;
-    syncFastForwardState();
+    void playDialogue();
   }, true);
 
   window.addEventListener('keyup', (event) => {

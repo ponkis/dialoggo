@@ -81,14 +81,14 @@ function createAppView(model, audioService) {
   const PREVIEW_BACKGROUND_TRANSITION_MS = 760;
   const dialogueShakeSamples = [
     { x: 0, y: 0 },
-    { x: -3.1, y: -2.3 },
-    { x: 3.8, y: 1.8 },
-    { x: -2.4, y: 3.4 },
-    { x: 3.1, y: -2.8 },
-    { x: -3.6, y: 1.5 },
-    { x: 2.1, y: 3.7 },
-    { x: 3.3, y: -3.2 },
-    { x: -2.5, y: -1.5 },
+    { x: -1.1, y: -1.6 },
+    { x: 1.2, y: 0.9 },
+    { x: -0.8, y: 1.7 },
+    { x: 1.1, y: -1.4 },
+    { x: -1.2, y: 0.7 },
+    { x: 0.8, y: 1.8 },
+    { x: 1.0, y: -1.6 },
+    { x: -0.7, y: -0.8 },
   ];
 
   const _truncCtx = document.createElement('canvas').getContext('2d');
@@ -141,6 +141,13 @@ function createAppView(model, audioService) {
 
   function fileToSrc(filePath) {
     return env.fs.toFileUrl(filePath);
+  }
+
+  function getDialogueLetterSpacing(textStyle = null) {
+    const style = textStyle || window.getComputedStyle(refs.dialogueText);
+    const customSpacing = Number.parseFloat(style?.getPropertyValue('--dialogue-letter-spacing'));
+    if (Number.isFinite(customSpacing)) return customSpacing;
+    return Number.parseFloat(style?.letterSpacing) || 0;
   }
 
   function prefersReducedMotion() {
@@ -215,6 +222,7 @@ function createAppView(model, audioService) {
       this.idleBlinkHoldMax = 4200;
       this.idleBlinkFrameDelay = 75;
       this.speakTimer = null;
+      this.smoothCloseResolver = null;
       this.sourceCanvas = null;
     }
 
@@ -420,6 +428,14 @@ function createAppView(model, audioService) {
       this.mode = 'idle';
 
       return new Promise((resolve) => {
+        this.smoothCloseResolver = resolve;
+
+        const finalizeClose = () => {
+          this.frameIndex = 0;
+          this.showFrame(this.speakFrames.length ? this.speakFrames : this.idleFrames, 0);
+          this.resolvePendingSmoothClose();
+        };
+
         if (this.frameIndex > 0) {
           let currentFrame = this.frameIndex;
           this.speakTimer = setInterval(() => {
@@ -428,9 +444,7 @@ function createAppView(model, audioService) {
               currentFrame = 0;
               clearInterval(this.speakTimer);
               this.speakTimer = null;
-              this.frameIndex = 0;
-              this.showFrame(this.speakFrames.length ? this.speakFrames : this.idleFrames, 0);
-              resolve();
+              finalizeClose();
               return;
             }
 
@@ -440,17 +454,24 @@ function createAppView(model, audioService) {
           return;
         }
 
-        this.frameIndex = 0;
-        this.showFrame(this.speakFrames.length ? this.speakFrames : this.idleFrames, 0);
-        resolve();
+        finalizeClose();
       });
     }
 
+    resolvePendingSmoothClose() {
+      if (!this.smoothCloseResolver) return;
+      const resolve = this.smoothCloseResolver;
+      this.smoothCloseResolver = null;
+      resolve();
+    }
+
     stopSpeaking() {
-      if (!this.speakTimer) return;
-      clearInterval(this.speakTimer);
-      clearTimeout(this.speakTimer);
-      this.speakTimer = null;
+      if (this.speakTimer) {
+        clearInterval(this.speakTimer);
+        clearTimeout(this.speakTimer);
+        this.speakTimer = null;
+      }
+      this.resolvePendingSmoothClose();
     }
 
     stop() {
@@ -599,17 +620,20 @@ function createAppView(model, audioService) {
 
       const padTop = 6;
       const padLeft = state.dialogueMirrored ? 32 : 14;
+      const textStyle = window.getComputedStyle(refs.dialogueText);
+      const font = textStyle.font || constants.N64_TEXT_FONT;
+      const letterSpacing = getDialogueLetterSpacing(textStyle);
 
       hiCtx.clearRect(0, 0, width, height);
       hiCtx.save();
       hiCtx.beginPath();
       hiCtx.rect(0, padTop, width, 2 * constants.N64_TEXT_LINE_HEIGHT);
       hiCtx.clip();
-      hiCtx.font = constants.N64_TEXT_FONT;
+      hiCtx.font = font;
 
       if ('letterSpacing' in hiCtx) {
         try {
-          hiCtx.letterSpacing = '0.5px';
+          hiCtx.letterSpacing = `${letterSpacing}px`;
         } catch { }
       }
 
@@ -619,7 +643,6 @@ function createAppView(model, audioService) {
       hiCtx.shadowOffsetX = 1;
       hiCtx.shadowOffsetY = 1;
       hiCtx.shadowBlur = 0;
-      const letterSpacing = 0.5;
 
       const lineElements = scrollWrapper.querySelectorAll('.line');
       const scrollY = getScrollWrapperTranslateYpx(scrollWrapper);
@@ -734,7 +757,7 @@ function createAppView(model, audioService) {
       characterSpan.classList.add('dialogue-char-emphasis', 'dialogue-char-shake');
       characterSpan.style.setProperty('--dialogue-char-shake-duration', `${270 + ((index % 5) * 22)}ms`);
       characterSpan.style.setProperty('--dialogue-char-shake-delay', `${-180 - ((index % 7) * 85)}ms`);
-      characterSpan.style.setProperty('--dialogue-char-shake-rotate', `${((index % 3) - 1) * 5}deg`);
+      characterSpan.style.setProperty('--dialogue-char-shake-rotate', `${((index % 3) - 1) * 2.2}deg`);
     }
 
     return characterSpan;
@@ -758,7 +781,7 @@ function createAppView(model, audioService) {
 
     const textStyle = window.getComputedStyle(refs.dialogueText);
     const areaStyle = window.getComputedStyle(refs.dialogueTextArea);
-    const effectiveLetterSpacing = state.n64ModeEnabled ? 0.5 : (Number.parseFloat(textStyle.letterSpacing) || 0);
+    const effectiveLetterSpacing = getDialogueLetterSpacing(textStyle);
     const n64RightSafetyPad = state.n64ModeEnabled ? 10 : 0;
     const paddingLeft = Number.parseFloat(areaStyle.paddingLeft) || 0;
     const paddingRight = Number.parseFloat(areaStyle.paddingRight) || 0;
@@ -827,49 +850,12 @@ function createAppView(model, audioService) {
       return model.splitStyledTextIntoLines(text);
     }
 
-    const lines = [];
-    const parsedCharacters = model.parseDialogueMarkup(text);
-    let currentLine = [];
-
-    function trimTrailingWhitespace(characters) {
-      let end = characters.length;
-      while (end > 0 && /\s/.test(characters[end - 1].value)) {
-        end -= 1;
-      }
-      return characters.slice(0, end);
-    }
-
-    function pushCurrentLine() {
-      lines.push(createDialogueLine(trimTrailingWhitespace(currentLine)));
-      currentLine = [];
-    }
-
-    parsedCharacters.forEach((character) => {
-      if (character.value === '\n') {
-        pushCurrentLine();
-        return;
-      }
-
-      const candidateLine = currentLine.concat(character);
-      const exceedsWidth = currentLine.length > 0
-        && measureDialogueCharactersWidth(candidateLine, metrics) > metrics.maxWidth;
-
-      if (exceedsWidth) {
-        pushCurrentLine();
-      }
-
-      if (/\s/.test(character.value) && currentLine.length === 0) {
-        return;
-      }
-
-      currentLine.push(character);
+    return model.splitStyledTextIntoLines(text, {
+      maxUnits: metrics.maxWidth,
+      measureCharacters(characters) {
+        return measureDialogueCharactersWidth(characters, metrics);
+      },
     });
-
-    if (currentLine.length > 0 || lines.length === 0 || parsedCharacters[parsedCharacters.length - 1]?.value === '\n') {
-      pushCurrentLine();
-    }
-
-    return lines;
   }
 
   function buildDialogueInputHighlightMarkup(value) {
@@ -977,7 +963,7 @@ function createAppView(model, audioService) {
     if (!refs.btnFastForward) return;
     setActionButtonBlocked(refs.btnFastForward, !canFastForward);
     refs.btnFastForward.classList.toggle('fast-forwarding', state.isFastForwarding);
-    refs.btnFastForward.title = canFastForward ? 'Hold to fast forward' : 'Fast forward';
+    refs.btnFastForward.title = canFastForward ? 'Hold Shift + Space to fast forward' : 'Fast forward';
   }
 
   function applyCharacterFilters({
@@ -1108,7 +1094,7 @@ function createAppView(model, audioService) {
     });
 
     document.querySelectorAll('.background-pack-section').forEach((section) => {
-      const hasVisibleButtons = Array.from(section.querySelectorAll('.background-card')).some((button) => (
+      const hasVisibleButtons = Array.from(section.querySelectorAll('.background-card, .background-pack-anchor')).some((button) => (
         !button.classList.contains('hidden-broken')
       ));
       section.classList.toggle('pack-hidden', !hasVisibleButtons);
@@ -1134,6 +1120,13 @@ function createAppView(model, audioService) {
     const framePath = frames[index];
     if (!framePath) return;
     cardState.img.src = fileToSrc(framePath);
+    cardState.img.classList.remove('missing-char-icon');
+  }
+
+  function restoreCardPreviewImage(cardState) {
+    if (!cardState?.defaultImagePath) return;
+    cardState.img.src = fileToSrc(cardState.defaultImagePath);
+    cardState.img.classList.toggle('missing-char-icon', cardState.usesMissingIcon === true);
   }
 
   function startCardIdleAnim(characterId) {
@@ -1524,13 +1517,8 @@ function createAppView(model, audioService) {
     refs.charGrid.innerHTML = '';
     cardAnimState.clear();
     const fragment = document.createDocumentFragment();
-    const fallbackPreviewPath = characters.find((character) => (
-      character.previewSpritePath || character.idleFrames[0] || character.speakFrames[0]
-    ));
-    const fallbackSpritePath = fallbackPreviewPath?.previewSpritePath
-      || fallbackPreviewPath?.idleFrames?.[0]
-      || fallbackPreviewPath?.speakFrames?.[0]
-      || null;
+    const missingCharacterFallbackPath = env.path.join(env.genericImgDir, '2.png');
+    const hasMissingCharacterFallback = env.fs.existsSync(missingCharacterFallbackPath);
     const charactersByPack = new Map();
 
     characters.forEach((character) => {
@@ -1593,12 +1581,10 @@ function createAppView(model, audioService) {
 
         const spriteImage = document.createElement('img');
         const previewPath = character.previewSpritePath || null;
-        if (previewPath) {
-          spriteImage.src = fileToSrc(previewPath);
-        } else if (fallbackSpritePath) {
-          spriteImage.src = fileToSrc(fallbackSpritePath);
-          spriteImage.classList.add('missing-char-icon');
-        }
+        const defaultImagePath = previewPath || (hasMissingCharacterFallback ? missingCharacterFallbackPath : null);
+        const usesMissingIcon = !previewPath && Boolean(defaultImagePath);
+        if (defaultImagePath) spriteImage.src = fileToSrc(defaultImagePath);
+        spriteImage.classList.toggle('missing-char-icon', usesMissingIcon);
 
         spriteImage.alt = character.displayName;
         spriteWrap.appendChild(spriteImage);
@@ -1629,6 +1615,8 @@ function createAppView(model, audioService) {
           direction: 1,
           mode: 'idle',
           img: spriteImage,
+          defaultImagePath,
+          usesMissingIcon,
           char: character,
         });
 
@@ -1647,7 +1635,7 @@ function createAppView(model, audioService) {
           }
 
           stopCardAnim(character.id);
-          if (previewPath) spriteImage.src = fileToSrc(previewPath);
+          restoreCardPreviewImage(cardAnimState.get(character.id));
         });
 
         button.addEventListener('click', () => {
@@ -1803,7 +1791,7 @@ function createAppView(model, audioService) {
 
       if (isCustomPack) {
         const uploadButton = document.createElement('button');
-        uploadButton.className = 'bg-upload-btn';
+        uploadButton.className = 'bg-upload-btn background-pack-anchor';
         uploadButton.dataset.packId = pack.id;
         uploadButton.type = 'button';
         uploadButton.title = 'Upload background';
@@ -1907,10 +1895,12 @@ function createAppView(model, audioService) {
 
       const BG_SCROLL_STEP = 180;
       scrollArrowLeft.addEventListener('click', () => {
+        if (scrollArrowLeft.classList.contains('hidden')) return;
         audioService.playMenuSound('arrowLeft');
         packGrid.scrollBy({ left: -BG_SCROLL_STEP, behavior: 'smooth' });
       });
       scrollArrowRight.addEventListener('click', () => {
+        if (scrollArrowRight.classList.contains('hidden')) return;
         audioService.playMenuSound('arrowRight');
         packGrid.scrollBy({ left: BG_SCROLL_STEP, behavior: 'smooth' });
       });
@@ -1944,8 +1934,7 @@ function createAppView(model, audioService) {
       }
 
       stopCardAnim(buttonCharacterId);
-      const previewPath = cardState.char.idleFrames[0] || cardState.char.speakFrames[0];
-      if (previewPath) cardState.img.src = fileToSrc(previewPath);
+      restoreCardPreviewImage(cardState);
     });
   }
 
