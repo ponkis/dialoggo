@@ -1476,11 +1476,13 @@ img {
 
 .background-pack-grid {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: nowrap;
   overflow-x: auto;
   align-items: flex-start;
-  padding: 10px 16px 34px;
+  padding: 40px 16px 60px;
+  margin-top: -30px;
+  margin-bottom: -26px;
   width: 100%;
   transform: translateY(var(--background-pack-grid-offset, 0px));
   scroll-behavior: smooth;
