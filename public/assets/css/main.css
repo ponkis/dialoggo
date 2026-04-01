@@ -1566,7 +1566,6 @@ img {
   text-align: left;
   --card-rotation: 0deg;
   --card-scale: 1;
-  --card-shift-y: 0px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(243, 241, 234, 0.96) 100%);
   border: 1px solid rgba(206, 198, 182, 0.95);
@@ -1577,9 +1576,9 @@ img {
     0 20px 24px rgba(0, 0, 0, 0.2);
   color: #2f2a1d;
   cursor: pointer;
-  overflow: hidden;
+  overflow: visible;
   transform-origin: 50% 96%;
-  transform: rotate(var(--card-rotation)) translateY(var(--card-shift-y)) scale(var(--card-scale));
+  transform: rotate(var(--card-rotation)) scale(var(--card-scale));
   transition:
     transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
@@ -1609,8 +1608,7 @@ img {
 }
 
 .background-card:hover:not(:disabled):not(.active) {
-  --card-scale: 1.022;
-  --card-shift-y: -3px;
+  --card-scale: 1.04;
   border-color: rgba(216, 187, 122, 0.86);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.96),
@@ -1627,7 +1625,6 @@ img {
 }
 
 .background-card:hover:not(:disabled) .background-card-photo {
-  transform: translateY(-2px);
   box-shadow:
     inset 0 0 0 1px rgba(235, 226, 208, 0.5),
     0 1px 0 rgba(255, 255, 255, 0.22),
@@ -1641,8 +1638,7 @@ img {
 
 .background-card.is-pressing:not(:disabled),
 .background-card:active:not(:disabled) {
-  --card-scale: 0.985;
-  --card-shift-y: -1px;
+  --card-scale: 0.96;
   transition-duration: 0.08s;
 }
 
@@ -1656,8 +1652,7 @@ img {
 
 .background-card.active,
 .background-card.active:hover {
-  --card-scale: 1.012;
-  --card-shift-y: -2px;
+  --card-scale: 1.03;
   border-color: rgba(222, 193, 128, 0.95);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.96),
@@ -1813,15 +1808,15 @@ img {
 
 @keyframes background-card-click-burst {
   0% {
-    transform: rotate(var(--card-rotation)) translateY(-1px) scale(0.985);
+    transform: rotate(var(--card-rotation)) scale(0.96);
   }
 
   46% {
-    transform: rotate(var(--card-rotation)) translateY(-3px) scale(1.018);
+    transform: rotate(var(--card-rotation)) scale(1.05);
   }
 
   100% {
-    transform: rotate(var(--card-rotation)) translateY(-2px) scale(1.012);
+    transform: rotate(var(--card-rotation)) scale(1.03);
   }
 }
 
@@ -1839,6 +1834,27 @@ img {
       inset 0 0 0 1px rgba(233, 244, 255, 0),
       0 0 0 14px rgba(132, 184, 236, 0);
   }
+}
+
+/* Tape decoration for polaroid cards */
+.background-card-tape {
+  position: absolute;
+  top: -6px;
+  z-index: 2;
+  width: 38px;
+  height: 14px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 253, 240, 0.62) 0%,
+    rgba(245, 238, 215, 0.52) 50%,
+    rgba(232, 224, 200, 0.48) 100%
+  );
+  border: 0.5px solid rgba(200, 190, 165, 0.35);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+  opacity: 0.82;
 }
 
 /* Scrollbar hidden — horizontal drag scroll */

@@ -1856,6 +1856,26 @@ function createAppView(model, audioService) {
         button.appendChild(photo);
         button.appendChild(copy);
 
+        // Randomly add tape decoration to some cards for organic polaroid feel
+        const tapeSeed = `tape:${background?.id || ''}:${index}`;
+        let tapeHash = 0;
+        for (let ti = 0; ti < tapeSeed.length; ti += 1) {
+          tapeHash = ((tapeHash << 5) - tapeHash) + tapeSeed.charCodeAt(ti);
+          tapeHash |= 0;
+        }
+        const tapeChance = (Math.abs(tapeHash) % 1000) / 1000;
+        if (tapeChance < 0.45) {
+          const tape = document.createElement('div');
+          tape.className = 'background-card-tape';
+          const tapeLeftPercent = 20 + ((Math.abs(tapeHash >> 3) % 400) / 10);
+          const tapeRotation = ((Math.abs(tapeHash >> 7) % 300) / 10) - 15;
+          const tapeWidth = 32 + ((Math.abs(tapeHash >> 11) % 160) / 10);
+          tape.style.left = `${tapeLeftPercent}%`;
+          tape.style.transform = `translateX(-50%) rotate(${tapeRotation.toFixed(1)}deg)`;
+          tape.style.width = `${tapeWidth.toFixed(0)}px`;
+          button.appendChild(tape);
+        }
+
         attachBackgroundCardInteractions(button, () => {
           const wasActive = state.selectedBackground?.id === background.id;
           onBackgroundSelected(background, wasActive);
