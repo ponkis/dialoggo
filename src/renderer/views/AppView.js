@@ -1759,40 +1759,14 @@ function createAppView(model, audioService) {
 
       if (isCustomPack) {
         const uploadButton = document.createElement('button');
-        uploadButton.className = 'background-card background-card-upload';
+        uploadButton.className = 'bg-upload-btn';
         uploadButton.dataset.packId = pack.id;
         uploadButton.type = 'button';
         uploadButton.title = 'Upload background';
-
-        const photo = document.createElement('div');
-        photo.className = 'background-card-photo';
-
-        const icon = document.createElement('div');
-        icon.className = 'background-card-upload-icon';
-        icon.setAttribute('aria-hidden', 'true');
-        icon.innerHTML = `
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M12 7v10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
-            <path d="M7 12h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
-          </svg>
-        `;
-        photo.appendChild(icon);
-
-        const copy = document.createElement('div');
-        copy.className = 'background-card-copy';
-
-        const title = document.createElement('span');
-        title.className = 'background-card-title';
-        title.textContent = 'Upload';
-
-        const meta = document.createElement('span');
-        meta.className = 'background-card-meta';
-        meta.textContent = pack.displayName;
-
-        copy.appendChild(title);
-        copy.appendChild(meta);
-        uploadButton.appendChild(photo);
-        uploadButton.appendChild(copy);
+        uploadButton.innerHTML = `<svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 5v14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+          <path d="M5 12h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+        </svg>`;
         attachBackgroundCardInteractions(uploadButton, () => {
           audioService.playMenuSound('click');
         });
@@ -1833,7 +1807,7 @@ function createAppView(model, audioService) {
         meta.textContent = background.packDisplayName;
 
         copy.appendChild(title);
-        copy.appendChild(meta);
+        if (!isCustomPack) copy.appendChild(meta);
         button.appendChild(photo);
         button.appendChild(copy);
 
