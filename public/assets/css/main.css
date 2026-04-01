@@ -1760,7 +1760,7 @@ img {
 }
 
 .bg-upload-btn:hover svg {
-  transform: scale(1.15) rotate(90deg);
+  transform: scale(1.15);
   opacity: 1;
 }
 

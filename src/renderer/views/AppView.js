@@ -1057,7 +1057,14 @@ function createAppView(model, audioService) {
     });
     activeBackgroundPackIdx = index;
     updateBackgroundPackNavArrows();
-    requestAnimationFrame(syncBackgroundPackVerticalAlignment);
+    requestAnimationFrame(() => {
+      syncBackgroundPackVerticalAlignment();
+      const activeSection = backgroundPackSections[activeBackgroundPackIdx];
+      if (activeSection) {
+        const grid = activeSection.querySelector('.background-pack-grid');
+        if (grid) grid.dispatchEvent(new Event('scroll'));
+      }
+    });
   }
 
   function navigateBackgroundPack(direction) {
