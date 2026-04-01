@@ -876,6 +876,67 @@ function startApp() {
     suppressCharacterGridClick = false;
   }, true);
 
+  /* Background grid drag-scroll (mirrors character reel) */
+  const BG_DRAG_THRESHOLD_PX = 6;
+  let bgDragState = null;
+  let suppressBackgroundGridClick = false;
+
+  function stopBackgroundGridDrag() {
+    if (!bgDragState) return;
+    const grid = bgDragState.grid;
+    bgDragState = null;
+    grid?.classList.remove('is-dragging');
+  }
+
+  document.addEventListener('pointerdown', (event) => {
+    const grid = event.target?.closest?.('.background-pack-grid');
+    if (!grid || event.button !== 0) return;
+    bgDragState = {
+      grid,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startScrollLeft: grid.scrollLeft,
+      moved: false,
+    };
+    suppressBackgroundGridClick = false;
+  });
+
+  window.addEventListener('pointermove', (event) => {
+    if (!bgDragState || event.pointerId !== bgDragState.pointerId) return;
+    const deltaX = event.clientX - bgDragState.startX;
+    if (!bgDragState.moved && Math.abs(deltaX) >= BG_DRAG_THRESHOLD_PX) {
+      bgDragState.moved = true;
+      suppressBackgroundGridClick = true;
+      bgDragState.grid.classList.add('is-dragging');
+    }
+    if (!bgDragState.moved) return;
+    event.preventDefault();
+    bgDragState.grid.scrollLeft = bgDragState.startScrollLeft - deltaX;
+  });
+
+  window.addEventListener('pointerup', (event) => {
+    if (!bgDragState || event.pointerId !== bgDragState.pointerId) return;
+    stopBackgroundGridDrag();
+    if (suppressBackgroundGridClick) {
+      window.setTimeout(() => { suppressBackgroundGridClick = false; }, 0);
+    }
+  });
+
+  window.addEventListener('pointercancel', (event) => {
+    if (!bgDragState || event.pointerId !== bgDragState.pointerId) return;
+    stopBackgroundGridDrag();
+    suppressBackgroundGridClick = false;
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!suppressBackgroundGridClick) return;
+    const card = event.target?.closest?.('.background-card');
+    if (!card) return;
+    event.preventDefault();
+    event.stopPropagation();
+    suppressBackgroundGridClick = false;
+  }, true);
+
   refs.charGrid.addEventListener('scroll', view.updateReelArrows);
   refs.characterSearchInput?.addEventListener('input', () => {
     view.syncCharacterSearchClearButton();

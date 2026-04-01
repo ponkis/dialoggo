@@ -1335,11 +1335,8 @@ img {
   inset: 0;
   display: none;
   flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   background: transparent;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(122, 176, 229, 0.88) rgba(10, 25, 41, 0.72);
 }
 
 .background-pack-section.pack-active {
@@ -1351,32 +1348,29 @@ img {
 }
 
 .background-pack-top {
-  position: sticky;
-  top: 0;
-  z-index: 2;
   display: flex;
   align-items: center;
-  padding: 10px 12px;
-  background:
-    linear-gradient(180deg, rgba(36, 68, 106, 0.94) 0%, rgba(28, 56, 88, 0.88) 100%);
-  box-shadow: 0 2px 8px rgba(6, 16, 28, 0.3);
-  border-bottom: 1px solid rgba(120, 175, 230, 0.12);
+  padding: 10px 16px 6px;
+  flex-shrink: 0;
 }
 
 .background-pack-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  justify-content: space-between;
+  gap: 12px;
   flex: 1 1 0;
   min-width: 0;
 }
 
 .background-pack-header-info {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1 1 0;
   min-width: 0;
+  text-align: center;
 }
 
 .background-pack-nav-arrow {
@@ -1443,12 +1437,34 @@ img {
 }
 
 .background-pack-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  display: flex;
   gap: 10px;
-  grid-auto-flow: row dense;
-  align-items: stretch;
-  padding: 12px 16px 18px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  align-items: flex-start;
+  padding: 10px 16px 14px;
+  padding-right: 32px;
+  flex: 1 1 0;
+  min-height: 0;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.background-pack-grid::-webkit-scrollbar {
+  display: none;
+}
+
+.background-pack-grid.is-dragging {
+  cursor: grabbing;
+  scroll-behavior: auto;
+}
+
+.background-pack-grid.is-dragging .background-card {
+  pointer-events: none;
 }
 
 .background-card {
@@ -1456,8 +1472,10 @@ img {
   -webkit-appearance: none;
   position: relative;
   isolation: isolate;
-  width: 100%;
+  width: 140px;
+  min-width: 140px;
   min-height: 0;
+  flex-shrink: 0;
   padding: 7px;
   display: grid;
   grid-template-rows: auto 1fr;
@@ -1718,38 +1736,9 @@ img {
   }
 }
 
-.background-pack-section::-webkit-scrollbar {
-  width: 8px;
-}
+/* Scrollbar hidden — horizontal drag scroll */
 
-.background-pack-section::-webkit-scrollbar-track {
-  background: linear-gradient(180deg, rgba(11, 28, 45, 0.84), rgba(8, 20, 34, 0.84));
-  border-radius: 999px;
-}
-
-.background-pack-section::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #88b4e2 0%, #4e7fb8 55%, #294b75 100%);
-  border-radius: 999px;
-  border: 1px solid rgba(8, 21, 35, 0.88);
-}
-
-.background-pack-section::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #9dc2ea 0%, #628ec3 55%, #33557d 100%);
-}
-
-@media (min-width: 880px) {
-  .background-card-featured {
-    grid-column: span 1;
-  }
-
-  .background-card-featured .background-card-photo {
-    aspect-ratio: 4 / 3;
-  }
-
-  .background-card-featured .background-card-title {
-    font-size: 9px;
-  }
-}
+/* Featured card — horizontal layout doesn't need grid-column span */
 
 @media (max-width: 720px) {
   .backgrounds-body {
@@ -1771,11 +1760,16 @@ img {
   }
 
   .background-pack-top {
-    padding: 12px 12px 10px;
+    padding: 8px 10px 4px;
   }
 
   .background-pack-grid {
-    padding: 10px 12px 16px;
+    padding: 8px 10px 12px;
+  }
+
+  .background-card {
+    width: 120px;
+    min-width: 120px;
   }
 }
 
