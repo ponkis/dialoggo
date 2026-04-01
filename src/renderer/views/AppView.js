@@ -81,14 +81,14 @@ function createAppView(model, audioService) {
   const PREVIEW_BACKGROUND_TRANSITION_MS = 760;
   const dialogueShakeSamples = [
     { x: 0, y: 0 },
-    { x: -1.1, y: -1.6 },
-    { x: 1.2, y: 0.9 },
-    { x: -0.8, y: 1.7 },
-    { x: 1.1, y: -1.4 },
-    { x: -1.2, y: 0.7 },
-    { x: 0.8, y: 1.8 },
-    { x: 1.0, y: -1.6 },
-    { x: -0.7, y: -0.8 },
+    { x: -3.1, y: -2.3 },
+    { x: 3.8, y: 1.8 },
+    { x: -2.4, y: 3.4 },
+    { x: 3.1, y: -2.8 },
+    { x: -3.6, y: 1.5 },
+    { x: 2.1, y: 3.7 },
+    { x: 3.3, y: -3.2 },
+    { x: -2.5, y: -1.5 },
   ];
 
   const _truncCtx = document.createElement('canvas').getContext('2d');
@@ -348,6 +348,13 @@ function createAppView(model, audioService) {
       this.idleStartTimeout = null;
     }
 
+    stopIdleState() {
+      this.clearIdleStartTimeout();
+      if (!this.idleTimer) return;
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
+
     startSpeaking(audioDurationMs) {
       this.stopSpeaking();
 
@@ -424,7 +431,13 @@ function createAppView(model, audioService) {
     }
 
     smoothCloseAndIdle() {
+      const transitionFrames = this.mode === 'speaking' && this.speakFrames.length
+        ? this.speakFrames
+        : (this.idleFrames.length ? this.idleFrames : this.speakFrames);
+      const finalFrames = this.idleFrames.length ? this.idleFrames : transitionFrames;
+
       this.stopSpeaking();
+      this.stopIdleState();
       this.mode = 'idle';
 
       return new Promise((resolve) => {
@@ -432,12 +445,12 @@ function createAppView(model, audioService) {
 
         const finalizeClose = () => {
           this.frameIndex = 0;
-          this.showFrame(this.speakFrames.length ? this.speakFrames : this.idleFrames, 0);
+          this.showFrame(finalFrames, 0);
           this.resolvePendingSmoothClose();
         };
 
-        if (this.frameIndex > 0) {
-          let currentFrame = this.frameIndex;
+        if (this.frameIndex > 0 && transitionFrames.length > 0) {
+          let currentFrame = Math.min(this.frameIndex, transitionFrames.length - 1);
           this.speakTimer = setInterval(() => {
             currentFrame -= 1;
             if (currentFrame <= 0) {
@@ -449,7 +462,7 @@ function createAppView(model, audioService) {
             }
 
             this.frameIndex = currentFrame;
-            this.showFrame(this.speakFrames.length ? this.speakFrames : this.idleFrames, currentFrame);
+            this.showFrame(transitionFrames, currentFrame);
           }, 30);
           return;
         }
@@ -618,16 +631,19 @@ function createAppView(model, audioService) {
       const hiCtx = hiCanvas.getContext('2d');
       if (!hiCtx) return;
 
-      const padTop = 6;
-      const padLeft = state.dialogueMirrored ? 32 : 14;
+      const areaStyle = window.getComputedStyle(area);
+      const padTop = Number.parseFloat(areaStyle.paddingTop) || 6;
+      const padRight = Number.parseFloat(areaStyle.paddingRight) || 0;
+      const padLeft = Number.parseFloat(areaStyle.paddingLeft) || 0;
       const textStyle = window.getComputedStyle(refs.dialogueText);
       const font = textStyle.font || constants.N64_TEXT_FONT;
       const letterSpacing = getDialogueLetterSpacing(textStyle);
+      const clipWidth = Math.max(1, width - padLeft - padRight);
 
       hiCtx.clearRect(0, 0, width, height);
       hiCtx.save();
       hiCtx.beginPath();
-      hiCtx.rect(0, padTop, width, 2 * constants.N64_TEXT_LINE_HEIGHT);
+      hiCtx.rect(padLeft, padTop, clipWidth, 2 * constants.N64_TEXT_LINE_HEIGHT);
       hiCtx.clip();
       hiCtx.font = font;
 
@@ -757,7 +773,7 @@ function createAppView(model, audioService) {
       characterSpan.classList.add('dialogue-char-emphasis', 'dialogue-char-shake');
       characterSpan.style.setProperty('--dialogue-char-shake-duration', `${270 + ((index % 5) * 22)}ms`);
       characterSpan.style.setProperty('--dialogue-char-shake-delay', `${-180 - ((index % 7) * 85)}ms`);
-      characterSpan.style.setProperty('--dialogue-char-shake-rotate', `${((index % 3) - 1) * 2.2}deg`);
+      characterSpan.style.setProperty('--dialogue-char-shake-rotate', `${((index % 3) - 1) * 5}deg`);
     }
 
     return characterSpan;
@@ -782,13 +798,9 @@ function createAppView(model, audioService) {
     const textStyle = window.getComputedStyle(refs.dialogueText);
     const areaStyle = window.getComputedStyle(refs.dialogueTextArea);
     const effectiveLetterSpacing = getDialogueLetterSpacing(textStyle);
-    const n64RightSafetyPad = state.n64ModeEnabled ? 10 : 0;
     const paddingLeft = Number.parseFloat(areaStyle.paddingLeft) || 0;
     const paddingRight = Number.parseFloat(areaStyle.paddingRight) || 0;
-    const measuredWidth = Math.max(
-      refs.dialogueText.clientWidth || 0,
-      Math.floor(refs.dialogueTextArea.clientWidth - paddingLeft - paddingRight),
-    ) - n64RightSafetyPad;
+    const measuredWidth = Math.floor(refs.dialogueTextArea.clientWidth - paddingLeft - paddingRight);
 
     if (measuredWidth <= 0) return null;
 
@@ -1877,11 +1889,21 @@ function createAppView(model, audioService) {
 
       const scrollArrowLeft = document.createElement('div');
       scrollArrowLeft.className = 'bg-scroll-arrow bg-scroll-arrow-left hidden';
-      scrollArrowLeft.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>';
+      const scrollArrowLeftHit = document.createElement('button');
+      scrollArrowLeftHit.className = 'bg-scroll-arrow-hit';
+      scrollArrowLeftHit.type = 'button';
+      scrollArrowLeftHit.title = 'Scroll left';
+      scrollArrowLeftHit.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>';
+      scrollArrowLeft.appendChild(scrollArrowLeftHit);
 
       const scrollArrowRight = document.createElement('div');
       scrollArrowRight.className = 'bg-scroll-arrow bg-scroll-arrow-right';
-      scrollArrowRight.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
+      const scrollArrowRightHit = document.createElement('button');
+      scrollArrowRightHit.className = 'bg-scroll-arrow-hit';
+      scrollArrowRightHit.type = 'button';
+      scrollArrowRightHit.title = 'Scroll right';
+      scrollArrowRightHit.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
+      scrollArrowRight.appendChild(scrollArrowRightHit);
 
       function updateBgScrollArrows() {
         const atStart = packGrid.scrollLeft <= 2;
@@ -1894,12 +1916,12 @@ function createAppView(model, audioService) {
       requestAnimationFrame(updateBgScrollArrows);
 
       const BG_SCROLL_STEP = 180;
-      scrollArrowLeft.addEventListener('click', () => {
+      scrollArrowLeftHit.addEventListener('click', () => {
         if (scrollArrowLeft.classList.contains('hidden')) return;
         audioService.playMenuSound('arrowLeft');
         packGrid.scrollBy({ left: -BG_SCROLL_STEP, behavior: 'smooth' });
       });
-      scrollArrowRight.addEventListener('click', () => {
+      scrollArrowRightHit.addEventListener('click', () => {
         if (scrollArrowRight.classList.contains('hidden')) return;
         audioService.playMenuSound('arrowRight');
         packGrid.scrollBy({ left: BG_SCROLL_STEP, behavior: 'smooth' });
@@ -2212,7 +2234,7 @@ function createAppView(model, audioService) {
     void refs.previewArea.offsetHeight;
 
     refs.previewArea.style.transition = `height ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}, filter ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}`;
-    setPreviewPlaceholderSuppressed(keepPlaceholderSuppressed);
+    setPreviewPlaceholderSuppressed(true);
 
     requestAnimationFrame(() => {
       refs.previewArea.style.height = `${targetHeight}px`;
@@ -2229,6 +2251,10 @@ function createAppView(model, audioService) {
     refs.previewArea.style.transition = '';
     refs.app?.classList.remove('settings-panel-open');
     if (refs.panelWrapper) delete refs.panelWrapper.dataset.naturalPanelHeight;
+    if (!keepPlaceholderSuppressed) {
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    }
+    setPreviewPlaceholderSuppressed(keepPlaceholderSuppressed);
     syncPreviewPlaceholderState();
   }
 

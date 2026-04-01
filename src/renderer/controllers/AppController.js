@@ -128,7 +128,7 @@ function startApp() {
     else speechLoop.pause();
 
     speechLoop._killCurrentAudio();
-    spriteRenderer.stop();
+    spriteRenderer.stopIdleState();
 
     if (!dialogueClosePromise) {
       const closePromise = spriteRenderer.smoothCloseAndIdle()
@@ -187,6 +187,47 @@ function startApp() {
     if (!(activeTarget instanceof HTMLElement)) return false;
     const editable = activeTarget.closest('textarea, input, [contenteditable=""], [contenteditable="true"], [contenteditable="plaintext-only"]');
     return isTextEntryElement(editable);
+  }
+
+  function playKeyboardCommandFeedback(allowed) {
+    audioService.playMenuSound(allowed ? 'click' : 'forbidden');
+  }
+
+  function handleKeyboardPlaybackCommand(command) {
+    if (command === 'stop') {
+      const allowed = !view.isActionButtonBlocked(refs.btnStop);
+      playKeyboardCommandFeedback(allowed);
+      if (!allowed) return false;
+      blurPlaybackButtonFocus();
+      stopDialogue();
+      return true;
+    }
+
+    if (command === 'fastForward') {
+      const allowed = canFastForward() && !view.isActionButtonBlocked(refs.btnFastForward);
+      playKeyboardCommandFeedback(allowed);
+      if (!allowed) return false;
+      blurPlaybackButtonFocus();
+      state.fastForwardKeyHeld = true;
+      syncFastForwardState();
+      return true;
+    }
+
+    if (state.isPlaying && !state.isPaused) {
+      const allowed = !view.isActionButtonBlocked(refs.btnPause);
+      playKeyboardCommandFeedback(allowed);
+      if (!allowed) return false;
+      blurPlaybackButtonFocus();
+      doPause();
+      return true;
+    }
+
+    const allowed = !view.isActionButtonBlocked(refs.btnPlay);
+    playKeyboardCommandFeedback(allowed);
+    if (!allowed) return false;
+    blurPlaybackButtonFocus();
+    void playDialogue();
+    return true;
   }
 
   function waitWhilePaused() {
@@ -853,36 +894,23 @@ function startApp() {
     if (event.code !== 'Space' || shouldIgnorePlaybackShortcut(event.target) || event.altKey || event.metaKey) return;
 
     if (event.ctrlKey) {
-      if (view.isActionButtonBlocked(refs.btnStop) || event.repeat) return;
+      if (event.repeat) return;
       event.preventDefault();
-      blurPlaybackButtonFocus();
-      stopDialogue();
+      handleKeyboardPlaybackCommand('stop');
       return;
     }
 
     if (event.shiftKey) {
-      if (event.repeat || !canFastForward()) return;
+      if (event.repeat) return;
       event.preventDefault();
-      blurPlaybackButtonFocus();
-      state.fastForwardKeyHeld = true;
-      syncFastForwardState();
+      handleKeyboardPlaybackCommand('fastForward');
       return;
     }
 
     if (event.repeat) return;
 
-    if (state.isPlaying && !state.isPaused) {
-      if (view.isActionButtonBlocked(refs.btnPause)) return;
-      event.preventDefault();
-      blurPlaybackButtonFocus();
-      doPause();
-      return;
-    }
-
-    if (view.isActionButtonBlocked(refs.btnPlay)) return;
     event.preventDefault();
-    blurPlaybackButtonFocus();
-    void playDialogue();
+    handleKeyboardPlaybackCommand('togglePlayPause');
   }, true);
 
   window.addEventListener('keyup', (event) => {
