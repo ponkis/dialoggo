@@ -1497,7 +1497,7 @@ img {
 .bg-scroll-arrow {
   position: absolute;
   top: 0;
-  bottom: 24px;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1505,6 +1505,7 @@ img {
   cursor: pointer;
   color: rgba(196, 220, 244, 0.7);
   transition: color 0.15s ease, opacity 0.2s ease;
+  transform: translateY(calc(var(--background-pack-grid-offset, 0px) - 12px));
 }
 
 .bg-scroll-arrow:hover {

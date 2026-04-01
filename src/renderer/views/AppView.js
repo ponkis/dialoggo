@@ -1066,6 +1066,8 @@ function createAppView(model, audioService) {
         : (-(packTop.getBoundingClientRect().height / 2) + visualPaddingOffset);
 
       packGrid.style.setProperty('--background-pack-grid-offset', `${offset}px`);
+      const gridWrapper = packGrid.closest('.background-pack-grid-wrapper');
+      if (gridWrapper) gridWrapper.style.setProperty('--background-pack-grid-offset', `${offset}px`);
     });
   }
 
