@@ -1723,8 +1723,8 @@ img {
   -webkit-appearance: none;
   position: relative;
   width: 140px;
-  height: 140px;
   min-width: 140px;
+  align-self: stretch;
   flex-shrink: 0;
   display: flex;
   align-items: center;
