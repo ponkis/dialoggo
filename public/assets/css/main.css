@@ -1582,7 +1582,7 @@ img {
   transform-origin: 50% 96%;
   transform: rotate(var(--card-rotation)) scale(var(--card-scale));
   transition:
-    transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.35s var(--ease-spring),
     box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
     border-color 0.22s ease,
     filter 0.22s ease,
@@ -1597,7 +1597,12 @@ img {
 }
 
 .background-card::before {
-  content: none;
+  content: '';
+  position: absolute;
+  inset: -1px;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 1;
 }
 
 .background-card::after {
@@ -1607,6 +1612,10 @@ img {
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.22),
     0 0 0 0 rgba(216, 187, 122, 0.2);
+  transition:
+    opacity 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .background-card:hover:not(:disabled):not(.active) {
@@ -1641,27 +1650,32 @@ img {
 .background-card.is-pressing:not(:disabled),
 .background-card:active:not(:disabled) {
   --card-scale: 0.96;
-  transition-duration: 0.08s;
+  transition: transform 0.08s ease-out;
 }
 
-.background-card.is-clicked:not(:disabled) {
-  animation: background-card-click-burst 0.42s cubic-bezier(0.2, 0.9, 0.2, 1);
-}
-
-.background-card.is-clicked:not(:disabled)::after {
+.background-card.is-clicked:not(:disabled)::before {
   animation: background-card-click-ring 0.42s ease-out;
 }
 
 .background-card.active,
 .background-card.active:hover {
-  --card-scale: 1.03;
-  border-color: rgba(222, 193, 128, 0.95);
+  --card-scale: 1.06;
+  border-color: rgba(245, 208, 120, 1);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.96),
     inset 0 -1px 0 rgba(80, 63, 35, 0.17),
-    0 0 0 2px rgba(222, 193, 128, 0.22),
-    0 12px 20px rgba(8, 13, 24, 0.34),
-    0 22px 26px rgba(0, 0, 0, 0.24);
+    0 0 0 2px rgba(245, 208, 120, 0.4),
+    0 12px 20px rgba(8, 13, 24, 0.45),
+    0 22px 26px rgba(0, 0, 0, 0.3);
+}
+
+.background-card.active::after,
+.background-card.active:hover::after {
+  opacity: 1;
+  border-color: rgba(245, 208, 120, 0.85);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+    0 0 0 8px rgba(245, 208, 120, 0.25);
 }
 
 .background-card:disabled,
@@ -1797,20 +1811,6 @@ img {
   letter-spacing: 0.8px;
   color: rgba(93, 80, 56, 0.76);
   text-transform: uppercase;
-}
-
-@keyframes background-card-click-burst {
-  0% {
-    transform: rotate(var(--card-rotation)) scale(0.96);
-  }
-
-  46% {
-    transform: rotate(var(--card-rotation)) scale(1.05);
-  }
-
-  100% {
-    transform: rotate(var(--card-rotation)) scale(1.03);
-  }
 }
 
 @keyframes background-card-click-ring {
