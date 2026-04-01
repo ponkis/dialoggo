@@ -1469,6 +1469,9 @@ img {
 .background-pack-grid-wrapper {
   position: relative;
   display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: center;
   overflow: hidden;
 }
 
@@ -1480,6 +1483,8 @@ img {
   align-items: flex-start;
   padding: 10px 16px 14px;
   padding-right: 0;
+  width: 100%;
+  transform: translateY(var(--background-pack-grid-offset, 0px));
   scroll-behavior: smooth;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -1841,6 +1846,7 @@ img {
 
   .background-pack-grid {
     padding: 8px 10px 12px;
+    transform: none;
   }
 
   .background-card {

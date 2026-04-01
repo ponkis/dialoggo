@@ -1033,6 +1033,7 @@ function createAppView(model, audioService) {
     });
     activeBackgroundPackIdx = index;
     updateBackgroundPackNavArrows();
+    requestAnimationFrame(syncBackgroundPackVerticalAlignment);
   }
 
   function navigateBackgroundPack(direction) {
@@ -1046,6 +1047,19 @@ function createAppView(model, audioService) {
       audioService.playMenuSound('click');
       showBackgroundPack(visibleIndices[nextPos]);
     }
+  }
+
+  function syncBackgroundPackVerticalAlignment() {
+    const isCompactLayout = window.matchMedia('(max-width: 720px)').matches;
+
+    backgroundPackSections.forEach((section) => {
+      const packTop = section.querySelector('.background-pack-top');
+      const packGrid = section.querySelector('.background-pack-grid');
+      if (!packTop || !packGrid) return;
+
+      const offset = isCompactLayout ? 0 : -(packTop.getBoundingClientRect().height / 2);
+      packGrid.style.setProperty('--background-pack-grid-offset', `${offset}px`);
+    });
   }
 
   function applyBackgroundFilters() {
@@ -2232,6 +2246,7 @@ function createAppView(model, audioService) {
   setFlipCardPanel(state.activePanel === 'settings' ? 'settings' : null);
   applySelectedBackground(state.selectedBackground);
   window.addEventListener('resize', syncDialogueInputHighlight);
+  window.addEventListener('resize', syncBackgroundPackVerticalAlignment);
   syncDialogueInputHighlightMetrics();
   syncPreviewPlaceholderState();
 
