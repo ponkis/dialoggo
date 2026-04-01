@@ -1057,7 +1057,14 @@ function createAppView(model, audioService) {
       const packGrid = section.querySelector('.background-pack-grid');
       if (!packTop || !packGrid) return;
 
-      const offset = isCompactLayout ? 0 : -(packTop.getBoundingClientRect().height / 2);
+      const gridStyle = window.getComputedStyle(packGrid);
+      const paddingTop = Number.parseFloat(gridStyle.paddingTop) || 0;
+      const paddingBottom = Number.parseFloat(gridStyle.paddingBottom) || 0;
+      const visualPaddingOffset = (paddingBottom - paddingTop) / 2;
+      const offset = isCompactLayout
+        ? 0
+        : (-(packTop.getBoundingClientRect().height / 2) + visualPaddingOffset);
+
       packGrid.style.setProperty('--background-pack-grid-offset', `${offset}px`);
     });
   }

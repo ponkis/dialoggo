@@ -1472,6 +1472,8 @@ img {
   flex: 1 1 auto;
   min-height: 0;
   align-items: center;
+  box-sizing: border-box;
+  padding: 32px 0;
   overflow: hidden;
 }
 
@@ -1481,8 +1483,7 @@ img {
   flex-wrap: nowrap;
   overflow-x: auto;
   align-items: flex-start;
-  padding: 10px 16px 14px;
-  padding-right: 0;
+  padding: 10px 16px 34px;
   width: 100%;
   transform: translateY(var(--background-pack-grid-offset, 0px));
   scroll-behavior: smooth;
@@ -1844,8 +1845,12 @@ img {
     padding: 8px 10px 4px;
   }
 
+  .background-pack-grid-wrapper {
+    padding: 16px 0;
+  }
+
   .background-pack-grid {
-    padding: 8px 10px 12px;
+    padding: 8px 10px 24px;
     transform: none;
   }
 
