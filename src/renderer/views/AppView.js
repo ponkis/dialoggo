@@ -1723,6 +1723,18 @@ function createAppView(model, audioService) {
       });
     }
 
+    const computeBackgroundCardRotation = (background, index) => {
+      const seed = `${background?.id || ''}:${background?.packId || ''}:${index}`;
+      let hash = 0;
+      for (let i = 0; i < seed.length; i += 1) {
+        hash = ((hash << 5) - hash) + seed.charCodeAt(i);
+        hash |= 0;
+      }
+      const normalized = ((Math.abs(hash) % 1000) / 1000);
+      const rotation = (normalized * 8) - 4;
+      return `${rotation.toFixed(2)}deg`;
+    };
+
     const orderedPacks = Array.isArray(backgroundPacks) && backgroundPacks.length > 0
       ? backgroundPacks
         .map((pack) => ({
@@ -1810,6 +1822,7 @@ function createAppView(model, audioService) {
         button.className = 'background-card';
         button.dataset.id = background.id;
         button.dataset.packId = background.packId;
+        button.style.setProperty('--card-rotation', computeBackgroundCardRotation(background, index));
         button.type = 'button';
         button.title = background.displayName;
         button.disabled = !background.isAvailable;
