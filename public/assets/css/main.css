@@ -1564,17 +1564,22 @@ img {
   grid-template-rows: auto 1fr;
   gap: 7px;
   text-align: left;
+  --card-rotation: 0deg;
+  --card-scale: 1;
+  --card-shift-y: 0px;
   background:
-    linear-gradient(180deg, rgba(57, 104, 154, 0.32) 0%, rgba(18, 41, 66, 0.78) 100%);
-  border: 1px solid rgba(138, 184, 229, 0.24);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(243, 241, 234, 0.96) 100%);
+  border: 1px solid rgba(206, 198, 182, 0.95);
   box-shadow:
-    inset 0 1px 0 rgba(237, 246, 255, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-    0 4px 12px rgba(0, 0, 0, 0.3);
-  color: var(--text-primary);
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -1px 0 rgba(74, 60, 33, 0.09),
+    0 8px 14px rgba(8, 13, 24, 0.36),
+    0 20px 24px rgba(0, 0, 0, 0.2);
+  color: #2f2a1d;
   cursor: pointer;
   overflow: hidden;
-  transform-origin: 50% 100%;
+  transform-origin: 50% 96%;
+  transform: rotate(var(--card-rotation)) translateY(var(--card-shift-y)) scale(var(--card-scale));
   transition:
     transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
@@ -1597,34 +1602,36 @@ img {
 .background-card::after {
   inset: -1px;
   opacity: 0;
-  border: 1px solid rgba(132, 184, 236, 0.34);
+  border: 1px solid rgba(216, 187, 122, 0.4);
   box-shadow:
-    inset 0 0 0 1px rgba(233, 244, 255, 0.14),
-    0 0 0 0 rgba(132, 184, 236, 0.18);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 0 0 0 rgba(216, 187, 122, 0.2);
 }
 
 .background-card:hover:not(:disabled):not(.active) {
-  transform: scale(1.015);
-  border-color: rgba(154, 198, 240, 0.5);
+  --card-scale: 1.022;
+  --card-shift-y: -3px;
+  border-color: rgba(216, 187, 122, 0.86);
   box-shadow:
-    inset 0 1px 0 rgba(243, 248, 255, 0.1),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.24),
-    0 12px 26px rgba(0, 0, 0, 0.36);
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    inset 0 -1px 0 rgba(80, 63, 35, 0.16),
+    0 10px 16px rgba(8, 13, 24, 0.36),
+    0 26px 28px rgba(0, 0, 0, 0.26);
 }
 
 .background-card:hover:not(:disabled):not(.active)::after {
   opacity: 1;
   box-shadow:
-    inset 0 0 0 1px rgba(234, 245, 255, 0.16),
-    0 0 0 5px rgba(132, 184, 236, 0.12);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.26),
+    0 0 0 4px rgba(216, 187, 122, 0.13);
 }
 
 .background-card:hover:not(:disabled) .background-card-photo {
   transform: translateY(-2px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.18),
-    0 8px 16px rgba(0, 0, 0, 0.28);
+    inset 0 0 0 1px rgba(235, 226, 208, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.22),
+    0 9px 17px rgba(0, 0, 0, 0.32);
 }
 
 .background-card:hover:not(:disabled) .background-card-image {
@@ -1634,7 +1641,8 @@ img {
 
 .background-card.is-pressing:not(:disabled),
 .background-card:active:not(:disabled) {
-  transform: translateY(-1px) scale(0.985);
+  --card-scale: 0.985;
+  --card-shift-y: -1px;
   transition-duration: 0.08s;
 }
 
@@ -1648,22 +1656,24 @@ img {
 
 .background-card.active,
 .background-card.active:hover {
-  transform: scale(1.01);
-  border-color: rgba(171, 205, 242, 0.84);
+  --card-scale: 1.012;
+  --card-shift-y: -2px;
+  border-color: rgba(222, 193, 128, 0.95);
   box-shadow:
-    inset 0 1px 0 rgba(236, 245, 255, 0.14),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.22),
-    0 0 0 2px rgba(132, 184, 236, 0.2),
-    0 12px 28px rgba(0, 0, 0, 0.32);
+    inset 0 1px 0 rgba(255, 255, 255, 0.96),
+    inset 0 -1px 0 rgba(80, 63, 35, 0.17),
+    0 0 0 2px rgba(222, 193, 128, 0.22),
+    0 12px 20px rgba(8, 13, 24, 0.34),
+    0 22px 26px rgba(0, 0, 0, 0.24);
 }
 
 .background-card.active::after,
 .background-card.active:hover::after {
   opacity: 1;
-  border-color: rgba(171, 205, 242, 0.62);
+  border-color: rgba(222, 193, 128, 0.74);
   box-shadow:
-    inset 0 0 0 1px rgba(235, 245, 255, 0.22),
-    0 0 0 6px rgba(132, 184, 236, 0.12);
+    inset 0 0 0 1px rgba(255, 255, 255, 0.24),
+    0 0 0 6px rgba(222, 193, 128, 0.15);
 }
 
 .background-card:disabled,
@@ -1681,13 +1691,12 @@ img {
   position: relative;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(36, 77, 119, 0.7), rgba(12, 28, 45, 0.9));
-  border: 1px solid rgba(134, 181, 226, 0.18);
+  background: #0f1622;
+  border: 1px solid rgba(154, 140, 115, 0.48);
   box-shadow:
-    inset 0 1px 0 rgba(236, 245, 255, 0.08),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.15),
-    0 1px 3px rgba(0, 0, 0, 0.2);
+    inset 0 0 0 1px rgba(242, 232, 212, 0.26),
+    0 1px 0 rgba(255, 255, 255, 0.2),
+    0 3px 7px rgba(0, 0, 0, 0.35);
   transition:
     transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -1698,8 +1707,8 @@ img {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent 24%, rgba(0, 0, 0, 0.22) 100%),
-    radial-gradient(circle at 18% 16%, rgba(212, 231, 255, 0.12), transparent 18%);
+    linear-gradient(168deg, rgba(255, 252, 245, 0.2) 0%, rgba(255, 252, 245, 0.03) 34%, rgba(0, 0, 0, 0.18) 100%),
+    radial-gradient(circle at 17% 14%, rgba(255, 255, 255, 0.15), transparent 22%);
   pointer-events: none;
 }
 
@@ -1786,9 +1795,9 @@ img {
   font-weight: 800;
   letter-spacing: 0.65px;
   text-transform: uppercase;
-  color: #edf5ff;
+  color: #433929;
   line-height: 1.12;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.24);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1798,21 +1807,21 @@ img {
 .background-card-meta {
   font-size: 6px;
   letter-spacing: 0.8px;
-  color: rgba(179, 204, 230, 0.64);
+  color: rgba(93, 80, 56, 0.76);
   text-transform: uppercase;
 }
 
 @keyframes background-card-click-burst {
   0% {
-    transform: scale(0.985);
+    transform: rotate(var(--card-rotation)) translateY(-1px) scale(0.985);
   }
 
   46% {
-    transform: scale(1.018);
+    transform: rotate(var(--card-rotation)) translateY(-3px) scale(1.018);
   }
 
   100% {
-    transform: scale(1.01);
+    transform: rotate(var(--card-rotation)) translateY(-2px) scale(1.012);
   }
 }
 
