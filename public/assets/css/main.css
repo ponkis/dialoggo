@@ -1254,7 +1254,7 @@ img {
   flex-direction: column;
   min-height: 0;
   gap: 10px;
-  padding: 14px 0 14px 18px;
+  padding: 0 0 0 18px;
   background:
     radial-gradient(120% 90% at 50% 36%, rgba(106, 158, 214, 0.28), transparent 58%),
     linear-gradient(170deg, #416d9f 0%, #2e5a8a 32%, #1f446c 64%, #16304d 100%);
@@ -1263,7 +1263,7 @@ img {
     inset 0 2px 12px rgba(0, 0, 0, 0.45),
     inset 0 -1px 0 rgba(191, 221, 250, 0.08),
     inset 0 0 40px rgba(10, 24, 40, 0.28);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .backgrounds-panel::before {
@@ -1328,7 +1328,36 @@ img {
   min-height: 0;
   min-width: 0;
   overflow: hidden;
-  border-left: 1px solid rgba(140, 190, 240, 0.14);
+}
+
+.backgrounds-sections::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(140, 190, 240, 0.18) 20%,
+    rgba(140, 190, 240, 0.22) 50%,
+    rgba(140, 190, 240, 0.18) 80%,
+    transparent 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.backgrounds-sections::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 120% 100% at 50% 50%, transparent 40%, rgba(8, 18, 32, 0.45) 100%),
+    linear-gradient(180deg, rgba(8, 18, 32, 0.2) 0%, transparent 15%, transparent 85%, rgba(8, 18, 32, 0.25) 100%);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .background-pack-section {
