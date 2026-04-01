@@ -1662,15 +1662,6 @@ img {
     0 22px 26px rgba(0, 0, 0, 0.24);
 }
 
-.background-card.active::after,
-.background-card.active:hover::after {
-  opacity: 1;
-  border-color: rgba(222, 193, 128, 0.74);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.24),
-    0 0 0 6px rgba(222, 193, 128, 0.15);
-}
-
 .background-card:disabled,
 .background-card.unavailable {
   cursor: not-allowed;
@@ -1758,7 +1749,7 @@ img {
   background:
     radial-gradient(circle at 50% 35%, rgba(166, 203, 244, 0.14), transparent 58%),
     linear-gradient(180deg, rgba(20, 52, 83, 0.24) 0%, rgba(10, 27, 43, 0.56) 100%);
-  box-shadow: 
+  box-shadow:
     0 4px 15px rgba(0, 0, 0, 0.3),
     inset 0 0 10px rgba(160, 200, 240, 0.05);
 }
@@ -1843,12 +1834,10 @@ img {
   z-index: 2;
   width: 38px;
   height: 14px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 253, 240, 0.62) 0%,
-    rgba(245, 238, 215, 0.52) 50%,
-    rgba(232, 224, 200, 0.48) 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(255, 253, 240, 0.62) 0%,
+      rgba(245, 238, 215, 0.52) 50%,
+      rgba(232, 224, 200, 0.48) 100%);
   border: 0.5px solid rgba(200, 190, 165, 0.35);
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.12),
