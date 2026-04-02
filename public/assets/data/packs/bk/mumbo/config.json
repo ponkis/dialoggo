@@ -1,5 +1,9 @@
 {
     "character":  {
                       "name":  "Mumbo"
-                  }
+                  },
+    "sound":  {
+                  "pitch":  -3,
+                  "canStretch":  true
+              }
 }

@@ -1,5 +1,8 @@
 {
     "character":  {
                       "name":  "Nabnut"
-                  }
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
 }

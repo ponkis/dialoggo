@@ -1,5 +1,8 @@
 {
     "character":  {
                       "name":  "Mutant Snippet"
-                  }
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
 }
