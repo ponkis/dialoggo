@@ -34,6 +34,7 @@ function startApp() {
     alt: false,
     meta: false,
   };
+  const keyboardPressedButtons = new Set();
   let dialogueClosePromise = null;
   let lastExecutedShortcut = null;
 
@@ -302,6 +303,7 @@ function startApp() {
         isVisible: () => canDisplayPlaybackShortcut(target),
         isAvailable: () => canUsePlaybackKeyboardShortcut(target) && !view.isActionButtonBlocked(refs.btnStop),
         getActionLabel: () => 'Stop',
+        getButtonElement: () => refs.btnStop,
         execute: () => handleKeyboardPlaybackCommand('stop'),
       },
       {
@@ -312,6 +314,7 @@ function startApp() {
         isVisible: () => canDisplayPlaybackShortcut(target),
         isAvailable: () => canUsePlaybackKeyboardShortcut(target) && canFastForward() && !view.isActionButtonBlocked(refs.btnFastForward),
         getActionLabel: () => 'Fast forward',
+        getButtonElement: () => refs.btnFastForward,
         execute: () => handleKeyboardPlaybackCommand('fastForward'),
       },
       {
@@ -327,6 +330,7 @@ function startApp() {
             : !view.isActionButtonBlocked(refs.btnPlay);
         },
         getActionLabel: () => getPlaybackToggleActionLabel(),
+        getButtonElement: () => (state.isPlaying && !state.isPaused ? refs.btnPause : refs.btnPlay),
         execute: () => handleKeyboardPlaybackCommand('togglePlayPause'),
       },
       {
@@ -337,6 +341,7 @@ function startApp() {
         isVisible: () => isCharacterSearchShortcutTarget(target),
         isAvailable: () => canClearCharacterSearchFromShortcut(target),
         getActionLabel: () => 'Clear search',
+        getButtonElement: () => null,
         execute: () => clearCharacterSearchFromShortcut(),
       },
     ];
@@ -402,11 +407,53 @@ function startApp() {
     });
   }
 
+  function setKeyboardPressedButtons(buttons) {
+    const nextButtons = new Set(
+      Array.from(buttons || []).filter((button) => button instanceof HTMLElement),
+    );
+
+    keyboardPressedButtons.forEach((button) => {
+      if (nextButtons.has(button)) return;
+      view.setButtonKeyboardPressed(button, false);
+    });
+
+    nextButtons.forEach((button) => {
+      if (keyboardPressedButtons.has(button)) return;
+      view.setButtonKeyboardPressed(button, true);
+    });
+
+    keyboardPressedButtons.clear();
+    nextButtons.forEach((button) => {
+      keyboardPressedButtons.add(button);
+    });
+  }
+
+  function syncKeyboardPressedButtonState(target = document.activeElement) {
+    if (lastExecutedShortcut && !lastExecutedShortcut.keys.every((key) => heldShortcutKeys.has(key))) {
+      lastExecutedShortcut = null;
+    }
+
+    if (lastExecutedShortcut?.buttonElement instanceof HTMLElement) {
+      setKeyboardPressedButtons([lastExecutedShortcut.buttonElement]);
+      return;
+    }
+
+    const candidate = getShortcutCandidate(target);
+    if (!candidate?.isComplete) {
+      setKeyboardPressedButtons([]);
+      return;
+    }
+
+    const buttonElement = candidate.shortcut.getButtonElement?.();
+    setKeyboardPressedButtons(buttonElement ? [buttonElement] : []);
+  }
+
   function resetShortcutVisualizerState() {
     heldShortcutKeys.clear();
     keyboardModifierState.alt = false;
     keyboardModifierState.meta = false;
     lastExecutedShortcut = null;
+    setKeyboardPressedButtons([]);
     view.syncShortcutVisualizer();
   }
 
@@ -420,6 +467,7 @@ function startApp() {
     if (candidate?.isComplete && candidate.shortcut.triggerKey === key && !event.repeat) {
       event.preventDefault();
       const actionLabel = candidate.shortcut.getActionLabel();
+      const buttonElement = candidate.shortcut.getButtonElement?.();
       const executed = candidate.shortcut.execute();
 
       if (executed) {
@@ -427,10 +475,12 @@ function startApp() {
           id: candidate.shortcut.id,
           keys: [...candidate.shortcut.keys],
           label: actionLabel,
+          buttonElement: buttonElement instanceof HTMLElement ? buttonElement : null,
         };
       }
     }
 
+    syncKeyboardPressedButtonState(event.target);
     syncShortcutVisualizerOverlay(event.target);
   }
 
@@ -445,6 +495,7 @@ function startApp() {
       syncFastForwardState();
     }
 
+    syncKeyboardPressedButtonState(event.target);
     syncShortcutVisualizerOverlay(event.target);
   }
 

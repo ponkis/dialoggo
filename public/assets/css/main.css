@@ -3038,16 +3038,19 @@ img {
 }
 
 .btn:active:not(:disabled) .button-top,
+.btn.is-keyboard-pressed .button-top,
 .btn.fast-forwarding .button-top {
   transform: translateY(6px);
 }
 
 .btn:active:not(:disabled) .button-top::after,
+.btn.is-keyboard-pressed .button-top::after,
 .btn.fast-forwarding .button-top::after {
   border-radius: 6px;
 }
 
 .btn:active:not(:disabled) .button-bottom,
+.btn.is-keyboard-pressed .button-bottom,
 .btn.fast-forwarding .button-bottom {
   border-radius: 10px 10px 8px 8px / 8px;
   padding-top: 0;

@@ -200,6 +200,11 @@ function createAppView(model, audioService) {
     root.setAttribute('aria-hidden', 'false');
   }
 
+  function setButtonKeyboardPressed(button, pressed) {
+    if (!(button instanceof HTMLElement)) return;
+    button.classList.toggle('is-keyboard-pressed', pressed === true);
+  }
+
   function getDialogueShakeSample(elapsed, index, scale = 1) {
     const sampleDuration = DIALOGUE_SHAKE_CYCLE_MS / dialogueShakeSamples.length;
     const sampleIndex = Math.floor((elapsed + (index * sampleDuration)) / sampleDuration) % dialogueShakeSamples.length;
@@ -2478,6 +2483,7 @@ function createAppView(model, audioService) {
     syncDialogueInputCounter,
     syncCharacterSearchClearButton,
     syncShortcutVisualizer,
+    setButtonKeyboardPressed,
     updateFastForwardAvailability,
     applyCharacterFilters,
     applyBackgroundFilters,
