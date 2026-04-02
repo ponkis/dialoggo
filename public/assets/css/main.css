@@ -499,9 +499,29 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
+  isolation: isolate;
   transform-origin: 50% 100%;
   transform: none;
   transition: opacity 0.35s ease;
+}
+
+.preview-area-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 32%, rgba(255, 255, 255, 0.08), transparent 42%),
+    linear-gradient(180deg, rgba(5, 10, 18, 0.12) 0%, rgba(4, 8, 16, 0.38) 100%);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+  z-index: 0;
+}
+
+.preview-area.has-selected-background .preview-area-content::before {
+  opacity: 1;
 }
 
 .preview-area.preview-settings-muted {
@@ -586,15 +606,12 @@ img {
   text-transform: uppercase;
   opacity: 0.82;
   position: relative;
-  background: rgb(0 0 0 / 28%);
   z-index: 1;
-  padding: 18px 26px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  text-align: center;
   transition: opacity 0.35s ease;
 }
 
+.preview-area.preview-placeholder-suppressed .preview-area-content::before,
 .preview-area.preview-placeholder-suppressed .preview-placeholder {
   opacity: 0;
   pointer-events: none;
