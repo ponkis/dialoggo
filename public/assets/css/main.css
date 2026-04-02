@@ -2702,7 +2702,7 @@ img {
   z-index: 0;
   margin: 0;
   pointer-events: none;
-  white-space: break-spaces;
+  white-space: pre-wrap;
   color: var(--text-primary);
   background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
   border: 2px solid #2a2a2a;
@@ -2715,7 +2715,7 @@ img {
 
 .text-input-highlight,
 .text-input-highlight span {
-  white-space: break-spaces;
+  white-space: pre-wrap;
 }
 
 .text-input-highlight::-webkit-scrollbar {
