@@ -745,9 +745,9 @@ function createAppView(model, audioService) {
 
       hiCtx.textBaseline = 'top';
       hiCtx.fillStyle = '#ffffff';
-      hiCtx.shadowColor = 'rgba(0, 0, 0, 0.65)';
-      hiCtx.shadowOffsetX = 1;
-      hiCtx.shadowOffsetY = 1;
+      hiCtx.shadowColor = 'transparent';
+      hiCtx.shadowOffsetX = 0;
+      hiCtx.shadowOffsetY = 0;
       hiCtx.shadowBlur = 0;
 
       const lineElements = scrollWrapper.querySelectorAll('.line');

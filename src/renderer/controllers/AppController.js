@@ -266,15 +266,20 @@ function startApp() {
     return 'Play';
   }
 
+  function areKeyboardShortcutsBlocked() {
+    return state.activePanel === 'settings';
+  }
+
   function canUsePlaybackKeyboardShortcut(target) {
-    return !shouldIgnorePlaybackShortcut(target) && !keyboardModifierState.alt && !keyboardModifierState.meta;
+    return !areKeyboardShortcutsBlocked() && !shouldIgnorePlaybackShortcut(target) && !keyboardModifierState.alt && !keyboardModifierState.meta;
   }
 
   function canDisplayPlaybackShortcut(target) {
-    return !shouldIgnorePlaybackShortcut(target);
+    return !areKeyboardShortcutsBlocked() && !shouldIgnorePlaybackShortcut(target);
   }
 
   function isCharacterSearchShortcutTarget(target) {
+    if (areKeyboardShortcutsBlocked()) return false;
     const activeTarget = target instanceof Element ? target : document.activeElement;
     return !!refs.characterSearchInput && activeTarget === refs.characterSearchInput;
   }
@@ -931,6 +936,7 @@ function startApp() {
         audioService.playMenuSound('settingsOpen');
         await view.flipPanel(previousPanel, 'settings');
         state.activePanel = 'settings';
+        resetShortcutVisualizerState();
       } else if (panel === 'backgrounds') {
         refs.sleeveSettings.classList.remove('active');
         refs.sleeveBackgrounds.classList.add('active');

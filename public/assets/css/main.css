@@ -969,10 +969,7 @@ img {
   overflow: hidden;
   text-overflow: clip;
   position: relative;
-  text-shadow:
-    1px 1px 0 rgba(0, 0, 0, 0.7),
-    -1px -1px 0 rgba(0, 0, 0, 0.3),
-    0 0 2px rgba(0, 0, 0, 0.5);
+  text-shadow: none;
   height: 100%;
 }
 
