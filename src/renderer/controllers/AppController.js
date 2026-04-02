@@ -269,6 +269,10 @@ function startApp() {
     return !shouldIgnorePlaybackShortcut(target) && !keyboardModifierState.alt && !keyboardModifierState.meta;
   }
 
+  function canDisplayPlaybackShortcut(target) {
+    return !shouldIgnorePlaybackShortcut(target);
+  }
+
   function isCharacterSearchShortcutTarget(target) {
     const activeTarget = target instanceof Element ? target : document.activeElement;
     return !!refs.characterSearchInput && activeTarget === refs.characterSearchInput;
@@ -295,6 +299,7 @@ function startApp() {
         keys: ['ctrl', 'space'],
         triggerKey: 'space',
         priority: 300,
+        isVisible: () => canDisplayPlaybackShortcut(target),
         isAvailable: () => canUsePlaybackKeyboardShortcut(target) && !view.isActionButtonBlocked(refs.btnStop),
         getActionLabel: () => 'Stop',
         execute: () => handleKeyboardPlaybackCommand('stop'),
@@ -304,6 +309,7 @@ function startApp() {
         keys: ['shift', 'space'],
         triggerKey: 'space',
         priority: 200,
+        isVisible: () => canDisplayPlaybackShortcut(target),
         isAvailable: () => canUsePlaybackKeyboardShortcut(target) && canFastForward() && !view.isActionButtonBlocked(refs.btnFastForward),
         getActionLabel: () => 'Fast forward',
         execute: () => handleKeyboardPlaybackCommand('fastForward'),
@@ -313,6 +319,7 @@ function startApp() {
         keys: ['space'],
         triggerKey: 'space',
         priority: 100,
+        isVisible: () => canDisplayPlaybackShortcut(target),
         isAvailable: () => {
           if (!canUsePlaybackKeyboardShortcut(target)) return false;
           return state.isPlaying && !state.isPaused
@@ -327,6 +334,7 @@ function startApp() {
         keys: ['escape'],
         triggerKey: 'escape',
         priority: 50,
+        isVisible: () => isCharacterSearchShortcutTarget(target),
         isAvailable: () => canClearCharacterSearchFromShortcut(target),
         getActionLabel: () => 'Clear search',
         execute: () => clearCharacterSearchFromShortcut(),
@@ -334,7 +342,7 @@ function startApp() {
     ];
   }
 
-  function getShortcutCandidate(target = document.activeElement) {
+  function getShortcutCandidate(target = document.activeElement, requireAvailability = true) {
     return getShortcutDefinitions(target)
       .map((shortcut) => {
         const matchedKeys = shortcut.keys.filter((key) => heldShortcutKeys.has(key));
@@ -344,7 +352,11 @@ function startApp() {
           isComplete: shortcut.keys.every((key) => heldShortcutKeys.has(key)),
         };
       })
-      .filter((entry) => entry.matchedKeys.length > 0 && entry.shortcut.isAvailable())
+      .filter((entry) => {
+        if (entry.matchedKeys.length === 0) return false;
+        if (!entry.shortcut.isVisible()) return false;
+        return requireAvailability ? entry.shortcut.isAvailable() : true;
+      })
       .sort((left, right) => {
         if (left.isComplete !== right.isComplete) {
           return Number(right.isComplete) - Number(left.isComplete);
@@ -377,7 +389,7 @@ function startApp() {
       return;
     }
 
-    const candidate = getShortcutCandidate(target);
+    const candidate = getShortcutCandidate(target, false);
     if (!candidate) {
       view.syncShortcutVisualizer();
       return;
