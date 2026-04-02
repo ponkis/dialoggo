@@ -2026,6 +2026,10 @@ function createAppView(model, audioService) {
       || refs.dialogueContainer?.classList.contains('active');
   }
 
+  function shouldAnimatePreviewContentExit() {
+    return refs.dialogueContainer?.classList.contains('active') === true;
+  }
+
   function syncPreviewPlaceholderState() {
     const suppressed = shouldSuppressPreviewPlaceholder();
     refs.previewArea?.classList.toggle('preview-placeholder-suppressed', suppressed);
@@ -2249,7 +2253,8 @@ function createAppView(model, audioService) {
     if (refs.panelWrapper) {
       refs.panelWrapper.style.transition = `height ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}`;
     }
-    refs.previewArea.classList.add('preview-strip-collapsed', 'preview-settings-muted', 'preview-content-hidden', 'preview-content-exiting');
+    refs.previewArea.classList.add('preview-strip-collapsed', 'preview-settings-muted', 'preview-content-hidden');
+    refs.previewArea.classList.toggle('preview-content-exiting', shouldAnimatePreviewContentExit());
     setPreviewPlaceholderSuppressed(true);
 
     requestAnimationFrame(() => {
@@ -2408,6 +2413,7 @@ function createAppView(model, audioService) {
     redrawSpriteForN64Toggle,
     computeExpandedPreviewHeight,
     setPreviewPlaceholderSuppressed,
+    shouldAnimatePreviewContentExit,
     setPreviewPlaceholderPanelIntent,
     syncPreviewPlaceholderState,
     setFrontPanel,

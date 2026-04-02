@@ -652,7 +652,8 @@ function startApp() {
         }
 
         if (large) {
-          refs.previewArea.classList.add('preview-settings-muted', 'preview-content-hidden', 'preview-content-exiting');
+          refs.previewArea.classList.add('preview-settings-muted', 'preview-content-hidden');
+          refs.previewArea.classList.toggle('preview-content-exiting', view.shouldAnimatePreviewContentExit());
           view.setPreviewPlaceholderSuppressed(true);
         } else if (!hasCollapsedPreviewFlow) {
           await view.collapsePreviewThenSettings();
