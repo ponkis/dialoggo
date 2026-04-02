@@ -171,16 +171,24 @@ function createAppView(model, audioService) {
         fragment.appendChild(plus);
       }
 
-      const keycap = document.createElement('span');
-      keycap.className = 'shortcut-keycap';
-      keycap.dataset.key = key;
+      const wrapper = document.createElement('span');
+      wrapper.className = 'shortcut-keycap';
+      wrapper.dataset.key = key;
+
+      const d3wrapper = document.createElement('span');
+      d3wrapper.className = 'shortcut-keycap-3dwrapper';
+
+      const cover = document.createElement('span');
+      cover.className = 'shortcut-keycap-cover';
 
       const label = document.createElement('span');
-      label.className = 'shortcut-keycap-label';
+      label.className = 'shortcut-keycap-button';
       label.textContent = shortcutKeyLabelMap.get(key) || key;
 
-      keycap.appendChild(label);
-      fragment.appendChild(keycap);
+      cover.appendChild(label);
+      d3wrapper.appendChild(cover);
+      wrapper.appendChild(d3wrapper);
+      fragment.appendChild(wrapper);
     });
 
     keysHost.replaceChildren(fragment);
