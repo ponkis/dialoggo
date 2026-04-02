@@ -777,13 +777,29 @@ function createAppView(model, audioService) {
         characterElements.forEach((characterElement, index) => {
           const characterText = characterElement.textContent || '';
           const emphasized = characterElement.classList.contains('dialogue-char-emphasis');
+          const italic = characterElement.classList.contains('dialogue-char-italic');
+          const strikethrough = characterElement.classList.contains('dialogue-char-strikethrough');
           const shakeSample = emphasized ? getDialogueShakeSample(elapsed, index, 1) : null;
           const shakeX = shakeSample ? shakeSample.x : 0;
           const shakeY = shakeSample ? shakeSample.y : 0;
 
+          if (italic) {
+            hiCtx.font = `italic ${font}`;
+          } else {
+            hiCtx.font = font;
+          }
+
           hiCtx.fillStyle = '#ffffff';
           hiCtx.fillText(characterText, x + shakeX, y + shakeY);
-          x += hiCtx.measureText(characterText).width + letterSpacing;
+          
+          const textWidth = hiCtx.measureText(characterText).width;
+
+          if (strikethrough) {
+            const lineY = y + shakeY + 16;
+            hiCtx.fillRect(x + shakeX, lineY, textWidth, 3);
+          }
+
+          x += textWidth + letterSpacing;
         });
       }
 
@@ -867,6 +883,14 @@ function createAppView(model, audioService) {
       characterSpan.style.setProperty('--dialogue-char-shake-duration', `${270 + ((index % 5) * 22)}ms`);
       characterSpan.style.setProperty('--dialogue-char-shake-delay', `${-180 - ((index % 7) * 85)}ms`);
       characterSpan.style.setProperty('--dialogue-char-shake-rotate', `${((index % 3) - 1) * 5}deg`);
+    }
+
+    if (character.italic && /\S/.test(character.value)) {
+      characterSpan.classList.add('dialogue-char-italic');
+    }
+
+    if (character.strikethrough && /\S/.test(character.value)) {
+      characterSpan.classList.add('dialogue-char-strikethrough');
     }
 
     return characterSpan;
@@ -967,17 +991,24 @@ function createAppView(model, audioService) {
     const source = String(value || '');
     const segments = [];
     let emphasis = false;
-    const pairedMarkerStarts = model.getPairedDialogueMarkerStarts(source);
+    let italic = false;
+    let strikethrough = false;
+    const pairedShakeStarts = model.getPairedDialogueMarkerStarts(source, '**');
+    const pairedItalicStarts = model.getPairedDialogueMarkerStarts(source, '_');
+    const pairedStrikeStarts = model.getPairedDialogueMarkerStarts(source, '~~');
     let runStart = 0;
 
     function pushRun(endIndex) {
       if (endIndex <= runStart) return;
-      const className = emphasis ? 'text-input-emphasis' : 'text-input-plain';
-      segments.push(`<span class="${className}">${escapeHtml(source.slice(runStart, endIndex))}</span>`);
+      const classes = ['text-input-plain'];
+      if (emphasis) classes.push('text-input-emphasis');
+      if (italic) classes.push('text-input-italic');
+      if (strikethrough) classes.push('text-input-strikethrough');
+      segments.push(`<span class="${classes.join(' ')}">${escapeHtml(source.slice(runStart, endIndex))}</span>`);
     }
 
     for (let index = 0; index < source.length; index += 1) {
-      if (source.startsWith('**', index) && pairedMarkerStarts.has(index)) {
+      if (source.startsWith('**', index) && pairedShakeStarts.has(index)) {
         pushRun(index);
         segments.push('<span class="text-input-modifier">**</span>');
         emphasis = !emphasis;
@@ -986,11 +1017,35 @@ function createAppView(model, audioService) {
         continue;
       }
 
-      if (source.startsWith('**', index)) {
+      if (source.startsWith('~~', index) && pairedStrikeStarts.has(index)) {
+        pushRun(index);
+        segments.push('<span class="text-input-modifier text-input-modifier-strike">~~</span>');
+        strikethrough = !strikethrough;
+        runStart = index + 2;
+        index += 1;
+        continue;
+      }
+
+      if (source.startsWith('_', index) && pairedItalicStarts.has(index)) {
+        pushRun(index);
+        segments.push('<span class="text-input-modifier text-input-modifier-italic">_</span>');
+        italic = !italic;
+        runStart = index + 1;
+        continue;
+      }
+
+      if (source.startsWith('**', index) || source.startsWith('~~', index)) {
         pushRun(index);
         segments.push(`<span class="text-input-plain">${escapeHtml(source.slice(index, index + 2))}</span>`);
         runStart = index + 2;
         index += 1;
+        continue;
+      }
+
+      if (source.startsWith('_', index)) {
+        pushRun(index);
+        segments.push(`<span class="text-input-plain">${escapeHtml(source.slice(index, index + 1))}</span>`);
+        runStart = index + 1;
         continue;
       }
     }

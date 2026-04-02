@@ -22,6 +22,8 @@ const PREVIEW_COLLAPSE_MS = 420;
 const FLIP_CARD_MS = 600;
 const PREVIEW_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const DIALOGUE_SHAKE_MARKER = '**';
+const DIALOGUE_ITALIC_MARKER = '_';
+const DIALOGUE_STRIKE_MARKER = '~~';
 
 const storageKeys = {
   n64Mode: 'dialoggo-n64-mode',
@@ -445,10 +447,12 @@ function normalizeCharacterSearch(value) {
     .replace(/[^a-z0-9]+/g, '');
 }
 
-function createDialogueCharacter(value, emphasis = false) {
+function createDialogueCharacter(value, emphasis = false, italic = false, strikethrough = false) {
   return {
     value,
     emphasis,
+    italic,
+    strikethrough,
   };
 }
 
@@ -459,14 +463,14 @@ function createLineFromCharacters(characters) {
   };
 }
 
-function getPairedDialogueMarkerStarts(text) {
+function getPairedDialogueMarkerStarts(text, marker) {
   const source = String(text || '');
   const markerStarts = [];
 
   for (let index = 0; index < source.length; index += 1) {
-    if (!source.startsWith(DIALOGUE_SHAKE_MARKER, index)) continue;
+    if (!source.startsWith(marker, index)) continue;
     markerStarts.push(index);
-    index += DIALOGUE_SHAKE_MARKER.length - 1;
+    index += marker.length - 1;
   }
 
   if (markerStarts.length < 2) return new Set();
@@ -475,19 +479,39 @@ function getPairedDialogueMarkerStarts(text) {
 }
 
 function parseDialogueMarkup(text) {
+  // Use original casing to preserve _text_ vs upper but we actually UpperCase later?
+  // Wait, original logic: const source = String(text || '').toUpperCase();
+  // _ and ~~ are fine with uppercase.
   const source = String(text || '').toUpperCase();
   const characters = [];
   let emphasis = false;
-  const pairedMarkerStarts = getPairedDialogueMarkerStarts(source);
+  let italic = false;
+  let strikethrough = false;
+  
+  const pairedShakeStarts = getPairedDialogueMarkerStarts(source, DIALOGUE_SHAKE_MARKER);
+  const pairedItalicStarts = getPairedDialogueMarkerStarts(source, DIALOGUE_ITALIC_MARKER);
+  const pairedStrikeStarts = getPairedDialogueMarkerStarts(source, DIALOGUE_STRIKE_MARKER);
 
   for (let index = 0; index < source.length; index += 1) {
-    if (source.startsWith(DIALOGUE_SHAKE_MARKER, index) && pairedMarkerStarts.has(index)) {
+    if (source.startsWith(DIALOGUE_SHAKE_MARKER, index) && pairedShakeStarts.has(index)) {
       emphasis = !emphasis;
       index += DIALOGUE_SHAKE_MARKER.length - 1;
       continue;
     }
 
-    characters.push(createDialogueCharacter(source[index], emphasis));
+    if (source.startsWith(DIALOGUE_STRIKE_MARKER, index) && pairedStrikeStarts.has(index)) {
+      strikethrough = !strikethrough;
+      index += DIALOGUE_STRIKE_MARKER.length - 1;
+      continue;
+    }
+
+    if (source.startsWith(DIALOGUE_ITALIC_MARKER, index) && pairedItalicStarts.has(index)) {
+      italic = !italic;
+      index += DIALOGUE_ITALIC_MARKER.length - 1;
+      continue;
+    }
+
+    characters.push(createDialogueCharacter(source[index], emphasis, italic, strikethrough));
   }
 
   return characters;

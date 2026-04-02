@@ -1091,7 +1091,6 @@ img {
 .dialogue-text .line {
   display: block;
   white-space: nowrap;
-  overflow: hidden;
   height: 33px;
 }
 
@@ -2894,8 +2893,45 @@ img {
     0 0 0.7px rgba(159, 216, 255, 0.55);
 }
 
+.text-input-italic {
+  color: #ffda79;
+  font-style: italic;
+}
+
+.text-input-strikethrough {
+  color: #ff7675;
+  text-decoration: line-through;
+}
+
 .text-input-modifier {
   color: rgba(159, 216, 255, 0.38);
+}
+
+.text-input-modifier.text-input-modifier-italic {
+  color: rgba(255, 218, 121, 0.38);
+}
+
+.text-input-modifier.text-input-modifier-strike {
+  color: rgba(255, 118, 117, 0.38);
+}
+
+.dialogue-char-italic {
+  font-style: italic;
+}
+
+.dialogue-char-strikethrough {
+  position: relative;
+}
+
+.dialogue-char-strikethrough::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: currentColor;
+  transform: translateY(-50%);
 }
 
 .text-input-trailing-space {
