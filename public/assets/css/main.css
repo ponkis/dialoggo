@@ -784,7 +784,7 @@ img {
 }
 
 .background-banner.active {
-  animation: banner-reveal 4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  animation: banner-reveal 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
 .background-banner-title {
@@ -812,10 +812,25 @@ img {
 }
 
 @keyframes banner-reveal {
-  0% { opacity: 0; transform: translate(-50%, -46%) scale(0.9); }
-  6% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  85% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -54%) scale(1.05); }
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+
+  10% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  72% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
 }
 
 .preview-placeholder span {
