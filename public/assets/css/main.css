@@ -358,6 +358,120 @@ img {
   flex-direction: column;
   height: calc(100vh - var(--bar-height));
   margin-top: var(--bar-height);
+  position: relative;
+}
+
+.shortcut-visualizer {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  z-index: 25;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translate3d(0, -10px, 0) scale(0.96);
+  transition:
+    opacity 0.18s ease,
+    transform 0.26s var(--ease-out),
+    visibility 0s linear 0.18s;
+}
+
+.shortcut-visualizer.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition:
+    opacity 0.16s ease,
+    transform 0.22s var(--ease-out),
+    visibility 0s linear 0s;
+}
+
+.shortcut-visualizer-shell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  max-width: min(420px, calc(100vw - 32px));
+}
+
+.shortcut-visualizer-keys {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.shortcut-visualizer-plus {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(242, 242, 242, 0.48);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.42);
+}
+
+.shortcut-keycap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 34px;
+  padding: 0 10px 5px;
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, rgba(20, 20, 20, 0.98) 0%, rgba(6, 6, 6, 0.98) 100%);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.85),
+    0 10px 16px rgba(0, 0, 0, 0.22);
+  transform: perspective(160px) rotateX(14deg);
+}
+
+.shortcut-keycap::before {
+  content: '';
+  position: absolute;
+  inset: 4px 3px 7px;
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(245, 245, 245, 0.95) 0%, rgba(201, 201, 201, 0.96) 100%);
+  border-bottom: 2px solid rgba(90, 90, 90, 0.95);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 4px 0 rgba(74, 74, 74, 0.9);
+}
+
+.shortcut-keycap-label {
+  position: relative;
+  z-index: 1;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(16, 16, 16, 0.82);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
+  white-space: nowrap;
+}
+
+.shortcut-keycap[data-key="space"] {
+  min-width: 78px;
+}
+
+.shortcut-visualizer-action {
+  max-width: 180px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 244, 224, 0.88);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.65),
+    0 0 12px rgba(0, 0, 0, 0.22);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Preview Area */
@@ -570,6 +684,12 @@ img {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .shortcut-visualizer,
+  .shortcut-visualizer.visible {
+    transition: none;
+    transform: none;
+  }
+
   .preview-area::before {
     animation: none;
   }
@@ -1898,6 +2018,36 @@ img {
 /* Featured card — horizontal layout doesn't need grid-column span */
 
 @media (max-width: 720px) {
+  .shortcut-visualizer {
+    top: 10px;
+    right: 12px;
+  }
+
+  .shortcut-visualizer-shell {
+    gap: 9px;
+    max-width: min(320px, calc(100vw - 24px));
+  }
+
+  .shortcut-visualizer-keys {
+    gap: 5px;
+  }
+
+  .shortcut-keycap {
+    min-width: 38px;
+    height: 31px;
+    padding: 0 8px 4px;
+  }
+
+  .shortcut-keycap[data-key="space"] {
+    min-width: 68px;
+  }
+
+  .shortcut-keycap-label,
+  .shortcut-visualizer-action,
+  .shortcut-visualizer-plus {
+    font-size: 10px;
+  }
+
   .backgrounds-body {
     padding: 12px 12px 16px;
     flex-direction: column;

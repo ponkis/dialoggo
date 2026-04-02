@@ -55,8 +55,12 @@ function createAppView(model, audioService) {
     sleeveGuide: document.getElementById('sleeve-tab-guide'),
     sleeveCharacter: document.getElementById('sleeve-tab-character'),
     sleeveSettings: document.getElementById('sleeve-tab-settings'),
+    shortcutVisualizer: document.getElementById('shortcut-visualizer'),
+    shortcutVisualizerKeys: document.getElementById('shortcut-visualizer-keys'),
+    shortcutVisualizerAction: document.getElementById('shortcut-visualizer-action'),
     inputMirrored: document.getElementById('input-mirrored-dialogue'),
     inputN64: document.getElementById('input-n64-mode'),
+    inputShortcutVisualizer: document.getElementById('input-shortcut-visualizer'),
     inputHideBroken: document.getElementById('input-hide-broken-chars'),
     inputHideBrokenBackgrounds: document.getElementById('input-hide-broken-backgrounds'),
   };
@@ -93,6 +97,18 @@ function createAppView(model, audioService) {
   ];
 
   const _truncCtx = document.createElement('canvas').getContext('2d');
+  const shortcutKeyLabelMap = new Map([
+    ['ctrl', 'Ctrl'],
+    ['shift', 'Shift'],
+    ['space', 'Space'],
+    ['escape', 'Esc'],
+  ]);
+  const shortcutKeyOrder = new Map([
+    ['ctrl', 0],
+    ['shift', 1],
+    ['space', 2],
+    ['escape', 3],
+  ]);
 
   function truncateTextToFit(text, maxWidth, fontStyle = '800 9px Outfit', letterSpacing = 0.65) {
     if (!text) return text;
@@ -114,6 +130,66 @@ function createAppView(model, audioService) {
     }
 
     return text;
+  }
+
+  function syncShortcutVisualizer({
+    visible = false,
+    keys = [],
+    action = '',
+  } = {}) {
+    const root = refs.shortcutVisualizer;
+    const keysHost = refs.shortcutVisualizerKeys;
+    const actionHost = refs.shortcutVisualizerAction;
+    if (!root || !keysHost || !actionHost) return;
+
+    const normalizedKeys = Array.from(new Set(
+      (Array.isArray(keys) ? keys : [])
+        .map((key) => String(key || '').toLowerCase())
+        .filter((key) => shortcutKeyLabelMap.has(key)),
+    )).sort((left, right) => {
+      const leftOrder = shortcutKeyOrder.has(left) ? shortcutKeyOrder.get(left) : Number.MAX_SAFE_INTEGER;
+      const rightOrder = shortcutKeyOrder.has(right) ? shortcutKeyOrder.get(right) : Number.MAX_SAFE_INTEGER;
+      return leftOrder - rightOrder;
+    });
+
+    if (!visible || normalizedKeys.length === 0) {
+      keysHost.replaceChildren();
+      actionHost.textContent = '';
+      actionHost.hidden = true;
+      root.classList.remove('visible');
+      root.setAttribute('aria-hidden', 'true');
+      return;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    normalizedKeys.forEach((key, index) => {
+      if (index > 0) {
+        const plus = document.createElement('span');
+        plus.className = 'shortcut-visualizer-plus';
+        plus.textContent = '+';
+        fragment.appendChild(plus);
+      }
+
+      const keycap = document.createElement('span');
+      keycap.className = 'shortcut-keycap';
+      keycap.dataset.key = key;
+
+      const label = document.createElement('span');
+      label.className = 'shortcut-keycap-label';
+      label.textContent = shortcutKeyLabelMap.get(key) || key;
+
+      keycap.appendChild(label);
+      fragment.appendChild(keycap);
+    });
+
+    keysHost.replaceChildren(fragment);
+
+    const trimmedAction = String(action || '').trim();
+    actionHost.textContent = trimmedAction;
+    actionHost.hidden = trimmedAction.length === 0;
+    root.classList.add('visible');
+    root.setAttribute('aria-hidden', 'false');
   }
 
   function getDialogueShakeSample(elapsed, index, scale = 1) {
@@ -2371,6 +2447,7 @@ function createAppView(model, audioService) {
   window.addEventListener('resize', syncBackgroundPackVerticalAlignment);
   syncDialogueInputHighlightMetrics();
   syncPreviewPlaceholderState();
+  syncShortcutVisualizer();
 
   return {
     refs,
@@ -2392,6 +2469,7 @@ function createAppView(model, audioService) {
     syncDialogueInputHighlightScroll,
     syncDialogueInputCounter,
     syncCharacterSearchClearButton,
+    syncShortcutVisualizer,
     updateFastForwardAvailability,
     applyCharacterFilters,
     applyBackgroundFilters,

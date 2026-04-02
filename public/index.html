@@ -37,6 +37,12 @@
   </div>
   <!-- App -->
   <div class="app">
+    <div class="shortcut-visualizer" id="shortcut-visualizer" aria-hidden="true">
+      <div class="shortcut-visualizer-shell">
+        <div class="shortcut-visualizer-keys" id="shortcut-visualizer-keys"></div>
+        <span class="shortcut-visualizer-action" id="shortcut-visualizer-action"></span>
+      </div>
+    </div>
     <!-- Preview Area -->
     <div class="preview-area" id="preview-area">
       <div class="preview-background-stack" aria-hidden="true">
@@ -287,6 +293,24 @@
                 <section class="settings-category" aria-labelledby="settings-cat-misc">
                   <div class="settings-stitch settings-stitch--under-title" aria-hidden="true"></div>
                   <div class="settings-category-body">
+                    <div class="setting-row" role="group" aria-label="Shortcut visualizer">
+                      <div class="setting-info">
+                        <span class="setting-label">Shortcut visualizer</span>
+                        <span class="setting-desc">Shows active shortcut keys and the triggered action as a small overlay.</span>
+                      </div>
+                      <div class="uiverse-rocker-host" title="Shortcut visualizer">
+                        <label class="uiverse-rocker-switch" id="switch-shortcut-visualizer">
+                          <input type="checkbox" id="input-shortcut-visualizer" aria-label="Shortcut visualizer">
+                          <div class="uiverse-switch-button">
+                            <div class="uiverse-light"></div>
+                            <div class="uiverse-dots"></div>
+                            <div class="uiverse-characters"></div>
+                            <div class="uiverse-shine"></div>
+                            <div class="uiverse-shadow"></div>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
                     <div class="setting-row" role="group" aria-label="Hide broken characters">
                       <div class="setting-info">
                         <span class="setting-label">Hide broken characters</span>

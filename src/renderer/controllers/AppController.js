@@ -29,7 +29,13 @@ function startApp() {
   const spriteRenderer = view.spriteRenderer;
   const speechLoop = audioService.createSpeechLoop(spriteRenderer);
   const pauseChars = new Set(['.', ',', '!', '?', ':', ';']);
+  const heldShortcutKeys = new Set();
+  const keyboardModifierState = {
+    alt: false,
+    meta: false,
+  };
   let dialogueClosePromise = null;
+  let lastExecutedShortcut = null;
 
   function canFastForward() {
     return state.isPlaying && !state.isPaused && !state.stopRequested;
@@ -79,6 +85,7 @@ function startApp() {
     syncCharacterButtonAvailability();
     updateFastForwardAvailability();
     updateSettingsSleeveBlockedState();
+    syncShortcutVisualizerOverlay();
   }
 
   function updatePlayButton() {
@@ -228,6 +235,205 @@ function startApp() {
     blurPlaybackButtonFocus();
     void playDialogue();
     return true;
+  }
+
+  function getCanonicalShortcutKey(code) {
+    switch (code) {
+      case 'ControlLeft':
+      case 'ControlRight':
+        return 'ctrl';
+      case 'ShiftLeft':
+      case 'ShiftRight':
+        return 'shift';
+      case 'Space':
+        return 'space';
+      case 'Escape':
+        return 'escape';
+      default:
+        return null;
+    }
+  }
+
+  function syncKeyboardModifierState(event) {
+    keyboardModifierState.alt = event.altKey === true;
+    keyboardModifierState.meta = event.metaKey === true;
+  }
+
+  function getPlaybackToggleActionLabel() {
+    if (state.isPlaying && !state.isPaused) return 'Pause';
+    if (state.isPaused) return 'Resume';
+    return 'Play';
+  }
+
+  function canUsePlaybackKeyboardShortcut(target) {
+    return !shouldIgnorePlaybackShortcut(target) && !keyboardModifierState.alt && !keyboardModifierState.meta;
+  }
+
+  function isCharacterSearchShortcutTarget(target) {
+    const activeTarget = target instanceof Element ? target : document.activeElement;
+    return !!refs.characterSearchInput && activeTarget === refs.characterSearchInput;
+  }
+
+  function canClearCharacterSearchFromShortcut(target) {
+    return isCharacterSearchShortcutTarget(target) && refs.characterSearchInput.value.length > 0;
+  }
+
+  function clearCharacterSearchFromShortcut() {
+    if (!refs.characterSearchInput || refs.characterSearchInput.value.length === 0) return false;
+    refs.characterSearchInput.value = '';
+    view.syncCharacterSearchClearButton();
+    view.applyCharacterFilters({
+      resetScroll: true,
+    });
+    return true;
+  }
+
+  function getShortcutDefinitions(target = document.activeElement) {
+    return [
+      {
+        id: 'playback-stop',
+        keys: ['ctrl', 'space'],
+        triggerKey: 'space',
+        priority: 300,
+        isAvailable: () => canUsePlaybackKeyboardShortcut(target) && !view.isActionButtonBlocked(refs.btnStop),
+        getActionLabel: () => 'Stop',
+        execute: () => handleKeyboardPlaybackCommand('stop'),
+      },
+      {
+        id: 'playback-fast-forward',
+        keys: ['shift', 'space'],
+        triggerKey: 'space',
+        priority: 200,
+        isAvailable: () => canUsePlaybackKeyboardShortcut(target) && canFastForward() && !view.isActionButtonBlocked(refs.btnFastForward),
+        getActionLabel: () => 'Fast forward',
+        execute: () => handleKeyboardPlaybackCommand('fastForward'),
+      },
+      {
+        id: 'playback-toggle',
+        keys: ['space'],
+        triggerKey: 'space',
+        priority: 100,
+        isAvailable: () => {
+          if (!canUsePlaybackKeyboardShortcut(target)) return false;
+          return state.isPlaying && !state.isPaused
+            ? !view.isActionButtonBlocked(refs.btnPause)
+            : !view.isActionButtonBlocked(refs.btnPlay);
+        },
+        getActionLabel: () => getPlaybackToggleActionLabel(),
+        execute: () => handleKeyboardPlaybackCommand('togglePlayPause'),
+      },
+      {
+        id: 'search-clear',
+        keys: ['escape'],
+        triggerKey: 'escape',
+        priority: 50,
+        isAvailable: () => canClearCharacterSearchFromShortcut(target),
+        getActionLabel: () => 'Clear search',
+        execute: () => clearCharacterSearchFromShortcut(),
+      },
+    ];
+  }
+
+  function getShortcutCandidate(target = document.activeElement) {
+    return getShortcutDefinitions(target)
+      .map((shortcut) => {
+        const matchedKeys = shortcut.keys.filter((key) => heldShortcutKeys.has(key));
+        return {
+          shortcut,
+          matchedKeys,
+          isComplete: shortcut.keys.every((key) => heldShortcutKeys.has(key)),
+        };
+      })
+      .filter((entry) => entry.matchedKeys.length > 0 && entry.shortcut.isAvailable())
+      .sort((left, right) => {
+        if (left.isComplete !== right.isComplete) {
+          return Number(right.isComplete) - Number(left.isComplete);
+        }
+
+        if (left.matchedKeys.length !== right.matchedKeys.length) {
+          return right.matchedKeys.length - left.matchedKeys.length;
+        }
+
+        return right.shortcut.priority - left.shortcut.priority;
+      })[0] || null;
+  }
+
+  function syncShortcutVisualizerOverlay(target = document.activeElement) {
+    if (!state.shortcutVisualizerEnabled) {
+      view.syncShortcutVisualizer();
+      return;
+    }
+
+    if (lastExecutedShortcut && !lastExecutedShortcut.keys.every((key) => heldShortcutKeys.has(key))) {
+      lastExecutedShortcut = null;
+    }
+
+    if (lastExecutedShortcut) {
+      view.syncShortcutVisualizer({
+        visible: true,
+        keys: lastExecutedShortcut.keys,
+        action: lastExecutedShortcut.label,
+      });
+      return;
+    }
+
+    const candidate = getShortcutCandidate(target);
+    if (!candidate) {
+      view.syncShortcutVisualizer();
+      return;
+    }
+
+    view.syncShortcutVisualizer({
+      visible: true,
+      keys: candidate.matchedKeys,
+      action: '',
+    });
+  }
+
+  function resetShortcutVisualizerState() {
+    heldShortcutKeys.clear();
+    keyboardModifierState.alt = false;
+    keyboardModifierState.meta = false;
+    lastExecutedShortcut = null;
+    view.syncShortcutVisualizer();
+  }
+
+  function handleShortcutKeydown(event) {
+    syncKeyboardModifierState(event);
+
+    const key = getCanonicalShortcutKey(event.code);
+    if (key) heldShortcutKeys.add(key);
+
+    const candidate = getShortcutCandidate(event.target);
+    if (candidate?.isComplete && candidate.shortcut.triggerKey === key && !event.repeat) {
+      event.preventDefault();
+      const actionLabel = candidate.shortcut.getActionLabel();
+      const executed = candidate.shortcut.execute();
+
+      if (executed) {
+        lastExecutedShortcut = {
+          id: candidate.shortcut.id,
+          keys: [...candidate.shortcut.keys],
+          label: actionLabel,
+        };
+      }
+    }
+
+    syncShortcutVisualizerOverlay(event.target);
+  }
+
+  function handleShortcutKeyup(event) {
+    syncKeyboardModifierState(event);
+
+    const key = getCanonicalShortcutKey(event.code);
+    if (key) heldShortcutKeys.delete(key);
+
+    if (event.code === 'Space') {
+      state.fastForwardKeyHeld = false;
+      syncFastForwardState();
+    }
+
+    syncShortcutVisualizerOverlay(event.target);
   }
 
   function waitWhilePaused() {
@@ -734,6 +940,23 @@ function startApp() {
     view.syncN64ClassOnDialogueBox();
   }
 
+  function initShortcutVisualizerFromStorage() {
+    if (!refs.inputShortcutVisualizer) return;
+
+    let enabled = true;
+
+    try {
+      const saved = localStorage.getItem(storageKeys.shortcutVisualizerEnabled);
+      if (saved !== null) {
+        enabled = saved === 'true';
+      }
+    } catch { }
+
+    state.shortcutVisualizerEnabled = enabled;
+    refs.inputShortcutVisualizer.checked = enabled;
+    syncShortcutVisualizerOverlay();
+  }
+
   function persistSelectedBackground() {
     try {
       if (state.selectedBackground?.id) {
@@ -890,37 +1113,13 @@ function startApp() {
     });
   });
 
-  window.addEventListener('keydown', (event) => {
-    if (event.code !== 'Space' || shouldIgnorePlaybackShortcut(event.target) || event.altKey || event.metaKey) return;
+  window.addEventListener('keydown', handleShortcutKeydown, true);
 
-    if (event.ctrlKey) {
-      if (event.repeat) return;
-      event.preventDefault();
-      handleKeyboardPlaybackCommand('stop');
-      return;
-    }
-
-    if (event.shiftKey) {
-      if (event.repeat) return;
-      event.preventDefault();
-      handleKeyboardPlaybackCommand('fastForward');
-      return;
-    }
-
-    if (event.repeat) return;
-
-    event.preventDefault();
-    handleKeyboardPlaybackCommand('togglePlayPause');
-  }, true);
-
-  window.addEventListener('keyup', (event) => {
-    if (event.code !== 'Space') return;
-    state.fastForwardKeyHeld = false;
-    syncFastForwardState();
-  }, true);
+  window.addEventListener('keyup', handleShortcutKeyup, true);
 
   window.addEventListener('blur', () => {
     resetFastForwardState();
+    resetShortcutVisualizerState();
   });
 
   const REEL_TAP_STEP = 160;
@@ -1071,16 +1270,7 @@ function startApp() {
     view.applyCharacterFilters({
       resetScroll: true
     });
-  });
-
-  refs.characterSearchInput?.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape' || !refs.characterSearchInput.value) return;
-    event.preventDefault();
-    refs.characterSearchInput.value = '';
-    view.syncCharacterSearchClearButton();
-    view.applyCharacterFilters({
-      resetScroll: true
-    });
+    syncShortcutVisualizerOverlay(refs.characterSearchInput);
   });
 
   refs.characterSearchClear?.addEventListener('click', () => {
@@ -1091,6 +1281,7 @@ function startApp() {
       resetScroll: true
     });
     refs.characterSearchInput.focus();
+    syncShortcutVisualizerOverlay(refs.characterSearchInput);
   });
 
   refs.sleeveSettings.addEventListener('click', () => {
@@ -1139,6 +1330,21 @@ function startApp() {
     audioService.playMenuSound('click');
   });
 
+  refs.inputShortcutVisualizer?.addEventListener('change', () => {
+    state.shortcutVisualizerEnabled = refs.inputShortcutVisualizer.checked;
+    try {
+      localStorage.setItem(storageKeys.shortcutVisualizerEnabled, String(state.shortcutVisualizerEnabled));
+    } catch { }
+
+    if (!state.shortcutVisualizerEnabled) {
+      resetShortcutVisualizerState();
+    } else {
+      syncShortcutVisualizerOverlay();
+    }
+
+    audioService.playMenuSound('click');
+  });
+
   refs.inputHideBroken?.addEventListener('change', () => {
     state.hideBrokenChars = refs.inputHideBroken.checked;
     try {
@@ -1168,6 +1374,7 @@ function startApp() {
     selectBackground(background);
   });
   requestAnimationFrame(view.updateReelArrows);
+  initShortcutVisualizerFromStorage();
   syncPlaybackUiState();
   initN64ModeFromDom();
   initSelectedBackgroundFromStorage();

@@ -26,6 +26,7 @@ const DIALOGUE_SHAKE_MARKER = '**';
 const storageKeys = {
   n64Mode: 'dialoggo-n64-mode',
   mirrorMode: 'dialoggo-mirror-mode',
+  shortcutVisualizerEnabled: 'dialoggo-shortcut-visualizer-enabled',
   hideBrokenChars: 'dialoggo-hide-broken-chars',
   hideBrokenBackgrounds: 'dialoggo-hide-broken-backgrounds',
   selectedBackground: 'dialoggo-selected-background',
@@ -754,6 +755,7 @@ function createAppModel() {
       fastForwardButtonHeld: false,
       dialogueMirrored: false,
       n64ModeEnabled: false,
+      shortcutVisualizerEnabled: true,
       hideBrokenChars: false,
       hideBrokenBackgrounds: false,
       frontPanel: 'controls',
