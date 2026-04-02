@@ -4,7 +4,6 @@
                   },
     "sound":  {
         "pitch":  -1,
-                  "hasVariablePitch":  true,
-                    "canStretch":  true
+                  "hasVariablePitch":  true
               }
 }

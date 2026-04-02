@@ -5,6 +5,7 @@
     "sound":  {
                   "hasVariablePitch":  true,
                   "pitch":  5,
-                  "canStretch":  false
+                  "canStretch":  false,
+                  "skipFrequency": 0
               }
 }
