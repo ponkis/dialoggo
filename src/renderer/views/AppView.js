@@ -2003,6 +2003,19 @@ function createAppView(model, audioService) {
     return Math.max(120, refs.app.clientHeight - refs.bottombar.offsetHeight - panelHeight);
   }
 
+  function resetPanelWrapperInlineStyles() {
+    if (!refs.panelWrapper) return;
+
+    refs.panelWrapper.style.height = '';
+    refs.panelWrapper.style.flex = '';
+    refs.panelWrapper.style.minHeight = '';
+    refs.panelWrapper.style.overflow = '';
+    refs.panelWrapper.style.transition = '';
+    if (refs.flipCard) {
+      refs.flipCard.style.overflow = '';
+    }
+  }
+
   function getPreviewPlaceholderPanelState() {
     return previewPlaceholderPanelIntent || state.activePanel || 'controls';
   }
@@ -2208,21 +2221,46 @@ function createAppView(model, audioService) {
 
   async function collapsePreviewThenSettings() {
     const height = Math.round(refs.previewArea.getBoundingClientRect().height);
+    const panelHeight = Math.round(refs.panelWrapper?.getBoundingClientRect().height ?? 0);
+    const targetPanelHeight = refs.app && refs.bottombar
+      ? Math.max(panelHeight, refs.app.clientHeight - refs.bottombar.offsetHeight - constants.PREVIEW_STRIP_HEIGHT)
+      : panelHeight;
+
     refs.previewArea.style.flex = '0 0 auto';
     refs.previewArea.style.minHeight = '0';
     refs.previewArea.style.height = `${height}px`;
     refs.previewArea.style.overflow = 'hidden';
+
+    if (refs.panelWrapper) {
+      refs.panelWrapper.style.flex = '0 0 auto';
+      refs.panelWrapper.style.minHeight = '0';
+      refs.panelWrapper.style.height = `${panelHeight}px`;
+      refs.panelWrapper.style.overflow = 'visible';
+    }
+
+    if (refs.flipCard) {
+      refs.flipCard.style.overflow = 'hidden';
+    }
+
+    refs.app?.classList.add('settings-panel-open');
     void refs.previewArea.offsetHeight;
 
     refs.previewArea.style.transition = `height ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}, filter ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}`;
+    if (refs.panelWrapper) {
+      refs.panelWrapper.style.transition = `height ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}`;
+    }
     refs.previewArea.classList.add('preview-strip-collapsed', 'preview-settings-muted', 'preview-content-hidden', 'preview-content-exiting');
     setPreviewPlaceholderSuppressed(true);
 
     requestAnimationFrame(() => {
       refs.previewArea.style.height = `${constants.PREVIEW_STRIP_HEIGHT}px`;
+      if (refs.panelWrapper) {
+        refs.panelWrapper.style.height = `${targetPanelHeight}px`;
+      }
     });
 
     await model.sleep(constants.PREVIEW_COLLAPSE_MS + 40);
+    resetPanelWrapperInlineStyles();
   }
 
   async function expandPreviewAfterControls(options = {}) {
@@ -2259,6 +2297,7 @@ function createAppView(model, audioService) {
     refs.previewArea.style.transition = '';
     refs.app?.classList.remove('settings-panel-open');
     if (refs.panelWrapper) delete refs.panelWrapper.dataset.naturalPanelHeight;
+    resetPanelWrapperInlineStyles();
 
     if (revealPlaceholderOnly && refs.previewAreaContent) {
       void refs.previewAreaContent.offsetWidth;
@@ -2307,6 +2346,7 @@ function createAppView(model, audioService) {
     refs.previewArea.style.transition = '';
     refs.app?.classList.remove('settings-panel-open');
     if (refs.panelWrapper) delete refs.panelWrapper.dataset.naturalPanelHeight;
+    resetPanelWrapperInlineStyles();
     syncSettingsLayoutMode('controls');
     syncPreviewPlaceholderState();
   }

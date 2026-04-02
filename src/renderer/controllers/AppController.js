@@ -655,7 +655,6 @@ function startApp() {
           refs.previewArea.classList.add('preview-settings-muted', 'preview-content-hidden', 'preview-content-exiting');
           view.setPreviewPlaceholderSuppressed(true);
         } else if (!hasCollapsedPreviewFlow) {
-          refs.app?.classList.add('settings-panel-open');
           await view.collapsePreviewThenSettings();
         }
 
