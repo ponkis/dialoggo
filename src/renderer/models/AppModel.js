@@ -733,7 +733,7 @@ function getSpeechBurstProfile(bufferDuration, fastForward) {
   }
 
   const longness = getSpeechClipLongness(bufferDuration);
-  const startChance = clampNumber(0.16 + longness * 0.24 + (fastForward ? 0.09 : 0), 0.16, 0.42);
+  const startChance = clampNumber((0.16 + longness * 0.24 + (fastForward ? 0.09 : 0)) * 2, 0.32, 0.84);
   if (Math.random() >= startChance) {
     return {
       shouldStart: false,

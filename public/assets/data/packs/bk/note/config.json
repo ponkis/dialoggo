@@ -1,8 +1,5 @@
 {
     "character":  {
                       "name":  "Note"
-                  },
-    "sound":  {
-                  "hasVariablePitch":  true
-              }
+                  }
 }

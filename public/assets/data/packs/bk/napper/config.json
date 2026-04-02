@@ -3,6 +3,7 @@
                       "name":  "Napper"
                   },
     "sound":  {
+        "pitch":  -3,
                   "hasVariablePitch":  true
               }
 }
