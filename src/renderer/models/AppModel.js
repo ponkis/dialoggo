@@ -733,7 +733,7 @@ function getSpeechBurstProfile(bufferDuration, fastForward) {
   }
 
   const longness = getSpeechClipLongness(bufferDuration);
-  const startChance = clampNumber((0.16 + longness * 0.24 + (fastForward ? 0.09 : 0)) * 2, 0.32, 0.84);
+  const startChance = clampNumber((0.21 + longness * 0.28 + (fastForward ? 0.11 : 0)) * 2, 0.42, 0.94);
   if (Math.random() >= startChance) {
     return {
       shouldStart: false,
@@ -746,11 +746,11 @@ function getSpeechBurstProfile(bufferDuration, fastForward) {
   return {
     shouldStart: true,
     burstStrength: clampNumber(
-      0.6 + longness * 0.2 + Math.random() * 0.12 + (fastForward ? 0.05 : 0),
-      0.6,
+      0.68 + longness * 0.22 + Math.random() * 0.14 + (fastForward ? 0.06 : 0),
+      0.68,
       1,
     ),
-    clipCount: (fastForward ? 3 : 2) + Math.floor(Math.random() * 3),
+    clipCount: (fastForward ? 4 : 3) + Math.floor(Math.random() * 3),
     cooldownClips: Math.floor(Math.random() * 2),
   };
 }
@@ -759,19 +759,19 @@ function getSpeechCutTargetDuration(bufferDuration, fastForward, cadence = null)
   const longness = getSpeechClipLongness(bufferDuration);
   const burstStrength = clampNumber(Number(cadence?.burstStrength) || 0, 0, 1);
   const cutChance = clampNumber(
-    0.28 + longness * 0.52 + (fastForward ? 0.08 : 0) + burstStrength * 0.18,
-    0.28,
-    0.97,
+    0.38 + longness * 0.5 + (fastForward ? 0.1 : 0) + burstStrength * 0.22,
+    0.38,
+    0.985,
   );
   const shouldCut = Math.random() < cutChance;
 
   if (!shouldCut) {
     const fullRatioMin = clampNumber(
       (fastForward ?
-        0.82 - longness * 0.06 :
-        0.87 - longness * 0.07) - burstStrength * 0.14,
-      0.56,
-      0.96,
+        0.74 - longness * 0.08 :
+        0.8 - longness * 0.09) - burstStrength * 0.18,
+      0.46,
+      0.9,
     );
 
     return bufferDuration * (fullRatioMin + Math.random() * (1 - fullRatioMin));
@@ -779,17 +779,17 @@ function getSpeechCutTargetDuration(bufferDuration, fastForward, cadence = null)
 
   const minRatio = clampNumber(
     (fastForward ?
-      0.5 - longness * 0.14 :
-      0.58 - longness * 0.18) - burstStrength * 0.14,
-    0.22,
+      0.42 - longness * 0.16 :
+      0.5 - longness * 0.2) - burstStrength * 0.18,
+    0.18,
     0.82,
   );
   const maxRatio = clampNumber(
     (fastForward ?
-      0.76 - longness * 0.1 :
-      0.84 - longness * 0.12) - burstStrength * 0.16,
+      0.64 - longness * 0.12 :
+      0.74 - longness * 0.14) - burstStrength * 0.2,
     minRatio + 0.08,
-    0.9,
+    0.84,
   );
   const ratio = minRatio + Math.random() * (maxRatio - minRatio);
 
