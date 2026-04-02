@@ -4,6 +4,7 @@
                   },
     "sound":  {
                   "pitch":  -3,
-                  "canStretch":  true
+                  "canStretch":  true,
+                  "skipFrequency": 0
               }
 }

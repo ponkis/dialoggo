@@ -1,5 +1,9 @@
 {
     "character":  {
                       "name":  "Kazooie"
-                  }
+                  },
+    "sound":  {
+                  "pitch":  1.5,
+                  "hasVariablePitch":  true
+              }
 }

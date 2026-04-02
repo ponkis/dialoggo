@@ -1,5 +1,9 @@
 {
     "character":  {
                       "name":  "Little Lockup"
-                  }
+                  },
+    "sound":  {
+                  "pitch":  1.5,
+                  "skipFrequency":  0.5
+              }
 }

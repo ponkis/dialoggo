@@ -1,5 +1,10 @@
 {
     "character":  {
                       "name":  "Boss Boom Box"
-                  }
+                  },
+    "sound":  {
+                  "pitch":  -4.5,
+                  "hasVariablePitch":  true,
+                  "canStretch":  false
+              }
 }

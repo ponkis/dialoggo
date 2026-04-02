@@ -1,5 +1,10 @@
 {
     "character":  {
                       "name":  "Loggo"
-                  }
+                  },
+    "sound":  {
+        "pitch":  -1,
+                  "hasVariablePitch":  true,
+                  "canStretch":  false
+              }
 }

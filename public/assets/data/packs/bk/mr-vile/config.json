@@ -1,5 +1,8 @@
 {
     "character":  {
                       "name":  "Mr Vile"
-                  }
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
 }

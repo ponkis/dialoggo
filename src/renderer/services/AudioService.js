@@ -327,7 +327,7 @@ function createAudioService(model) {
         return null;
       }
 
-      const burstProfile = model.getSpeechBurstProfile(bufferDuration, this.fastForward);
+      const burstProfile = model.getSpeechBurstProfile(bufferDuration, this.fastForward, this.character);
       if (!burstProfile.shouldStart) return null;
 
       this._burstClipsRemaining = burstProfile.clipCount;
@@ -357,7 +357,12 @@ function createAudioService(model) {
           if (this.paused) continue;
 
           const cadence = this._getSpeechCadence(buffer.duration);
-          const targetDuration = model.getSpeechCutTargetDuration(buffer.duration, this.fastForward, cadence);
+          const targetDuration = model.getSpeechCutTargetDuration(
+            buffer.duration,
+            this.fastForward,
+            cadence,
+            this.character,
+          );
           const playbackConfig = model.getCharacterPlaybackConfig(
             buffer.duration,
             this.character,

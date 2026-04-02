@@ -3,6 +3,7 @@
                       "name":  "Leaky"
                   },
     "sound":  {
+        "pitch":  3.5,
                   "hasVariablePitch":  true
               }
 }

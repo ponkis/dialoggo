@@ -53,6 +53,28 @@ public/
 
 The build process uses Webpack to bundle the Electron main process, preload script, and renderer separately, then writes a runnable `dist/package.json` and copies the static public assets into the distribution folder.
 
+## Character Sound Config
+
+Character `config.json` files can define a `sound` object like this:
+
+```json
+{
+  "sound": {
+    "pitch": 4,
+    "hasVariablePitch": true,
+    "canStretch": true,
+    "skipFrequency": 1
+  }
+}
+```
+
+- `skipFrequency` controls how aggressively dialogue clips get chopped during speech playback.
+- `1` is the current standard behavior.
+- Values above `1` make skips happen more often and cut clips shorter.
+- Values below `1` make playback smoother and let clips run longer.
+- `0` or any negative value disables skips entirely.
+- Recommended range: `0` to `2`.
+
 ## Security
 
 - Electron runs with `contextIsolation: true` and `nodeIntegration: false`, with a narrow preload bridge for the renderer.
