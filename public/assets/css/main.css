@@ -3805,6 +3805,38 @@ img {
   flex-shrink: 0;
 }
 
+.char-btn-label {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  text-align: center;
+}
+
+.char-btn-label-text {
+  display: block;
+  min-width: 0;
+}
+
+.char-btn-favorite-heart {
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 9px;
+  height: 9px;
+  color: #f3a1ab;
+  flex: 0 0 auto;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+
+.char-btn-favorite-heart svg {
+  width: 100%;
+  height: 100%;
+}
+
 .char-btn:hover:not(:disabled):not(.active) {
   color: var(--text-primary);
 }
@@ -3859,6 +3891,71 @@ img {
 .missing-char-icon {
   filter: grayscale(1) brightness(0.7);
   opacity: 0.6;
+}
+
+.character-context-menu {
+  position: fixed;
+  z-index: 1200;
+  min-width: 184px;
+  padding: 6px;
+  border: 1px solid rgba(220, 198, 151, 0.24);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0) 30%),
+    linear-gradient(180deg, rgba(28, 25, 22, 0.98), rgba(17, 15, 13, 0.98));
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.character-context-menu[hidden] {
+  display: none !important;
+}
+
+.character-context-menu-action {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.55px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.character-context-menu-action-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  color: #f0b3bb;
+  flex: 0 0 auto;
+}
+
+.character-context-menu-action-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.character-context-menu-action-label {
+  min-width: 0;
+}
+
+.character-context-menu-action:hover,
+.character-context-menu-action:focus-visible {
+  outline: none;
+  background: rgba(255, 215, 140, 0.12);
+  color: var(--accent);
 }
 
 ::-webkit-scrollbar {

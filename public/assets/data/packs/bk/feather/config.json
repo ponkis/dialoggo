@@ -1,8 +1,5 @@
 {
     "character":  {
                       "name":  "Feather"
-                  },
-    "sound":  {
-                  "hasVariablePitch":  true
-              }
+                  }
 }

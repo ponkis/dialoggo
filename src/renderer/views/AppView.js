@@ -68,6 +68,8 @@ function createAppView(model, audioService) {
     bannerSubtitle: document.getElementById('background-banner-subtitle'),
     formatToolbar: document.getElementById('dialogue-format-toolbar'),
   };
+  let characterContextMenu = null;
+  let characterContextMenuAction = null;
 
   let n64PixelScratch = null;
   let n64DialogueTextHi = null;
@@ -81,6 +83,7 @@ function createAppView(model, audioService) {
   const spriteImageCache = new Map();
   const dialogueMeasureCache = new Map();
   const cardAnimState = new Map();
+  const characterCardKeysById = new Map();
   let flipCardAnimation = null;
   let previewPlaceholderExplicitSuppression = false;
   let previewPlaceholderPanelIntent = null;
@@ -113,6 +116,168 @@ function createAppView(model, audioService) {
     ['space', 2],
     ['escape', 3],
   ]);
+
+  function createHeartIcon({
+    filled = true,
+    wrapperClassName = '',
+    svgClassName = '',
+  } = {}) {
+    const icon = document.createElement('span');
+    if (wrapperClassName) icon.className = wrapperClassName;
+    icon.setAttribute('aria-hidden', 'true');
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 256 256');
+    if (svgClassName) svg.setAttribute('class', svgClassName);
+
+    if (filled) {
+      svg.setAttribute('fill', 'currentColor');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M178,40c-20.2,0-38.7,9.4-50,25.3C116.7,49.4,98.2,40,78,40C44.9,40,18,67,18,100.2c0,70.1,98.1,116.4,102.3,118.3a18,18,0,0,0,15.4,0c4.2-1.9,102.3-48.2,102.3-118.3C238,67,211.1,40,178,40Z');
+      svg.appendChild(path);
+    } else {
+      svg.setAttribute('fill', 'none');
+      svg.setAttribute('stroke', 'currentColor');
+      svg.setAttribute('stroke-width', '18');
+      svg.setAttribute('stroke-linecap', 'round');
+      svg.setAttribute('stroke-linejoin', 'round');
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', 'M178,48c-21.6,0-41.3,10.4-50,26.3C119.3,58.4,99.6,48,78,48C48.2,48,24,72.2,24,102c0,66.4,92.5,109.9,96.4,111.7a18.2,18.2,0,0,0,15.2,0C139.5,211.9,232,168.4,232,102C232,72.2,207.8,48,178,48Z');
+      svg.appendChild(path);
+    }
+
+    icon.appendChild(svg);
+    return icon;
+  }
+
+  function createFavoriteHeartIcon() {
+    return createHeartIcon({
+      filled: true,
+      wrapperClassName: 'char-btn-favorite-heart',
+    });
+  }
+
+  function buildCharacterContextMenuContent(action, isFavorite) {
+    const icon = createHeartIcon({
+      filled: isFavorite,
+      wrapperClassName: 'character-context-menu-action-icon',
+    });
+    const label = document.createElement('span');
+    label.className = 'character-context-menu-action-label';
+    label.textContent = isFavorite ? 'Remove from favorites' : 'Add to favorites';
+    action.replaceChildren(icon, label);
+  }
+
+  function ensureCharacterContextMenu() {
+    if (characterContextMenu && characterContextMenuAction) {
+      return {
+        menu: characterContextMenu,
+        action: characterContextMenuAction,
+      };
+    }
+
+    characterContextMenu = document.createElement('div');
+    characterContextMenu.className = 'character-context-menu';
+    characterContextMenu.hidden = true;
+    characterContextMenu.setAttribute('role', 'menu');
+    characterContextMenu.setAttribute('aria-hidden', 'true');
+
+    characterContextMenuAction = document.createElement('button');
+    characterContextMenuAction.type = 'button';
+    characterContextMenuAction.className = 'character-context-menu-action';
+    characterContextMenuAction.setAttribute('role', 'menuitem');
+    characterContextMenuAction.addEventListener('contextmenu', (event) => {
+      event.preventDefault();
+    });
+
+    characterContextMenu.appendChild(characterContextMenuAction);
+    document.body.appendChild(characterContextMenu);
+
+    return {
+      menu: characterContextMenu,
+      action: characterContextMenuAction,
+    };
+  }
+
+  function hideCharacterContextMenu() {
+    if (!characterContextMenu || !characterContextMenuAction) {
+      state.characterContextMenu.visible = false;
+      state.characterContextMenu.targetCharacterId = null;
+      state.characterContextMenu.x = 0;
+      state.characterContextMenu.y = 0;
+      return;
+    }
+
+    state.characterContextMenu.visible = false;
+    state.characterContextMenu.targetCharacterId = null;
+    state.characterContextMenu.x = 0;
+    state.characterContextMenu.y = 0;
+    characterContextMenu.hidden = true;
+    characterContextMenu.setAttribute('aria-hidden', 'true');
+    delete characterContextMenu.dataset.characterId;
+    characterContextMenuAction.onclick = null;
+  }
+
+  function showCharacterContextMenu({
+    character,
+    isFavorite = false,
+    x = 0,
+    y = 0,
+    onToggleFavorite = null,
+  } = {}) {
+    if (!character?.id) return;
+
+    const {
+      menu,
+      action,
+    } = ensureCharacterContextMenu();
+
+    state.characterContextMenu.visible = true;
+    state.characterContextMenu.targetCharacterId = character.id;
+    state.characterContextMenu.x = x;
+    state.characterContextMenu.y = y;
+
+    menu.dataset.characterId = character.id;
+    buildCharacterContextMenuContent(action, isFavorite);
+    action.onclick = (event) => {
+      event.preventDefault();
+      onToggleFavorite?.(character);
+    };
+
+    menu.hidden = false;
+    menu.setAttribute('aria-hidden', 'false');
+    menu.style.left = `${Math.round(x)}px`;
+    menu.style.top = `${Math.round(y)}px`;
+
+    const rect = menu.getBoundingClientRect();
+    const clampedLeft = Math.min(
+      Math.max(8, Math.round(x)),
+      Math.max(8, Math.round(window.innerWidth - rect.width - 8)),
+    );
+    const clampedTop = Math.min(
+      Math.max(8, Math.round(y)),
+      Math.max(8, Math.round(window.innerHeight - rect.height - 8)),
+    );
+
+    menu.style.left = `${clampedLeft}px`;
+    menu.style.top = `${clampedTop}px`;
+    state.characterContextMenu.x = clampedLeft;
+    state.characterContextMenu.y = clampedTop;
+
+    requestAnimationFrame(() => {
+      action.focus({
+        preventScroll: true,
+      });
+    });
+  }
+
+  function isCharacterContextMenuVisible() {
+    return Boolean(characterContextMenu && state.characterContextMenu.visible === true && !characterContextMenu.hidden);
+  }
+
+  function isCharacterContextMenuTarget(target) {
+    return Boolean(characterContextMenu && target instanceof Node && characterContextMenu.contains(target));
+  }
 
   function truncateTextToFit(text, maxWidth, fontStyle = '800 9px Outfit', letterSpacing = 0.65) {
     if (!text) return text;
@@ -1310,11 +1475,25 @@ function createAppView(model, audioService) {
   }
 
   function stopCardAnim(characterId) {
-    const cardState = cardAnimState.get(characterId);
-    if (!cardState) return;
-    clearInterval(cardState.timer);
-    clearTimeout(cardState.timer);
-    cardState.timer = null;
+    const cardKeys = cardAnimState.has(characterId)
+      ? [characterId]
+      : Array.from(characterCardKeysById.get(characterId) || []);
+
+    cardKeys.forEach((cardKey) => {
+      const cardState = cardAnimState.get(cardKey);
+      if (!cardState) return;
+      clearInterval(cardState.timer);
+      clearTimeout(cardState.timer);
+      cardState.timer = null;
+      cardState.runId = (cardState.runId || 0) + 1;
+      cardState.mode = 'stopped';
+    });
+  }
+
+  function stopAllCardAnimations() {
+    Array.from(cardAnimState.keys()).forEach((cardKey) => {
+      stopCardAnim(cardKey);
+    });
   }
 
   function setCardFrame(cardState, frames, index) {
@@ -1331,81 +1510,102 @@ function createAppView(model, audioService) {
   }
 
   function startCardIdleAnim(characterId) {
-    const cardState = cardAnimState.get(characterId);
-    if (!cardState) return;
+    const cardKeys = cardAnimState.has(characterId)
+      ? [characterId]
+      : Array.from(characterCardKeysById.get(characterId) || []);
 
-    const frames = cardState.char.idleFrames;
-    if (!frames?.length) return;
+    cardKeys.forEach((cardKey) => {
+      const cardState = cardAnimState.get(cardKey);
+      if (!cardState) return;
 
-    stopCardAnim(characterId);
-    cardState.mode = 'idle';
-    cardState.frameIndex = 0;
-    cardState.direction = 1;
-    setCardFrame(cardState, frames, cardState.frameIndex);
+      const frames = cardState.char.idleFrames;
+      if (!frames?.length) return;
 
-    const lastFrame = Math.max(0, frames.length - 1);
-    const schedule = () => {
-      const hold = 1500 + Math.floor(Math.random() * 2200);
-      cardState.timer = setTimeout(playCycle, hold);
-    };
+      clearInterval(cardState.timer);
+      clearTimeout(cardState.timer);
+      cardState.timer = null;
+      cardState.runId = (cardState.runId || 0) + 1;
+      const runId = cardState.runId;
+      cardState.mode = 'idle';
+      cardState.frameIndex = 0;
+      cardState.direction = 1;
+      setCardFrame(cardState, frames, cardState.frameIndex);
 
-    const playCycle = () => {
-      if (cardState.mode !== 'idle') return;
+      const lastFrame = Math.max(0, frames.length - 1);
+      const schedule = () => {
+        if (cardState.runId !== runId || cardState.mode !== 'idle') return;
+        const hold = 1500 + Math.floor(Math.random() * 2200);
+        cardState.timer = setTimeout(playCycle, hold);
+      };
 
-      let index = 1;
-      let direction = 1;
-      const step = () => {
-        if (cardState.mode !== 'idle') return;
+      const playCycle = () => {
+        if (cardState.runId !== runId || cardState.mode !== 'idle') return;
 
-        cardState.frameIndex = index;
-        setCardFrame(cardState, frames, cardState.frameIndex);
-        if (index >= lastFrame) direction = -1;
-        index += direction;
+        let index = 1;
+        let direction = 1;
+        const step = () => {
+          if (cardState.runId !== runId || cardState.mode !== 'idle') return;
 
-        if (index <= 0) {
-          cardState.frameIndex = 0;
-          setCardFrame(cardState, frames, 0);
-          schedule();
-          return;
-        }
+          cardState.frameIndex = index;
+          setCardFrame(cardState, frames, cardState.frameIndex);
+          if (index >= lastFrame) direction = -1;
+          index += direction;
+
+          if (index <= 0) {
+            cardState.frameIndex = 0;
+            setCardFrame(cardState, frames, 0);
+            schedule();
+            return;
+          }
+
+          cardState.timer = setTimeout(step, 80);
+        };
 
         cardState.timer = setTimeout(step, 80);
       };
 
-      cardState.timer = setTimeout(step, 80);
-    };
-
-    schedule();
+      schedule();
+    });
   }
 
   function startCardSpeakThenIdle(characterId) {
-    const cardState = cardAnimState.get(characterId);
-    if (!cardState) return;
+    const cardKeys = cardAnimState.has(characterId)
+      ? [characterId]
+      : Array.from(characterCardKeysById.get(characterId) || []);
 
-    const speakFrames = cardState.char.speakFrames;
-    if (!speakFrames?.length) {
-      startCardIdleAnim(characterId);
-      return;
-    }
+    cardKeys.forEach((cardKey) => {
+      const cardState = cardAnimState.get(cardKey);
+      if (!cardState) return;
 
-    stopCardAnim(characterId);
-    cardState.mode = 'speak';
-    cardState.frameIndex = 0;
-    cardState.direction = 1;
-    setCardFrame(cardState, speakFrames, cardState.frameIndex);
-
-    cardState.timer = setInterval(() => {
-      if (cardState.mode !== 'speak') return;
-
-      cardState.frameIndex += cardState.direction;
-      if (cardState.frameIndex >= speakFrames.length - 1) cardState.direction = -1;
-      else if (cardState.frameIndex <= 0) {
-        startCardIdleAnim(characterId);
+      const speakFrames = cardState.char.speakFrames;
+      if (!speakFrames?.length) {
+        startCardIdleAnim(cardKey);
         return;
       }
 
+      clearInterval(cardState.timer);
+      clearTimeout(cardState.timer);
+      cardState.timer = null;
+      cardState.runId = (cardState.runId || 0) + 1;
+      const runId = cardState.runId;
+      cardState.mode = 'speak';
+      cardState.frameIndex = 0;
+      cardState.direction = 1;
       setCardFrame(cardState, speakFrames, cardState.frameIndex);
-    }, 70);
+
+      cardState.timer = setInterval(() => {
+        if (cardState.runId !== runId || cardState.mode !== 'speak') return;
+
+        cardState.frameIndex += cardState.direction;
+        if (cardState.frameIndex >= speakFrames.length - 1) cardState.direction = -1;
+        else if (cardState.frameIndex <= 0) {
+          startCardIdleAnim(cardKey);
+          return;
+        }
+
+        setCardFrame(cardState, speakFrames, cardState.frameIndex);
+      }, 70);
+    });
   }
 
   function updateReelArrows() {
@@ -1714,13 +1914,20 @@ function createAppView(model, audioService) {
     }
   }
 
-  function buildCharacterGrid(onCharacterSelected) {
+  function buildCharacterGrid({
+    onCharacterSelected = null,
+    onCharacterContextMenu = null,
+  } = {}) {
     refs.charGrid.innerHTML = '';
+    stopAllCardAnimations();
     cardAnimState.clear();
+    characterCardKeysById.clear();
     const fragment = document.createDocumentFragment();
     const missingCharacterFallbackPath = env.path.join(env.genericImgDir, '2.png');
     const hasMissingCharacterFallback = env.fs.existsSync(missingCharacterFallbackPath);
     const charactersByPack = new Map();
+    const charactersById = new Map(characters.map((character) => [character.id, character]));
+    const favoriteCharacterIds = new Set(state.favoriteCharacterIds || []);
 
     characters.forEach((character) => {
       if (!charactersByPack.has(character.packId)) {
@@ -1734,7 +1941,26 @@ function createAppView(model, audioService) {
       charactersByPack.get(character.packId).characters.push(character);
     });
 
-    const orderedPacks = Array.isArray(packs) && packs.length > 0
+    const buildSpecialPack = (id, displayName, characterIds) => {
+      const packCharacters = characterIds
+        .map((characterId) => charactersById.get(characterId))
+        .filter((character) => Boolean(character));
+
+      if (packCharacters.length === 0) return null;
+
+      return {
+        id,
+        displayName,
+        characters: packCharacters,
+      };
+    };
+
+    const specialPacks = [
+      buildSpecialPack('__favorites__', 'Favorites', state.favoriteCharacterIds || []),
+      buildSpecialPack('__recent__', 'Recent', state.recentCharacterIds || []),
+    ].filter((pack) => Boolean(pack));
+
+    const regularPacks = Array.isArray(packs) && packs.length > 0
       ? packs
         .map((pack) => ({
           id: pack.id,
@@ -1743,6 +1969,7 @@ function createAppView(model, audioService) {
         }))
         .filter((pack) => pack.characters.length > 0)
       : Array.from(charactersByPack.values());
+    const orderedPacks = [...specialPacks, ...regularPacks];
 
     orderedPacks.forEach((pack) => {
       const packSection = document.createElement('section');
@@ -1763,9 +1990,11 @@ function createAppView(model, audioService) {
       packStrip.className = 'character-pack-strip';
 
       pack.characters.forEach((character) => {
+        const cardKey = `${pack.id}::${character.id}::${packStrip.childElementCount}`;
         const button = document.createElement('button');
         button.className = 'char-btn';
         button.dataset.id = character.id;
+        button.dataset.cardKey = cardKey;
         button.dataset.packId = character.packId;
         button.dataset.searchIndex = model.normalizeCharacterSearch([
           character.displayName,
@@ -1791,7 +2020,16 @@ function createAppView(model, audioService) {
         spriteWrap.appendChild(spriteImage);
 
         const label = document.createElement('span');
-        label.textContent = character.displayName;
+        label.className = 'char-btn-label';
+
+        if (favoriteCharacterIds.has(character.id)) {
+          label.appendChild(createFavoriteHeartIcon());
+        }
+
+        const labelText = document.createElement('span');
+        labelText.className = 'char-btn-label-text';
+        labelText.textContent = character.displayName;
+        label.appendChild(labelText);
 
         button.appendChild(spriteWrap);
         button.appendChild(label);
@@ -1810,8 +2048,9 @@ function createAppView(model, audioService) {
           }
         }
 
-        cardAnimState.set(character.id, {
+        cardAnimState.set(cardKey, {
           timer: null,
+          runId: 0,
           frameIndex: 0,
           direction: 1,
           mode: 'idle',
@@ -1820,29 +2059,40 @@ function createAppView(model, audioService) {
           usesMissingIcon,
           char: character,
         });
+        if (!characterCardKeysById.has(character.id)) {
+          characterCardKeysById.set(character.id, new Set());
+        }
+        characterCardKeysById.get(character.id).add(cardKey);
 
         button.addEventListener('mouseenter', () => {
           if (button.disabled) return;
-          startCardIdleAnim(character.id);
+          if (state.selectedCharacter?.id === character.id) return;
+          startCardIdleAnim(cardKey);
         });
 
         button.addEventListener('mouseleave', () => {
           if (button.disabled) return;
 
           if (state.selectedCharacter?.id === character.id) {
-            const cardState = cardAnimState.get(character.id);
-            if (cardState?.mode !== 'speak') startCardIdleAnim(character.id);
+            const cardState = cardAnimState.get(cardKey);
+            if (cardState?.mode !== 'speak') startCardIdleAnim(cardKey);
             return;
           }
 
-          stopCardAnim(character.id);
-          restoreCardPreviewImage(cardAnimState.get(character.id));
+          stopCardAnim(cardKey);
+          restoreCardPreviewImage(cardAnimState.get(cardKey));
         });
 
         button.addEventListener('click', () => {
           if (button.disabled) return;
           const wasActive = state.selectedCharacter?.id === character.id;
-          onCharacterSelected(character, wasActive);
+          onCharacterSelected?.(character, wasActive);
+        });
+
+        button.addEventListener('contextmenu', (event) => {
+          if (button.disabled) return;
+          event.preventDefault();
+          onCharacterContextMenu?.(character, event);
         });
 
         packStrip.appendChild(button);
@@ -2133,18 +2383,21 @@ function createAppView(model, audioService) {
   function updateSelectedCharacterCard(character) {
     document.querySelectorAll('.char-btn').forEach((button) => {
       button.classList.toggle('active', button.dataset.id === character?.id);
+      const buttonCardKey = button.dataset.cardKey;
+      if (!buttonCardKey) return;
+
       const buttonCharacterId = button.dataset.id;
       if (!buttonCharacterId) return;
 
-      const cardState = cardAnimState.get(buttonCharacterId);
+      const cardState = cardAnimState.get(buttonCardKey);
       if (!cardState) return;
 
       if (buttonCharacterId === character?.id) {
-        startCardIdleAnim(buttonCharacterId);
+        startCardIdleAnim(buttonCardKey);
         return;
       }
 
-      stopCardAnim(buttonCharacterId);
+      stopCardAnim(buttonCardKey);
       restoreCardPreviewImage(cardState);
     });
   }
@@ -2610,6 +2863,10 @@ function createAppView(model, audioService) {
     updateFastForwardAvailability,
     applyCharacterFilters,
     applyBackgroundFilters,
+    showCharacterContextMenu,
+    hideCharacterContextMenu,
+    isCharacterContextMenuVisible,
+    isCharacterContextMenuTarget,
     stopCardAnim,
     startCardIdleAnim,
     startCardSpeakThenIdle,

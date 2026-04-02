@@ -18,6 +18,8 @@ function createAudioService(model) {
     forbidden: env.path.join(env.sndDir, 'gui', '5.wav'),
     settingsOpen: env.path.join(env.sndDir, 'gui', '3.wav'),
     settingsClose: env.path.join(env.sndDir, 'gui', '4.wav'),
+    favoriteAdd: env.path.join(env.sndDir, 'gui', '10.wav'),
+    favoriteRemove: env.path.join(env.sndDir, 'gui', '9.wav'),
   };
 
   function getAudioContextClass() {

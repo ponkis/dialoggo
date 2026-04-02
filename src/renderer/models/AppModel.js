@@ -25,6 +25,7 @@ const PREVIEW_STRIP_HEIGHT = 58;
 const PREVIEW_COLLAPSE_MS = 420;
 const FLIP_CARD_MS = 600;
 const PREVIEW_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+const MAX_RECENT_CHARACTERS = 5;
 const DIALOGUE_SHAKE_MARKER = '**';
 const DIALOGUE_ITALIC_MARKER = '_';
 const DIALOGUE_STRIKE_MARKER = '~~';
@@ -36,6 +37,8 @@ const storageKeys = {
   hideBrokenChars: 'dialoggo-hide-broken-chars',
   hideBrokenBackgrounds: 'dialoggo-hide-broken-backgrounds',
   selectedBackground: 'dialoggo-selected-background',
+  favoriteCharacters: 'dialoggo-favorite-characters',
+  recentCharacters: 'dialoggo-recent-characters',
 };
 const RESERVED_PACK_DIRECTORY_NAMES = new Set(['char', 'generic', 'gui']);
 const CUSTOM_PACK_ID = 'custom';
@@ -894,6 +897,14 @@ function createAppModel() {
       shortcutVisualizerEnabled: true,
       hideBrokenChars: false,
       hideBrokenBackgrounds: false,
+      favoriteCharacterIds: [],
+      recentCharacterIds: [],
+      characterContextMenu: {
+        visible: false,
+        targetCharacterId: null,
+        x: 0,
+        y: 0,
+      },
       frontPanel: 'controls',
       activePanel: 'controls',
       panelTransitionLock: false,
@@ -915,6 +926,7 @@ function createAppModel() {
       N64_TEXT_LINE_HEIGHT,
       N64_TEXT_FONT,
       DIALOGUE_INPUT_MAX_LENGTH,
+      MAX_RECENT_CHARACTERS,
       PREVIEW_STRIP_HEIGHT,
       PREVIEW_COLLAPSE_MS,
       FLIP_CARD_MS,

@@ -28,6 +28,7 @@ function startApp() {
   const refs = view.refs;
   const spriteRenderer = view.spriteRenderer;
   const speechLoop = audioService.createSpeechLoop(spriteRenderer);
+  const charactersById = new Map(characters.map((character) => [character.id, character]));
   const pauseChars = new Set(['.', ',', '!', '?', ':', ';']);
   const heldShortcutKeys = new Set();
   const keyboardModifierState = {
@@ -61,7 +62,7 @@ function startApp() {
     const interactionLocked = state.isPlaying || state.isPaused || state.stopRequested;
     document.querySelectorAll('.char-btn').forEach((button) => {
       const id = button.dataset.id;
-      const character = characters.find((item) => item.id === id);
+      const character = charactersById.get(id);
       button.disabled = interactionLocked || !(character && character.isAvailable);
     });
   }
@@ -468,6 +469,14 @@ function startApp() {
     const key = getCanonicalShortcutKey(event.code);
     if (key) heldShortcutKeys.add(key);
 
+    if (key === 'escape' && view.isCharacterContextMenuVisible()) {
+      event.preventDefault();
+      closeCharacterContextMenu();
+      setKeyboardPressedButtons([]);
+      view.syncShortcutVisualizer();
+      return;
+    }
+
     const candidate = getShortcutCandidate(event.target);
     if (candidate?.isComplete && candidate.shortcut.triggerKey === key && !event.repeat) {
       event.preventDefault();
@@ -531,12 +540,135 @@ function startApp() {
     }
   }
 
+  function persistCharacterIdList(storageKey, characterIds) {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(characterIds));
+    } catch { }
+  }
+
+  function sanitizeCharacterIdList(characterIds, {
+    limit = Number.POSITIVE_INFINITY,
+  } = {}) {
+    const sanitized = [];
+    const seen = new Set();
+
+    (Array.isArray(characterIds) ? characterIds : []).forEach((characterId) => {
+      const normalizedId = String(characterId || '').trim();
+      if (!normalizedId || seen.has(normalizedId) || !charactersById.has(normalizedId)) return;
+      seen.add(normalizedId);
+      sanitized.push(normalizedId);
+    });
+
+    return sanitized.slice(0, limit);
+  }
+
+  function loadCharacterIdListFromStorage(storageKey, {
+    limit = Number.POSITIVE_INFINITY,
+  } = {}) {
+    let parsedCharacterIds = [];
+
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) parsedCharacterIds = parsed;
+      }
+    } catch { }
+
+    const sanitizedCharacterIds = sanitizeCharacterIdList(parsedCharacterIds, {
+      limit,
+    });
+    persistCharacterIdList(storageKey, sanitizedCharacterIds);
+    return sanitizedCharacterIds;
+  }
+
+  function closeCharacterContextMenu() {
+    view.hideCharacterContextMenu();
+  }
+
+  function renderCharacterGrid({
+    preserveScroll = true,
+  } = {}) {
+    const previousScrollLeft = refs.charGrid?.scrollLeft || 0;
+
+    closeCharacterContextMenu();
+    view.buildCharacterGrid({
+      onCharacterSelected: (character, wasActive) => {
+        selectCharacter(character);
+        if (!wasActive) view.startCardSpeakThenIdle(character.id);
+      },
+      onCharacterContextMenu: (character, event) => {
+        if (!character?.id) return;
+        audioService.playMenuSound('click');
+        view.showCharacterContextMenu({
+          character,
+          isFavorite: state.favoriteCharacterIds.includes(character.id),
+          x: event.clientX,
+          y: event.clientY,
+          onToggleFavorite: () => {
+            toggleFavoriteCharacter(character);
+          },
+        });
+      },
+    });
+
+    if (state.hideBrokenChars) {
+      applyHideBrokenChars();
+    } else {
+      view.applyCharacterFilters();
+    }
+
+    view.updateSelectedCharacterCard(state.selectedCharacter);
+
+    if (preserveScroll && refs.charGrid) {
+      refs.charGrid.scrollLeft = previousScrollLeft;
+    }
+
+    syncPlaybackUiState();
+  }
+
+  function persistFavoriteCharacters() {
+    persistCharacterIdList(storageKeys.favoriteCharacters, state.favoriteCharacterIds);
+  }
+
+  function persistRecentCharacters() {
+    persistCharacterIdList(storageKeys.recentCharacters, state.recentCharacterIds);
+  }
+
+  function moveCharacterToRecent(characterId) {
+    if (!characterId || !charactersById.has(characterId)) return;
+
+    state.recentCharacterIds = sanitizeCharacterIdList(
+      [characterId, ...state.recentCharacterIds],
+      {
+        limit: constants.MAX_RECENT_CHARACTERS,
+      },
+    );
+    persistRecentCharacters();
+    renderCharacterGrid();
+  }
+
+  function toggleFavoriteCharacter(character) {
+    if (!character?.id || !charactersById.has(character.id)) return;
+
+    const isFavorite = state.favoriteCharacterIds.includes(character.id);
+    const nextFavoriteIds = isFavorite
+      ? state.favoriteCharacterIds.filter((characterId) => characterId !== character.id)
+      : [character.id, ...state.favoriteCharacterIds];
+
+    state.favoriteCharacterIds = sanitizeCharacterIdList(nextFavoriteIds);
+    persistFavoriteCharacters();
+    renderCharacterGrid();
+    audioService.playMenuSound(isFavorite ? 'favoriteRemove' : 'favoriteAdd');
+  }
+
   function selectCharacter(character) {
     if (state.isPlaying) return;
     if (!character?.isAvailable) return;
     if (state.selectedCharacter?.id === character.id) return;
 
     state.selectedCharacter = character;
+    moveCharacterToRecent(character.id);
     view.updateSelectedCharacterCard(character);
 
     spriteRenderer.loadCharacter(character);
@@ -905,6 +1037,7 @@ function startApp() {
     if (state.panelTransitionLock || panel === state.activePanel) return;
     if (panel === 'settings' && (state.isPlaying || state.isPaused)) return;
 
+    closeCharacterContextMenu();
     state.panelTransitionLock = true;
     const large = view.isLargeScreen();
     const previousPanel = state.activePanel;
@@ -1034,6 +1167,16 @@ function startApp() {
         localStorage.removeItem(storageKeys.selectedBackground);
       }
     } catch { }
+  }
+
+  function initFavoriteCharactersFromStorage() {
+    state.favoriteCharacterIds = loadCharacterIdListFromStorage(storageKeys.favoriteCharacters);
+  }
+
+  function initRecentCharactersFromStorage() {
+    state.recentCharacterIds = loadCharacterIdListFromStorage(storageKeys.recentCharacters, {
+      limit: constants.MAX_RECENT_CHARACTERS,
+    });
   }
 
   function applyHideBrokenChars() {
@@ -1213,7 +1356,14 @@ function startApp() {
   window.addEventListener('blur', () => {
     resetFastForwardState();
     resetShortcutVisualizerState();
+    closeCharacterContextMenu();
   });
+
+  document.addEventListener('pointerdown', (event) => {
+    if (!view.isCharacterContextMenuVisible()) return;
+    if (view.isCharacterContextMenuTarget(event.target)) return;
+    closeCharacterContextMenu();
+  }, true);
 
   const REEL_TAP_STEP = 160;
   const REEL_DRAG_THRESHOLD_PX = 6;
@@ -1357,8 +1507,12 @@ function startApp() {
     suppressBackgroundGridClick = false;
   }, true);
 
-  refs.charGrid.addEventListener('scroll', view.updateReelArrows);
+  refs.charGrid.addEventListener('scroll', () => {
+    closeCharacterContextMenu();
+    view.updateReelArrows();
+  });
   refs.characterSearchInput?.addEventListener('input', () => {
+    closeCharacterContextMenu();
     view.syncCharacterSearchClearButton();
     view.applyCharacterFilters({
       resetScroll: true
@@ -1368,6 +1522,7 @@ function startApp() {
 
   refs.characterSearchClear?.addEventListener('click', () => {
     if (!refs.characterSearchInput) return;
+    closeCharacterContextMenu();
     refs.characterSearchInput.value = '';
     view.syncCharacterSearchClearButton();
     view.applyCharacterFilters({
@@ -1458,9 +1613,10 @@ function startApp() {
 
   view.normalizeDialogueInput();
   view.syncCharacterSearchClearButton();
-  view.buildCharacterGrid((character, wasActive) => {
-    selectCharacter(character);
-    if (!wasActive) view.startCardSpeakThenIdle(character.id);
+  initFavoriteCharactersFromStorage();
+  initRecentCharactersFromStorage();
+  renderCharacterGrid({
+    preserveScroll: false,
   });
   view.buildBackgroundGrid((background) => {
     audioService.playMenuSound('click');
