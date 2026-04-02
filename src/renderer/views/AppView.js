@@ -66,6 +66,7 @@ function createAppView(model, audioService) {
     banner: document.getElementById('background-banner'),
     bannerTitle: document.getElementById('background-banner-title'),
     bannerSubtitle: document.getElementById('background-banner-subtitle'),
+    formatToolbar: document.getElementById('dialogue-format-toolbar'),
   };
 
   let n64PixelScratch = null;
@@ -1112,6 +1113,46 @@ function createAppView(model, audioService) {
     refs.input.setCustomValidity('');
     syncDialogueInputHighlight();
     syncDialogueInputCounter();
+  }
+
+  function updateFormatToolbarVisibility() {
+    if (!refs.input || !refs.formatToolbar) return;
+    const hasSelection = document.activeElement === refs.input && refs.input.selectionStart !== refs.input.selectionEnd;
+    refs.formatToolbar.classList.toggle('hidden', !hasSelection);
+  }
+
+  function applyModifierToSelection(modifier) {
+    if (!refs.input) return;
+    const start = refs.input.selectionStart;
+    const end = refs.input.selectionEnd;
+    if (start === end) return;
+    
+    const value = refs.input.value;
+    const before = value.substring(0, start);
+    const selected = value.substring(start, end);
+    const after = value.substring(end);
+    
+    const isWrapped = before.endsWith(modifier) && after.startsWith(modifier);
+    
+    let newValue;
+    let newStart;
+    let newEnd;
+
+    if (isWrapped) {
+      newValue = before.slice(0, -modifier.length) + selected + after.slice(modifier.length);
+      newStart = start - modifier.length;
+      newEnd = end - modifier.length;
+    } else {
+      newValue = before + modifier + selected + modifier + after;
+      newStart = start + modifier.length;
+      newEnd = end + modifier.length;
+    }
+    
+    refs.input.value = newValue;
+    refs.input.setSelectionRange(newStart, newEnd);
+    refs.input.focus();
+    normalizeDialogueInput();
+    updateFormatToolbarVisibility();
   }
 
   function syncCharacterSearchClearButton() {
@@ -2557,6 +2598,8 @@ function createAppView(model, audioService) {
     setInputLocked,
     appendDialogueCharacter,
     normalizeDialogueInput,
+    updateFormatToolbarVisibility,
+    applyModifierToSelection,
     syncDialogueInputHighlight,
     syncDialogueInputHighlightMetrics,
     syncDialogueInputHighlightScroll,

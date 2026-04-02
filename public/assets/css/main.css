@@ -2938,6 +2938,59 @@ img {
   opacity: 0;
 }
 
+.dialogue-format-toolbar {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.dialogue-format-toolbar.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+}
+
+.format-btn {
+  background: rgba(8, 8, 8, 0.68);
+  border: 1px solid rgba(78, 78, 78, 0.5);
+  color: rgba(214, 214, 214, 0.72);
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.format-btn:hover {
+  background: rgba(40, 40, 40, 0.8);
+  color: #fff;
+  border-color: rgba(120, 120, 120, 0.8);
+}
+
+.format-btn-shaky {
+  color: #9fd8ff;
+}
+
+.format-btn-italic {
+  color: #ffda79;
+  font-style: italic;
+}
+
+.format-btn-strike {
+  color: #ff7675;
+  text-decoration: line-through;
+}
+
 .text-input-counter {
   position: absolute;
   right: 10px;

@@ -1141,6 +1141,30 @@ function startApp() {
     audioService.playMenuSound('forbidden');
   }, true);
 
+  document.addEventListener('mousedown', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target) return;
+    
+    const formatBtn = target.closest('.format-btn');
+    if (formatBtn) {
+      event.preventDefault();
+      const modifier = formatBtn.dataset.modifier;
+      if (modifier) {
+        view.applyModifierToSelection(modifier);
+      }
+    }
+  });
+
+  document.addEventListener('selectionchange', () => {
+    if (document.activeElement === refs.input) {
+      view.updateFormatToolbarVisibility();
+    }
+  });
+
+  refs.input.addEventListener('blur', () => {
+    view.updateFormatToolbarVisibility();
+  });
+
   refs.input.addEventListener('input', handleDialogueInputChange);
   refs.input.addEventListener('scroll', view.syncDialogueInputHighlightScroll);
 
