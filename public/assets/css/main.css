@@ -788,27 +788,61 @@ img {
 }
 
 .background-banner-title {
+  margin: 0;
+  line-height: 0.95;
+  white-space: nowrap;
+}
+
+.background-banner-title span {
   font-family: 'Lithos Black', sans-serif;
   font-size: 56px;
   text-transform: uppercase;
+  display: inline-block;
+  margin-right: -10px;
   background: linear-gradient(180deg, #f7d022 0%, #f38a0c 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(4px 4px 0px #000);
-  margin: 0;
-  line-height: 0.95;
+  filter: drop-shadow(4px 4px 0px rgba(0, 0, 0, 0.95));
+  position: relative;
+  vertical-align: top;
+}
+
+.background-banner-title span:last-child {
+  margin-right: 0;
+  padding-right: 12px;
+}
+
+.background-banner-title span.space {
+  margin-right: 1px;
 }
 
 .background-banner-subtitle {
+  margin: 0;
+  padding-top: 4px;
+  white-space: nowrap;
+}
+
+.background-banner-subtitle span {
   font-family: 'Lithos Black', sans-serif;
   font-size: 28px;
   text-transform: uppercase;
+  display: inline-block;
+  margin-right: -4px;
   background: linear-gradient(180deg, #ff00ff 25%, #ffffff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(3px 3px 0px #000);
-  margin: 0;
-  padding-top: 4px;
+  filter: drop-shadow(3px 3px 0px rgba(0, 0, 0, 0.95));
+  position: relative;
+  vertical-align: top;
+}
+
+.background-banner-subtitle span:last-child {
+  margin-right: 0;
+  padding-right: 8px;
+}
+
+.background-banner-subtitle span.space {
+  margin-right: 2px;
 }
 
 @keyframes banner-reveal {

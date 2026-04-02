@@ -2135,7 +2135,7 @@ function createAppView(model, audioService) {
     startPlaceholderAnim();
   }
 
-  function applySelectedBackground(background) {
+  function applySelectedBackground(background, isUserAction = false) {
     if (!refs.previewArea) return;
 
     const hasPreviewImage = Boolean(background?.previewImagePath);
@@ -2179,13 +2179,23 @@ function createAppView(model, audioService) {
       commitPreviewBackground(previewBackgroundPendingImage, previewBackgroundPendingHasImage);
     }, PREVIEW_BACKGROUND_TRANSITION_MS + 40);
 
-    if (hasPreviewImage) {
-      refs.bannerTitle.textContent = background?.displayName || '';
-      refs.bannerSubtitle.textContent = background?.packDisplayName ? `( ${background.packDisplayName} )` : '';
+    if (hasPreviewImage && isUserAction) {
+      const renderStackedText = (el, str) => {
+        const arr = Array.from(str || '');
+        const len = arr.length;
+        el.innerHTML = arr.map((char, i) => {
+          const z = len - i;
+          if (char === ' ') return `<span class="space" style="z-index: ${z};">&nbsp;</span>`;
+          return `<span style="z-index: ${z};">${char}</span>`;
+        }).join('');
+      };
+      
+      renderStackedText(refs.bannerTitle, background?.displayName || '');
+      renderStackedText(refs.bannerSubtitle, background?.packDisplayName ? `( ${background.packDisplayName} )` : '');
       refs.banner.classList.remove('active');
       void refs.banner.offsetWidth;
       refs.banner.classList.add('active');
-    } else {
+    } else if (!isUserAction || !hasPreviewImage) {
       refs.banner.classList.remove('active');
     }
   }

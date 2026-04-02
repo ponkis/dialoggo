@@ -563,7 +563,7 @@ function startApp() {
     if (state.selectedBackground?.id === background.id) {
       state.selectedBackground = null;
       view.updateSelectedBackgroundCard(null);
-      view.applySelectedBackground(null);
+      view.applySelectedBackground(null, true);
       persistSelectedBackground();
       audioService.playMenuSound('select');
       return;
@@ -571,7 +571,7 @@ function startApp() {
 
     state.selectedBackground = background;
     view.updateSelectedBackgroundCard(background);
-    view.applySelectedBackground(background);
+    view.applySelectedBackground(background, true);
     persistSelectedBackground();
     audioService.playMenuSound('select');
   }
