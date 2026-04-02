@@ -7,6 +7,7 @@ const IDLE_FRAME_COUNT = 4;
 const FAST_FORWARD_TEXT_MULTIPLIER = 1.75;
 const FAST_FORWARD_AUDIO_RATE = 1.3;
 const FAST_FORWARD_SPRITE_MULTIPLIER = 1.18;
+const SPEECH_CUT_LONGNESS_WINDOW = 1.2;
 const STARTUP_INTRO_MS = 1160;
 const STARTUP_JIGGY_SIZE = 48;
 const STARTUP_JIGGY_CENTER_OFFSET_X = -2;
@@ -437,6 +438,10 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function clampNumber(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
 function clampDialogueInputValue(value) {
   return String(value || '').slice(0, DIALOGUE_INPUT_MAX_LENGTH);
 }
@@ -713,26 +718,80 @@ function semitoneOffsetToRate(semitoneOffset) {
   return Math.pow(2, semitoneOffset / 12);
 }
 
-function getSpeechCutTargetDuration(bufferDuration, fastForward) {
-  const longness = Math.max(0, Math.min(1, (bufferDuration - 0.08) / 1.2));
-  const cutChance = Math.max(0.28, Math.min(0.94, 0.28 + longness * 0.52 + (fastForward ? 0.08 : 0)));
+function getSpeechClipLongness(bufferDuration) {
+  return clampNumber((bufferDuration - 0.08) / SPEECH_CUT_LONGNESS_WINDOW, 0, 1);
+}
+
+function getSpeechBurstProfile(bufferDuration, fastForward) {
+  if (bufferDuration < 0.32) {
+    return {
+      shouldStart: false,
+      burstStrength: 0,
+      clipCount: 0,
+      cooldownClips: 0,
+    };
+  }
+
+  const longness = getSpeechClipLongness(bufferDuration);
+  const startChance = clampNumber(0.05 + longness * 0.12 + (fastForward ? 0.05 : 0), 0.05, 0.24);
+  if (Math.random() >= startChance) {
+    return {
+      shouldStart: false,
+      burstStrength: 0,
+      clipCount: 0,
+      cooldownClips: 0,
+    };
+  }
+
+  return {
+    shouldStart: true,
+    burstStrength: clampNumber(
+      0.6 + longness * 0.2 + Math.random() * 0.12 + (fastForward ? 0.05 : 0),
+      0.6,
+      1,
+    ),
+    clipCount: (fastForward ? 3 : 2) + Math.floor(Math.random() * 3),
+    cooldownClips: 2 + Math.floor(Math.random() * 4),
+  };
+}
+
+function getSpeechCutTargetDuration(bufferDuration, fastForward, cadence = null) {
+  const longness = getSpeechClipLongness(bufferDuration);
+  const burstStrength = clampNumber(Number(cadence?.burstStrength) || 0, 0, 1);
+  const cutChance = clampNumber(
+    0.28 + longness * 0.52 + (fastForward ? 0.08 : 0) + burstStrength * 0.18,
+    0.28,
+    0.97,
+  );
   const shouldCut = Math.random() < cutChance;
 
   if (!shouldCut) {
-    const fullRatioMin = fastForward ?
-      0.82 - longness * 0.06 :
-      0.87 - longness * 0.07;
+    const fullRatioMin = clampNumber(
+      (fastForward ?
+        0.82 - longness * 0.06 :
+        0.87 - longness * 0.07) - burstStrength * 0.14,
+      0.56,
+      0.96,
+    );
 
     return bufferDuration * (fullRatioMin + Math.random() * (1 - fullRatioMin));
   }
 
-  const minRatio = fastForward ?
-    0.5 - longness * 0.14 :
-    0.58 - longness * 0.18;
-  const maxRatio = fastForward ?
-    0.76 - longness * 0.1 :
-    0.84 - longness * 0.12;
-  const ratio = Math.max(0.34, Math.min(0.93, minRatio + Math.random() * (maxRatio - minRatio)));
+  const minRatio = clampNumber(
+    (fastForward ?
+      0.5 - longness * 0.14 :
+      0.58 - longness * 0.18) - burstStrength * 0.14,
+    0.22,
+    0.82,
+  );
+  const maxRatio = clampNumber(
+    (fastForward ?
+      0.76 - longness * 0.1 :
+      0.84 - longness * 0.12) - burstStrength * 0.16,
+    minRatio + 0.08,
+    0.9,
+  );
+  const ratio = minRatio + Math.random() * (maxRatio - minRatio);
 
   return Math.max(0.055, bufferDuration * ratio);
 }
@@ -819,6 +878,7 @@ function createAppModel() {
     splitTextIntoLines,
     getCharacterPitchSemitoneOffset,
     semitoneOffsetToRate,
+    getSpeechBurstProfile,
     getSpeechCutTargetDuration,
     getCharacterPlaybackConfig,
   };

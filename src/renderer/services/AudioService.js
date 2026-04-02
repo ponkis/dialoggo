@@ -200,6 +200,10 @@ function createAudioService(model) {
       this._loopPromise = null;
       this._abortController = null;
       this._clipResolve = null;
+      this._burstClipsRemaining = 0;
+      this._burstStrength = 0;
+      this._burstCooldownClips = 0;
+      this._burstPendingCooldownClips = 0;
     }
 
     start(soundFiles, character = null) {
@@ -208,6 +212,7 @@ function createAudioService(model) {
       this.character = character;
       this.running = true;
       this.paused = false;
+      this._resetBurstCadence();
       this._abortController = new AbortController();
       this._loopPromise = this._loop();
     }
@@ -237,6 +242,7 @@ function createAudioService(model) {
       this.running = false;
       this.paused = false;
       this.currentBasePlaybackRate = 1;
+      this._resetBurstCadence();
       this._killCurrentAudio();
       this._resolveWait();
 
@@ -249,6 +255,7 @@ function createAudioService(model) {
     async gracefulStop() {
       this.running = false;
       this.paused = false;
+      this._resetBurstCadence();
       this._killCurrentAudio();
       this._resolveWait();
 
@@ -292,6 +299,44 @@ function createAudioService(model) {
       this._clipResolve = null;
     }
 
+    _resetBurstCadence() {
+      this._burstClipsRemaining = 0;
+      this._burstStrength = 0;
+      this._burstCooldownClips = 0;
+      this._burstPendingCooldownClips = 0;
+    }
+
+    _getSpeechCadence(bufferDuration) {
+      if (this._burstClipsRemaining > 0) {
+        const burstStrength = this._burstStrength;
+        this._burstClipsRemaining = Math.max(0, this._burstClipsRemaining - 1);
+
+        if (this._burstClipsRemaining === 0) {
+          this._burstStrength = 0;
+          this._burstCooldownClips = this._burstPendingCooldownClips;
+          this._burstPendingCooldownClips = 0;
+        }
+
+        return {
+          burstStrength,
+        };
+      }
+
+      if (this._burstCooldownClips > 0) {
+        this._burstCooldownClips = Math.max(0, this._burstCooldownClips - 1);
+        return null;
+      }
+
+      const burstProfile = model.getSpeechBurstProfile(bufferDuration, this.fastForward);
+      if (!burstProfile.shouldStart) return null;
+
+      this._burstClipsRemaining = burstProfile.clipCount;
+      this._burstStrength = burstProfile.burstStrength;
+      this._burstPendingCooldownClips = burstProfile.cooldownClips;
+
+      return this._getSpeechCadence(bufferDuration);
+    }
+
     async _loop() {
       while (this.running) {
         if (this.paused) {
@@ -311,7 +356,8 @@ function createAudioService(model) {
           if (!this.running) break;
           if (this.paused) continue;
 
-          const targetDuration = model.getSpeechCutTargetDuration(buffer.duration, this.fastForward);
+          const cadence = this._getSpeechCadence(buffer.duration);
+          const targetDuration = model.getSpeechCutTargetDuration(buffer.duration, this.fastForward, cadence);
           const playbackConfig = model.getCharacterPlaybackConfig(
             buffer.duration,
             this.character,
