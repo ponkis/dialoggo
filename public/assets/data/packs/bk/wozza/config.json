@@ -3,6 +3,7 @@
                       "name":  "Wozza"
                   },
     "sound":  {
+        "pitch":  -3.5,
                   "hasVariablePitch":  true
               }
 }

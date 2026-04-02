@@ -3,6 +3,8 @@
                       "name":  "Yellow Flibbit"
                   },
     "sound":  {
-                  "hasVariablePitch":  true
+        "pitch":  -2,
+                  "hasVariablePitch":  true,
+                  "canStretch":  true
               }
 }

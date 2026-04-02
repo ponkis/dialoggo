@@ -1,5 +1,9 @@
 {
     "character":  {
                       "name":  "Ugly Tooty"
-                  }
+                  },
+                      "sound":  {
+                          "pitch":  2,
+                  "canStretch":  true
+              }
 }

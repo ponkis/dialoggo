@@ -1,5 +1,9 @@
 {
     "character":  {
                       "name":  "Eagle Eyrie"
-                  }
+                  },
+                      "sound":  {
+                        "pitch": -3,
+                  "hasVariablePitch":  true
+              }
 }

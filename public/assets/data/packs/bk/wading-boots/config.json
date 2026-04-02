@@ -1,5 +1,9 @@
 {
     "character":  {
                       "name":  "Wading Boots"
-                  }
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true,
+                  "canStretch":  true
+              }
 }

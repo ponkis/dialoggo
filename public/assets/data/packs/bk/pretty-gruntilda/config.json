@@ -1,5 +1,10 @@
 {
     "character":  {
                       "name":  "Pretty Gruntilda"
-                  }
+                  },
+    "sound":  {
+                          "pitch":  1,
+                  "hasVariablePitch":  true,
+                  "canStretch":  true
+              }
 }
