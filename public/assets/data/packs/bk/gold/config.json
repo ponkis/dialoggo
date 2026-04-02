@@ -3,6 +3,7 @@
                       "name":  "Gold"
                   },
     "sound":  {
+        "pitch":  2.5,
                   "hasVariablePitch":  true
               }
 }

@@ -3844,6 +3844,7 @@ img {
 .char-btn.active,
 .char-btn.active:hover {
   color: var(--accent);
+  cursor: default;
 }
 
 .char-btn:disabled {
@@ -3938,7 +3939,7 @@ img {
   justify-content: center;
   width: 14px;
   height: 14px;
-  color: #f0b3bb;
+  color: currentColor;
   flex: 0 0 auto;
 }
 

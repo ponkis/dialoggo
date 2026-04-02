@@ -3,6 +3,7 @@
                       "name":  "Gobi"
                   },
     "sound":  {
+        "pitch":  -2,
                   "hasVariablePitch":  true
               }
 }
