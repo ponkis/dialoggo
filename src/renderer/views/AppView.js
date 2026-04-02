@@ -2165,7 +2165,7 @@ function createAppView(model, audioService) {
     previewBackgroundPendingHasImage = hasPreviewImage;
     setPreviewBackgroundLayer(refs.previewBackgroundCurrent, currentImageValue, currentHasImage);
     setPreviewBackgroundLayer(refs.previewBackgroundNext, nextImageValue, hasPreviewImage);
-    refs.previewArea.classList.toggle('has-selected-background', currentHasImage || hasPreviewImage);
+    refs.previewArea.classList.toggle('has-selected-background', hasPreviewImage);
     const isClearingBackground = currentHasImage && !hasPreviewImage;
     refs.previewArea.classList.remove('is-transitioning-background', 'is-clearing-background');
     void refs.previewArea.offsetWidth;
@@ -2295,6 +2295,7 @@ function createAppView(model, audioService) {
 
     const phaseMs = Math.round(constants.FLIP_CARD_MS / 2);
     const angles = getFlipPhaseAngles(fromPanel, toPanel);
+    flushPreviewBackgroundTransition();
     refs.flipCard.classList.add('panel-flipping');
 
     try {
@@ -2421,6 +2422,7 @@ function createAppView(model, audioService) {
       flipCardAnimation = null;
     }
 
+    flushPreviewBackgroundTransition();
     refs.flipCard?.classList.remove('panel-flipping');
     if (refs.flipCard) refs.flipCard.style.transform = '';
     setFlipCardPanel(null);
