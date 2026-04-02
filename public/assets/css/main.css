@@ -8,6 +8,13 @@
   font-style: normal;
 }
 
+@font-face {
+  font-family: "Lithos Black";
+  src: url("../font/lithos-black.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+}
+
 /* Tokens */
 :root {
   --bg-deep: #1a1008;
@@ -757,6 +764,58 @@ img {
 .preview-area.preview-placeholder-suppressed .preview-placeholder {
   opacity: 0;
   pointer-events: none;
+}
+
+/* Background Banner */
+.background-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0;
+  gap: 0px;
+}
+
+.background-banner.active {
+  animation: banner-reveal 4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.background-banner-title {
+  font-family: 'Lithos Black', sans-serif;
+  font-size: 56px;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #f7d022 0%, #f38a0c 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(4px 4px 0px #000);
+  margin: 0;
+  line-height: 0.95;
+}
+
+.background-banner-subtitle {
+  font-family: 'Lithos Black', sans-serif;
+  font-size: 28px;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #ff00ff 25%, #ffffff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(3px 3px 0px #000);
+  margin: 0;
+  padding-top: 4px;
+}
+
+@keyframes banner-reveal {
+  0% { opacity: 0; transform: translate(-50%, -46%) scale(0.9); }
+  6% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  85% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -54%) scale(1.05); }
 }
 
 .preview-placeholder span {

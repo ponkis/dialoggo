@@ -63,6 +63,9 @@ function createAppView(model, audioService) {
     inputShortcutVisualizer: document.getElementById('input-shortcut-visualizer'),
     inputHideBroken: document.getElementById('input-hide-broken-chars'),
     inputHideBrokenBackgrounds: document.getElementById('input-hide-broken-backgrounds'),
+    banner: document.getElementById('background-banner'),
+    bannerTitle: document.getElementById('background-banner-title'),
+    bannerSubtitle: document.getElementById('background-banner-subtitle'),
   };
 
   let n64PixelScratch = null;
@@ -2175,6 +2178,16 @@ function createAppView(model, audioService) {
       previewBackgroundTransitionTimer = 0;
       commitPreviewBackground(previewBackgroundPendingImage, previewBackgroundPendingHasImage);
     }, PREVIEW_BACKGROUND_TRANSITION_MS + 40);
+
+    if (hasPreviewImage) {
+      refs.bannerTitle.textContent = background?.displayName || '';
+      refs.bannerSubtitle.textContent = background?.packDisplayName ? `( ${background.packDisplayName} )` : '';
+      refs.banner.classList.remove('active');
+      void refs.banner.offsetWidth;
+      refs.banner.classList.add('active');
+    } else {
+      refs.banner.classList.remove('active');
+    }
   }
 
   function setPreviewPlaceholderSuppressed(suppressed) {
