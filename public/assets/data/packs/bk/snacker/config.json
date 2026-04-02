@@ -3,7 +3,7 @@
                       "name":  "Snacker"
                   },
     "sound":  {
-        "pitch": -1.5,
+        "pitch": -2,
                   "hasVariablePitch":  true
               }
 }
