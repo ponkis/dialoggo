@@ -1,5 +1,10 @@
 {
     "character":  {
                       "name":  "Rubee"
-                  }
+                  },
+                      "sound":  {
+                        "pitch":  0.5,
+                  "hasVariablePitch":  true,
+                  "canStretch":  true
+                      }
 }

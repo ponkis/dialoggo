@@ -1,5 +1,9 @@
 {
     "character":  {
                       "name":  "Tooty"
-                  }
+                  },
+                      "sound":  {
+                        "pitch":  4,
+                  "hasVariablePitch":  true
+                      }
 }

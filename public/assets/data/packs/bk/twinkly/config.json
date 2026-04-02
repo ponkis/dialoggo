@@ -1,8 +1,0 @@
-{
-    "character":  {
-                      "name":  "Twinkly"
-                  },
-                  "sound" :  {
-                  "hasVariablePitch":  true
-              }
-}

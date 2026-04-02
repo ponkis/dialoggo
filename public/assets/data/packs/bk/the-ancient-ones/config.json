@@ -3,6 +3,8 @@
                       "name":  "The Ancient Ones"
                   },
     "sound":  {
-                  "hasVariablePitch":  true
+        "pitch":  1.5,
+                  "hasVariablePitch":  true,
+                  "canStretch":  true
               }
 }

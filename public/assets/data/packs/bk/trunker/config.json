@@ -1,5 +1,9 @@
 {
     "character":  {
                       "name":  "Trunker"
-                  }
+                  },
+                      "sound":  {
+                  "hasVariablePitch":  true,
+                  "canStretch":  true
+                      }
 }

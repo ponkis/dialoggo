@@ -3,6 +3,8 @@
                       "name":  "Jinxy"
                   },
     "sound":  {
-                  "hasVariablePitch":  true
+        "pitch":  -1,
+                  "hasVariablePitch":  true,
+                    "canStretch":  true
               }
 }
