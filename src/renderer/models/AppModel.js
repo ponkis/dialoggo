@@ -714,7 +714,7 @@ function semitoneOffsetToRate(semitoneOffset) {
 }
 
 function getSpeechCutTargetDuration(bufferDuration, fastForward) {
-  const longness = Math.max(0, Math.min(1, (bufferDuration - 0.08) / 1.65));
+  const longness = Math.max(0, Math.min(1, (bufferDuration - 0.08) / 1.2));
   const cutChance = Math.max(0.28, Math.min(0.94, 0.28 + longness * 0.52 + (fastForward ? 0.08 : 0)));
   const shouldCut = Math.random() < cutChance;
 
