@@ -371,6 +371,7 @@ img {
   position: relative;
   overflow: hidden;
   min-height: 180px;
+  transition: filter 0.38s var(--ease-out);
 }
 
 .preview-background-stack {

@@ -2214,7 +2214,7 @@ function createAppView(model, audioService) {
     refs.previewArea.style.overflow = 'hidden';
     void refs.previewArea.offsetHeight;
 
-    refs.previewArea.style.transition = `height ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}`;
+    refs.previewArea.style.transition = `height ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}, filter ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}`;
     refs.previewArea.classList.add('preview-strip-collapsed', 'preview-settings-muted', 'preview-content-hidden', 'preview-content-exiting');
     setPreviewPlaceholderSuppressed(true);
 
@@ -2237,7 +2237,7 @@ function createAppView(model, audioService) {
     refs.previewArea.style.overflow = 'hidden';
     void refs.previewArea.offsetHeight;
 
-    refs.previewArea.style.transition = `height ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}`;
+    refs.previewArea.style.transition = `height ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}, filter ${constants.PREVIEW_COLLAPSE_MS}ms ${constants.PREVIEW_EASE}`;
     setPreviewPlaceholderSuppressed(true);
 
     requestAnimationFrame(() => {
