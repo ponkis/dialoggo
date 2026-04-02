@@ -3,6 +3,8 @@
                       "name":  "Gloop"
                   },
     "sound":  {
-                  "hasVariablePitch":  true
+        "pitch":  -7,
+                  "hasVariablePitch":  true,
+                  "skipFrequency":  1
               }
 }

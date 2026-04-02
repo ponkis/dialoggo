@@ -1,5 +1,8 @@
 {
     "character":  {
                       "name":  "Beehive"
-                  }
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
 }

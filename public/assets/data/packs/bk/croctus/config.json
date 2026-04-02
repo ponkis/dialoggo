@@ -3,6 +3,8 @@
                       "name":  "Croctus"
                   },
     "sound":  {
-                  "hasVariablePitch":  true
+        "pitch":  -5.5,
+                  "hasVariablePitch":  true,
+                  "canStretch":  false
               }
 }

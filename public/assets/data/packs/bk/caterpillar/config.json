@@ -1,5 +1,9 @@
 {
     "character":  {
                       "name":  "Caterpillar"
-                  }
+                  },
+    "sound":  {
+        "pitch":  2,
+                  "hasVariablePitch":  true
+              }
 }

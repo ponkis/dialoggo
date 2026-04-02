@@ -1,5 +1,9 @@
 {
     "character":  {
                       "name":  "Eyrie"
-                  }
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true,
+                  "skipFrequency":  0
+              }
 }

@@ -1,5 +1,8 @@
 {
     "character":  {
                       "name":  "Cheato"
-                  }
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
 }

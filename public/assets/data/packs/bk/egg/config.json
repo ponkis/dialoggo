@@ -3,6 +3,7 @@
                       "name":  "Egg"
                   },
     "sound":  {
+        "pitch":  -1,
                   "hasVariablePitch":  true
               }
 }

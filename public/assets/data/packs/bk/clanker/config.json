@@ -1,5 +1,10 @@
 {
     "character":  {
                       "name":  "Clanker"
-                  }
+                  },
+    "sound":  {
+        "pitch":  -14,
+        "canStretch":  true,
+        "skipFrequency": 0
+              }
 }

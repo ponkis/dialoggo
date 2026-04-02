@@ -1,5 +1,10 @@
 {
     "character":  {
                       "name":  "Extra Life"
-                  }
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true,
+                  "pitch":  -2.5,
+                  "skipFrequency": 0.5
+              }
 }

@@ -3,6 +3,7 @@
                       "name":  "Brentilda"
                   },
     "sound":  {
+        "pitch":  3,
                   "hasVariablePitch":  true
               }
 }

@@ -1,5 +1,9 @@
 {
     "character":  {
                       "name":  "Black Snippet"
-                  }
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true,
+                  "skipFrequency": 0
+              }
 }
