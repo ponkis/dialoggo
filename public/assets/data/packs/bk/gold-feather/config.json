@@ -1,8 +1,5 @@
 {
     "character":  {
                       "name":  "Gold Feather"
-                  },
-    "sound":  {
-                  "hasVariablePitch":  true
-              }
+                  }
 }
