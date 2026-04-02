@@ -1,5 +1,9 @@
 {
     "character":  {
                       "name":  "Grabba"
-                  }
+                  },
+    "sound":  {
+                  "pitch":  -11.5,
+                  "hasVariablePitch":  true
+              }
 }

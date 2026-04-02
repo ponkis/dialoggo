@@ -3,6 +3,7 @@
                       "name":  "Honeycomb"
                   },
     "sound":  {
+        "pitch":  1,
                   "hasVariablePitch":  true
               }
 }

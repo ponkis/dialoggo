@@ -1,5 +1,9 @@
 {
     "character":  {
                       "name":  "Groggy"
-                  }
+                  },
+    "sound":  {
+                  "pitch":  2,
+                  "canStretch":  false
+              }
 }

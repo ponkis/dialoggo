@@ -1,5 +1,8 @@
 {
     "character":  {
                       "name":  "Gruntilda"
-                  }
+                  },
+    "sound":  {
+                  "hasVariablePitch": true
+              }
 }
