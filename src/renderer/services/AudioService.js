@@ -383,7 +383,7 @@ function createAudioService(model) {
             offset: 0,
             duration: playbackConfig.sourceDuration,
             fadeInMs: 12,
-            fadeOutMs: this.fastForward ? 32 : 44,
+            fadeOutMs: this.fastForward ? 16 : 22,
           });
 
           this.currentSource = source;
