@@ -1,0 +1,8 @@
+{
+    "character":  {
+                      "name":  "Topacio"
+                  },
+    "sound":  {
+                  "hasVariablePitch":  true
+              }
+}

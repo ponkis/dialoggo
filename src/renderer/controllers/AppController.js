@@ -38,6 +38,9 @@ function startApp() {
   const keyboardPressedButtons = new Set();
   let dialogueClosePromise = null;
   let lastExecutedShortcut = null;
+  let transientVisualizerAlert = null;
+  let transientVisualizerAlertTimer = 0;
+  const TRANSIENT_VISUALIZER_ALERT_MS = 1650;
 
   function canFastForward() {
     return state.isPlaying && !state.isPaused && !state.stopRequested;
@@ -381,9 +384,67 @@ function startApp() {
       })[0] || null;
   }
 
+  function clearTransientVisualizerAlert({
+    skipSync = false,
+  } = {}) {
+    if (transientVisualizerAlertTimer) {
+      window.clearTimeout(transientVisualizerAlertTimer);
+      transientVisualizerAlertTimer = 0;
+    }
+
+    transientVisualizerAlert = null;
+
+    if (!skipSync) {
+      syncShortcutVisualizerOverlay();
+    }
+  }
+
+  function showTransientVisualizerAlert({
+    action = '',
+    leadingText = '',
+    trailingText = '',
+    iconSrc = '',
+    iconAlt = '',
+  } = {}) {
+    if (!state.shortcutVisualizerEnabled) return;
+
+    transientVisualizerAlert = {
+      action,
+      leadingText,
+      trailingText,
+      iconSrc,
+      iconAlt,
+    };
+
+    if (transientVisualizerAlertTimer) {
+      window.clearTimeout(transientVisualizerAlertTimer);
+    }
+
+    syncShortcutVisualizerOverlay();
+
+    transientVisualizerAlertTimer = window.setTimeout(() => {
+      transientVisualizerAlert = null;
+      transientVisualizerAlertTimer = 0;
+      syncShortcutVisualizerOverlay();
+    }, TRANSIENT_VISUALIZER_ALERT_MS);
+  }
+
   function syncShortcutVisualizerOverlay(target = document.activeElement) {
     if (!state.shortcutVisualizerEnabled) {
       view.syncShortcutVisualizer();
+      return;
+    }
+
+    if (transientVisualizerAlert) {
+      view.syncShortcutVisualizer({
+        visible: true,
+        keys: [],
+        action: transientVisualizerAlert.action,
+        leadingText: transientVisualizerAlert.leadingText,
+        trailingText: transientVisualizerAlert.trailingText,
+        iconSrc: transientVisualizerAlert.iconSrc,
+        iconAlt: transientVisualizerAlert.iconAlt,
+      });
       return;
     }
 
@@ -459,6 +520,9 @@ function startApp() {
     keyboardModifierState.alt = false;
     keyboardModifierState.meta = false;
     lastExecutedShortcut = null;
+    clearTransientVisualizerAlert({
+      skipSync: true,
+    });
     setKeyboardPressedButtons([]);
     view.syncShortcutVisualizer();
   }
@@ -661,6 +725,8 @@ function startApp() {
     if (!character?.id || !charactersById.has(character.id)) return;
 
     const isFavorite = state.favoriteCharacterIds.includes(character.id);
+    const nextAction = isFavorite ? 'Removed' : 'Added';
+    const nextRelation = isFavorite ? 'from favorites' : 'to favorites';
     const nextFavoriteIds = isFavorite
       ? state.favoriteCharacterIds.filter((characterId) => characterId !== character.id)
       : [character.id, ...state.favoriteCharacterIds];
@@ -669,6 +735,20 @@ function startApp() {
     persistFavoriteCharacters();
     renderCharacterGrid();
     audioService.playMenuSound(isFavorite ? 'favoriteRemove' : 'favoriteAdd');
+
+    if (character.previewSpritePath) {
+      showTransientVisualizerAlert({
+        leadingText: nextAction,
+        trailingText: nextRelation,
+        iconSrc: view.fileToSrc(character.previewSpritePath),
+        iconAlt: character.displayName,
+      });
+      return;
+    }
+
+    showTransientVisualizerAlert({
+      action: `${nextAction} ${character.displayName} ${nextRelation}`,
+    });
   }
 
   function selectCharacter(character) {

@@ -370,13 +370,13 @@ img {
 
 .shortcut-visualizer {
   position: absolute;
-  top: 14px;
-  right: 16px;
+  top: 12px;
+  right: 14px;
   z-index: 25;
   pointer-events: none;
   opacity: 0;
   visibility: hidden;
-  transform: translate3d(0, -10px, 0) scale(0.96);
+  transform: translate3d(0, -8px, 0) scale(0.96);
   transition:
     opacity 0.18s ease,
     transform 0.26s var(--ease-out),
@@ -397,20 +397,24 @@ img {
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
-  max-width: min(420px, calc(100vw - 32px));
+  gap: 10px;
+  max-width: min(340px, calc(100vw - 28px));
+}
+
+.shortcut-visualizer.shortcut-visualizer-text-only .shortcut-visualizer-shell {
+  gap: 0;
 }
 
 .shortcut-visualizer-keys {
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 7px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .shortcut-visualizer-plus {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -423,14 +427,14 @@ img {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 44px;
+  width: 44px;
+  height: 36px;
 }
 
 .shortcut-keycap-3dwrapper {
   position: relative;
   transform-style: preserve-3d;
-  perspective: 100px;
+  perspective: 92px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -440,16 +444,16 @@ img {
 
 .shortcut-keycap-cover {
   background-color: rgb(0, 0, 0);
-  height: 40px;
-  width: 48px;
-  border-radius: 10px;
+  height: 32px;
+  width: 40px;
+  border-radius: 8px;
   transform: rotateX(13deg);
   position: absolute;
   z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-bottom: 7px;
+  padding-bottom: 5px;
   box-shadow: 0px 1px 1px 1px rgba(255, 255, 255, 0.82);
 }
 
@@ -458,17 +462,17 @@ img {
   border-bottom: 2px solid rgba(255, 255, 255, 0.92);
   background-color: rgb(221, 221, 221);
   box-shadow: 0px 4px 0px 0.2px rgb(116, 116, 116);
-  height: 36px;
-  width: 44px;
-  border-radius: 8px;
+  height: 28px;
+  width: 36px;
+  border-radius: 6px;
   transform: rotateX(13deg);
   z-index: 2;
   position: absolute;
   transition: 80ms;
   color: rgb(0 0 0 / 70%);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   white-space: nowrap;
   display: inline-flex;
@@ -478,20 +482,20 @@ img {
 }
 
 .shortcut-keycap[data-key="space"] {
-  width: 88px;
+  width: 72px;
 }
 
 .shortcut-keycap[data-key="space"] .shortcut-keycap-cover {
-  width: 84px;
+  width: 68px;
 }
 
 .shortcut-keycap[data-key="space"] .shortcut-keycap-button {
-  width: 80px;
+  width: 64px;
 }
 
 .shortcut-visualizer-action {
-  max-width: 180px;
-  font-size: 11px;
+  max-width: 168px;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -499,9 +503,34 @@ img {
   text-shadow:
     0 1px 2px rgba(0, 0, 0, 0.65),
     0 0 12px rgba(0, 0, 0, 0.22);
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.shortcut-visualizer.shortcut-visualizer-text-only .shortcut-visualizer-action {
+  max-width: min(280px, calc(100vw - 28px));
+}
+
+.shortcut-visualizer-action-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shortcut-visualizer-action-sprite {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  filter:
+    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.68))
+    drop-shadow(0 0 6px rgba(0, 0, 0, 0.22));
+  flex: 0 0 auto;
 }
 
 /* Preview Area */
@@ -2144,55 +2173,60 @@ img {
 
 @media (max-width: 720px) {
   .shortcut-visualizer {
-    top: 10px;
-    right: 12px;
+    top: 9px;
+    right: 10px;
   }
 
   .shortcut-visualizer-shell {
-    gap: 9px;
-    max-width: min(320px, calc(100vw - 24px));
+    gap: 8px;
+    max-width: min(280px, calc(100vw - 20px));
   }
 
   .shortcut-visualizer-keys {
-    gap: 5px;
+    gap: 4px;
   }
 
   .shortcut-keycap {
-    width: 46px;
-    height: 38px;
+    width: 38px;
+    height: 31px;
   }
 
   .shortcut-keycap-3dwrapper {
-    perspective: 90px;
+    perspective: 84px;
   }
 
   .shortcut-keycap-cover {
-    width: 42px;
-    height: 34px;
-    padding-bottom: 6px;
+    width: 34px;
+    height: 27px;
+    padding-bottom: 5px;
   }
 
   .shortcut-keycap-button {
-    width: 38px;
-    height: 30px;
+    width: 30px;
+    height: 23px;
   }
 
   .shortcut-keycap[data-key="space"] {
-    width: 76px;
+    width: 62px;
   }
 
   .shortcut-keycap[data-key="space"] .shortcut-keycap-cover {
-    width: 72px;
+    width: 58px;
   }
 
   .shortcut-keycap[data-key="space"] .shortcut-keycap-button {
-    width: 68px;
+    width: 54px;
   }
 
   .shortcut-keycap-button,
   .shortcut-visualizer-action,
   .shortcut-visualizer-plus {
-    font-size: 10px;
+    font-size: 9px;
+  }
+
+  .shortcut-visualizer-action-sprite {
+    width: 18px;
+    height: 18px;
   }
 
   .backgrounds-body {

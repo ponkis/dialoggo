@@ -1,0 +1,9 @@
+{
+    "character":  {
+                      "name":  "Tangy"
+                  },
+    "sound":  {
+        "pitch":  5,
+                  "hasVariablePitch":  true
+              }
+}

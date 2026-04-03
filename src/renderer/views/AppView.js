@@ -301,10 +301,65 @@ function createAppView(model, audioService) {
     return text;
   }
 
+  function appendShortcutVisualizerActionText(host, text) {
+    const normalizedText = String(text || '').trim();
+    if (!normalizedText) return;
+
+    const span = document.createElement('span');
+    span.className = 'shortcut-visualizer-action-text';
+    span.textContent = normalizedText;
+    host.appendChild(span);
+  }
+
+  function buildShortcutVisualizerActionContent({
+    action = '',
+    leadingText = '',
+    trailingText = '',
+    iconSrc = '',
+    iconAlt = '',
+  } = {}) {
+    const normalizedAction = String(action || '').trim();
+    const normalizedLeadingText = String(leadingText || '').trim();
+    const normalizedTrailingText = String(trailingText || '').trim();
+    const normalizedIconSrc = String(iconSrc || '').trim();
+    const normalizedIconAlt = String(iconAlt || '').trim();
+
+    if (!normalizedIconSrc) {
+      const fallbackText = normalizedAction || [normalizedLeadingText, normalizedTrailingText].filter(Boolean).join(' ');
+      return {
+        hasContent: fallbackText.length > 0,
+        textContent: fallbackText,
+        fragment: null,
+      };
+    }
+
+    const fragment = document.createDocumentFragment();
+    appendShortcutVisualizerActionText(fragment, normalizedLeadingText);
+
+    const sprite = document.createElement('img');
+    sprite.className = 'shortcut-visualizer-action-sprite';
+    sprite.src = normalizedIconSrc;
+    sprite.alt = normalizedIconAlt;
+    sprite.setAttribute('aria-hidden', normalizedIconAlt ? 'false' : 'true');
+    fragment.appendChild(sprite);
+
+    appendShortcutVisualizerActionText(fragment, normalizedTrailingText);
+
+    return {
+      hasContent: true,
+      textContent: '',
+      fragment,
+    };
+  }
+
   function syncShortcutVisualizer({
     visible = false,
     keys = [],
     action = '',
+    leadingText = '',
+    trailingText = '',
+    iconSrc = '',
+    iconAlt = '',
   } = {}) {
     const root = refs.shortcutVisualizer;
     const keysHost = refs.shortcutVisualizerKeys;
@@ -321,11 +376,22 @@ function createAppView(model, audioService) {
       return leftOrder - rightOrder;
     });
 
-    if (!visible || normalizedKeys.length === 0) {
+    const actionContent = buildShortcutVisualizerActionContent({
+      action,
+      leadingText,
+      trailingText,
+      iconSrc,
+      iconAlt,
+    });
+    const shouldShowTextOnly = normalizedKeys.length === 0 && actionContent.hasContent;
+
+    if (!visible || (normalizedKeys.length === 0 && !actionContent.hasContent)) {
       keysHost.replaceChildren();
+      actionHost.replaceChildren();
       actionHost.textContent = '';
       actionHost.hidden = true;
       root.classList.remove('visible');
+      root.classList.remove('shortcut-visualizer-text-only');
       root.setAttribute('aria-hidden', 'true');
       return;
     }
@@ -361,10 +427,16 @@ function createAppView(model, audioService) {
     });
 
     keysHost.replaceChildren(fragment);
+    keysHost.hidden = normalizedKeys.length === 0;
 
-    const trimmedAction = String(action || '').trim();
-    actionHost.textContent = trimmedAction;
-    actionHost.hidden = trimmedAction.length === 0;
+    actionHost.replaceChildren();
+    if (actionContent.fragment) {
+      actionHost.appendChild(actionContent.fragment);
+    } else {
+      actionHost.textContent = actionContent.textContent;
+    }
+    actionHost.hidden = !actionContent.hasContent;
+    root.classList.toggle('shortcut-visualizer-text-only', shouldShowTextOnly);
     root.classList.add('visible');
     root.setAttribute('aria-hidden', 'false');
   }
