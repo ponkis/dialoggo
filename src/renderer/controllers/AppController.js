@@ -40,7 +40,9 @@ function startApp() {
   let lastExecutedShortcut = null;
   let transientVisualizerAlert = null;
   let transientVisualizerAlertTimer = 0;
+  let transientVisualizerAlertFadeTimer = 0;
   const TRANSIENT_VISUALIZER_ALERT_MS = 1650;
+  const TRANSIENT_VISUALIZER_ALERT_FADE_MS = 220;
 
   function canFastForward() {
     return state.isPlaying && !state.isPaused && !state.stopRequested;
@@ -391,8 +393,13 @@ function startApp() {
       window.clearTimeout(transientVisualizerAlertTimer);
       transientVisualizerAlertTimer = 0;
     }
+    if (transientVisualizerAlertFadeTimer) {
+      window.clearTimeout(transientVisualizerAlertFadeTimer);
+      transientVisualizerAlertFadeTimer = 0;
+    }
 
     transientVisualizerAlert = null;
+    refs.shortcutVisualizer?.classList.remove('shortcut-visualizer-favorite-alert-exit');
 
     if (!skipSync) {
       syncShortcutVisualizerOverlay();
@@ -419,13 +426,24 @@ function startApp() {
     if (transientVisualizerAlertTimer) {
       window.clearTimeout(transientVisualizerAlertTimer);
     }
+    if (transientVisualizerAlertFadeTimer) {
+      window.clearTimeout(transientVisualizerAlertFadeTimer);
+      transientVisualizerAlertFadeTimer = 0;
+    }
+
+    refs.shortcutVisualizer?.classList.remove('shortcut-visualizer-favorite-alert-exit');
 
     syncShortcutVisualizerOverlay();
 
     transientVisualizerAlertTimer = window.setTimeout(() => {
-      transientVisualizerAlert = null;
+      refs.shortcutVisualizer?.classList.add('shortcut-visualizer-favorite-alert-exit');
       transientVisualizerAlertTimer = 0;
-      syncShortcutVisualizerOverlay();
+      transientVisualizerAlertFadeTimer = window.setTimeout(() => {
+        transientVisualizerAlert = null;
+        transientVisualizerAlertFadeTimer = 0;
+        refs.shortcutVisualizer?.classList.remove('shortcut-visualizer-favorite-alert-exit');
+        syncShortcutVisualizerOverlay();
+      }, TRANSIENT_VISUALIZER_ALERT_FADE_MS);
     }, TRANSIENT_VISUALIZER_ALERT_MS);
   }
 

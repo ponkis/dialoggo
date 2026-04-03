@@ -393,6 +393,15 @@ img {
     visibility 0s linear 0s;
 }
 
+.shortcut-visualizer.shortcut-visualizer-favorite-alert-exit {
+  opacity: 0;
+  transform: translate3d(0, -4px, 0) scale(0.98);
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease,
+    visibility 0s linear 0.22s;
+}
+
 .shortcut-visualizer-shell {
   display: inline-flex;
   align-items: center;
