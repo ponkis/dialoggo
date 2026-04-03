@@ -589,7 +589,9 @@ function startApp() {
   function renderCharacterGrid({
     preserveScroll = true,
   } = {}) {
-    const previousScrollLeft = refs.charGrid?.scrollLeft || 0;
+    const charGrid = refs.charGrid;
+    const previousScrollLeft = charGrid?.scrollLeft || 0;
+    const previousScrollWidth = charGrid?.scrollWidth || 0;
 
     closeCharacterContextMenu();
     view.buildCharacterGrid({
@@ -620,8 +622,15 @@ function startApp() {
 
     view.updateSelectedCharacterCard(state.selectedCharacter);
 
-    if (preserveScroll && refs.charGrid) {
-      refs.charGrid.scrollLeft = previousScrollLeft;
+    if (preserveScroll && charGrid) {
+      const scrollDiff = charGrid.scrollWidth - previousScrollWidth;
+      const targetScrollLeft = Math.max(0, previousScrollLeft + scrollDiff);
+
+      const prevBehavior = charGrid.style.scrollBehavior;
+      charGrid.style.scrollBehavior = 'auto'; // Disable smooth scroll briefly
+      charGrid.scrollLeft = targetScrollLeft;
+      void charGrid.offsetWidth; // Force layout refresh instantly
+      charGrid.style.scrollBehavior = prevBehavior; // Restore behavior
     }
 
     syncPlaybackUiState();
