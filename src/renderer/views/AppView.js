@@ -68,8 +68,8 @@ function createAppView(model, audioService) {
     bannerSubtitle: document.getElementById('background-banner-subtitle'),
     formatToolbar: document.getElementById('dialogue-format-toolbar'),
   };
-  let characterContextMenu = null;
-  let characterContextMenuAction = null;
+  let favoriteContextMenu = null;
+  let favoriteContextMenuAction = null;
 
   let n64PixelScratch = null;
   let n64DialogueTextHi = null;
@@ -150,98 +150,104 @@ function createAppView(model, audioService) {
     return icon;
   }
 
-  function createFavoriteHeartIcon() {
+  function createFavoriteHeartIcon(wrapperClassName = 'char-btn-favorite-heart') {
     return createHeartIcon({
       filled: true,
-      wrapperClassName: 'char-btn-favorite-heart',
+      wrapperClassName,
     });
   }
 
-  function buildCharacterContextMenuContent(action, isFavorite) {
+  function buildFavoriteContextMenuContent(action, isFavorite) {
     const icon = createHeartIcon({
       filled: isFavorite,
-      wrapperClassName: 'character-context-menu-action-icon',
+      wrapperClassName: 'favorite-context-menu-action-icon',
     });
     const label = document.createElement('span');
-    label.className = 'character-context-menu-action-label';
+    label.className = 'favorite-context-menu-action-label';
     label.textContent = isFavorite ? 'Remove from favorites' : 'Add to favorites';
     action.replaceChildren(icon, label);
   }
 
-  function ensureCharacterContextMenu() {
-    if (characterContextMenu && characterContextMenuAction) {
+  function ensureFavoriteContextMenu() {
+    if (favoriteContextMenu && favoriteContextMenuAction) {
       return {
-        menu: characterContextMenu,
-        action: characterContextMenuAction,
+        menu: favoriteContextMenu,
+        action: favoriteContextMenuAction,
       };
     }
 
-    characterContextMenu = document.createElement('div');
-    characterContextMenu.className = 'character-context-menu';
-    characterContextMenu.hidden = true;
-    characterContextMenu.setAttribute('role', 'menu');
-    characterContextMenu.setAttribute('aria-hidden', 'true');
+    favoriteContextMenu = document.createElement('div');
+    favoriteContextMenu.className = 'favorite-context-menu';
+    favoriteContextMenu.hidden = true;
+    favoriteContextMenu.setAttribute('role', 'menu');
+    favoriteContextMenu.setAttribute('aria-hidden', 'true');
 
-    characterContextMenuAction = document.createElement('button');
-    characterContextMenuAction.type = 'button';
-    characterContextMenuAction.className = 'character-context-menu-action';
-    characterContextMenuAction.setAttribute('role', 'menuitem');
-    characterContextMenuAction.addEventListener('contextmenu', (event) => {
+    favoriteContextMenuAction = document.createElement('button');
+    favoriteContextMenuAction.type = 'button';
+    favoriteContextMenuAction.className = 'favorite-context-menu-action';
+    favoriteContextMenuAction.setAttribute('role', 'menuitem');
+    favoriteContextMenuAction.addEventListener('contextmenu', (event) => {
       event.preventDefault();
     });
 
-    characterContextMenu.appendChild(characterContextMenuAction);
-    document.body.appendChild(characterContextMenu);
+    favoriteContextMenu.appendChild(favoriteContextMenuAction);
+    document.body.appendChild(favoriteContextMenu);
 
     return {
-      menu: characterContextMenu,
-      action: characterContextMenuAction,
+      menu: favoriteContextMenu,
+      action: favoriteContextMenuAction,
     };
   }
 
-  function hideCharacterContextMenu() {
-    if (!characterContextMenu || !characterContextMenuAction) {
-      state.characterContextMenu.visible = false;
-      state.characterContextMenu.targetCharacterId = null;
-      state.characterContextMenu.x = 0;
-      state.characterContextMenu.y = 0;
+  function hideFavoriteContextMenu() {
+    if (!favoriteContextMenu || !favoriteContextMenuAction) {
+      state.favoriteContextMenu.visible = false;
+      state.favoriteContextMenu.targetId = null;
+      state.favoriteContextMenu.targetType = null;
+      state.favoriteContextMenu.x = 0;
+      state.favoriteContextMenu.y = 0;
       return;
     }
 
-    state.characterContextMenu.visible = false;
-    state.characterContextMenu.targetCharacterId = null;
-    state.characterContextMenu.x = 0;
-    state.characterContextMenu.y = 0;
-    characterContextMenu.hidden = true;
-    characterContextMenu.setAttribute('aria-hidden', 'true');
-    delete characterContextMenu.dataset.characterId;
-    characterContextMenuAction.onclick = null;
+    state.favoriteContextMenu.visible = false;
+    state.favoriteContextMenu.targetId = null;
+    state.favoriteContextMenu.targetType = null;
+    state.favoriteContextMenu.x = 0;
+    state.favoriteContextMenu.y = 0;
+    favoriteContextMenu.hidden = true;
+    favoriteContextMenu.setAttribute('aria-hidden', 'true');
+    delete favoriteContextMenu.dataset.targetId;
+    delete favoriteContextMenu.dataset.targetType;
+    favoriteContextMenuAction.onclick = null;
   }
 
-  function showCharacterContextMenu({
-    character,
+  function showFavoriteContextMenu({
+    targetId,
+    targetType = 'character',
     isFavorite = false,
     x = 0,
     y = 0,
     onToggleFavorite = null,
   } = {}) {
-    if (!character?.id) return;
+    if (!targetId) return;
 
     const {
       menu,
       action,
-    } = ensureCharacterContextMenu();
+    } = ensureFavoriteContextMenu();
 
-    state.characterContextMenu.visible = true;
-    state.characterContextMenu.targetCharacterId = character.id;
-    state.characterContextMenu.x = x;
-    state.characterContextMenu.y = y;
+    state.favoriteContextMenu.visible = true;
+    state.favoriteContextMenu.targetId = targetId;
+    state.favoriteContextMenu.targetType = targetType;
+    state.favoriteContextMenu.x = x;
+    state.favoriteContextMenu.y = y;
 
-    menu.dataset.characterId = character.id;
-    buildCharacterContextMenuContent(action, isFavorite);
+    menu.dataset.targetId = targetId;
+    menu.dataset.targetType = targetType;
+    buildFavoriteContextMenuContent(action, isFavorite);
     action.onclick = (event) => {
       event.preventDefault();
-      onToggleFavorite?.(character);
+      onToggleFavorite?.();
     };
 
     menu.hidden = false;
@@ -261,8 +267,8 @@ function createAppView(model, audioService) {
 
     menu.style.left = `${clampedLeft}px`;
     menu.style.top = `${clampedTop}px`;
-    state.characterContextMenu.x = clampedLeft;
-    state.characterContextMenu.y = clampedTop;
+    state.favoriteContextMenu.x = clampedLeft;
+    state.favoriteContextMenu.y = clampedTop;
 
     requestAnimationFrame(() => {
       action.focus({
@@ -271,12 +277,12 @@ function createAppView(model, audioService) {
     });
   }
 
-  function isCharacterContextMenuVisible() {
-    return Boolean(characterContextMenu && state.characterContextMenu.visible === true && !characterContextMenu.hidden);
+  function isFavoriteContextMenuVisible() {
+    return Boolean(favoriteContextMenu && state.favoriteContextMenu.visible === true && !favoriteContextMenu.hidden);
   }
 
-  function isCharacterContextMenuTarget(target) {
-    return Boolean(characterContextMenu && target instanceof Node && characterContextMenu.contains(target));
+  function isFavoriteContextMenuTarget(target) {
+    return Boolean(favoriteContextMenu && target instanceof Node && favoriteContextMenu.contains(target));
   }
 
   function truncateTextToFit(text, maxWidth, fontStyle = '800 9px Outfit', letterSpacing = 0.65) {
@@ -317,12 +323,14 @@ function createAppView(model, audioService) {
     trailingText = '',
     iconSrc = '',
     iconAlt = '',
+    iconVariant = 'sprite',
   } = {}) {
     const normalizedAction = String(action || '').trim();
     const normalizedLeadingText = String(leadingText || '').trim();
     const normalizedTrailingText = String(trailingText || '').trim();
     const normalizedIconSrc = String(iconSrc || '').trim();
     const normalizedIconAlt = String(iconAlt || '').trim();
+    const normalizedIconVariant = String(iconVariant || 'sprite').trim().toLowerCase();
 
     if (!normalizedIconSrc) {
       const fallbackText = normalizedAction || [normalizedLeadingText, normalizedTrailingText].filter(Boolean).join(' ');
@@ -337,7 +345,9 @@ function createAppView(model, audioService) {
     appendShortcutVisualizerActionText(fragment, normalizedLeadingText);
 
     const sprite = document.createElement('img');
-    sprite.className = 'shortcut-visualizer-action-sprite';
+    sprite.className = normalizedIconVariant === 'thumbnail'
+      ? 'shortcut-visualizer-action-icon shortcut-visualizer-action-thumbnail'
+      : 'shortcut-visualizer-action-icon shortcut-visualizer-action-sprite';
     sprite.src = normalizedIconSrc;
     sprite.alt = normalizedIconAlt;
     sprite.setAttribute('aria-hidden', normalizedIconAlt ? 'false' : 'true');
@@ -360,6 +370,7 @@ function createAppView(model, audioService) {
     trailingText = '',
     iconSrc = '',
     iconAlt = '',
+    iconVariant = 'sprite',
   } = {}) {
     const root = refs.shortcutVisualizer;
     const keysHost = refs.shortcutVisualizerKeys;
@@ -382,6 +393,7 @@ function createAppView(model, audioService) {
       trailingText,
       iconSrc,
       iconAlt,
+      iconVariant,
     });
     const shouldShowTextOnly = normalizedKeys.length === 0 && actionContent.hasContent;
 
@@ -1455,6 +1467,14 @@ function createAppView(model, audioService) {
   let backgroundPackSections = [];
   let activeBackgroundPackIdx = 0;
 
+  function getBackgroundPackSectionIndexById(packId) {
+    return backgroundPackSections.findIndex((section) => section.dataset.packId === packId);
+  }
+
+  function getActiveBackgroundPackId() {
+    return backgroundPackSections[activeBackgroundPackIdx]?.dataset.packId || null;
+  }
+
   function getVisibleBackgroundPackIndices() {
     return backgroundPackSections
       .map((_section, i) => i)
@@ -1476,10 +1496,16 @@ function createAppView(model, audioService) {
   }
 
   function showBackgroundPack(index) {
+    if (!backgroundPackSections.length) {
+      activeBackgroundPackIdx = 0;
+      return;
+    }
+
+    const safeIndex = Math.max(0, Math.min(index, backgroundPackSections.length - 1));
     backgroundPackSections.forEach((section, i) => {
-      section.classList.toggle('pack-active', i === index);
+      section.classList.toggle('pack-active', i === safeIndex);
     });
-    activeBackgroundPackIdx = index;
+    activeBackgroundPackIdx = safeIndex;
     updateBackgroundPackNavArrows();
     requestAnimationFrame(() => {
       syncBackgroundPackVerticalAlignment();
@@ -1544,6 +1570,52 @@ function createAppView(model, audioService) {
     } else {
       updateBackgroundPackNavArrows();
     }
+  }
+
+  function getBackgroundPackScrollState() {
+    const scrollLeftByPackId = {};
+
+    backgroundPackSections.forEach((section) => {
+      const packId = section.dataset.packId;
+      const grid = section.querySelector('.background-pack-grid');
+      if (!packId || !grid) return;
+      scrollLeftByPackId[packId] = grid.scrollLeft;
+    });
+
+    return scrollLeftByPackId;
+  }
+
+  function restoreBackgroundPackState({
+    activePackId = null,
+    scrollLeftByPackId = {},
+  } = {}) {
+    const visibleIndices = getVisibleBackgroundPackIndices();
+    let targetIndex = getBackgroundPackSectionIndexById(activePackId);
+
+    if (targetIndex < 0 || !visibleIndices.includes(targetIndex)) {
+      targetIndex = visibleIndices[0] ?? 0;
+    }
+
+    showBackgroundPack(targetIndex);
+
+    requestAnimationFrame(() => {
+      backgroundPackSections.forEach((section) => {
+        const packId = section.dataset.packId;
+        const grid = section.querySelector('.background-pack-grid');
+        if (!packId || !grid) return;
+
+        const nextScrollLeft = Number(scrollLeftByPackId?.[packId]);
+        if (Number.isFinite(nextScrollLeft)) {
+          const previousBehavior = grid.style.scrollBehavior;
+          grid.style.scrollBehavior = 'auto';
+          grid.scrollLeft = Math.max(0, nextScrollLeft);
+          void grid.offsetWidth;
+          grid.style.scrollBehavior = previousBehavior;
+        }
+
+        grid.dispatchEvent(new Event('scroll'));
+      });
+    });
   }
 
   function stopCardAnim(characterId) {
@@ -2179,7 +2251,10 @@ function createAppView(model, audioService) {
     applyCharacterFilters();
   }
 
-  function buildBackgroundGrid(onBackgroundSelected) {
+  function buildBackgroundGrid({
+    onBackgroundSelected = null,
+    onBackgroundContextMenu = null,
+  } = {}) {
     if (!refs.backgroundsSections) return;
 
     refs.backgroundsSections.innerHTML = '';
@@ -2187,6 +2262,8 @@ function createAppView(model, audioService) {
     activeBackgroundPackIdx = 0;
     const fragment = document.createDocumentFragment();
     const backgroundsByPack = new Map();
+    const backgroundsById = new Map(backgrounds.map((background) => [background.id, background]));
+    const favoriteBackgroundIds = new Set(state.favoriteBackgroundIds || []);
 
     backgrounds.forEach((background) => {
       if (!backgroundsByPack.has(background.packId)) {
@@ -2199,6 +2276,20 @@ function createAppView(model, audioService) {
 
       backgroundsByPack.get(background.packId).backgrounds.push(background);
     });
+
+    const buildSpecialPack = (id, displayName, backgroundIds) => {
+      const packBackgrounds = backgroundIds
+        .map((backgroundId) => backgroundsById.get(backgroundId))
+        .filter((background) => Boolean(background));
+
+      if (packBackgrounds.length === 0) return null;
+
+      return {
+        id,
+        displayName,
+        backgrounds: packBackgrounds,
+      };
+    };
 
     function attachBackgroundCardInteractions(button, onActivate) {
       let backgroundCardClickTimer = 0;
@@ -2246,7 +2337,12 @@ function createAppView(model, audioService) {
       return `${rotation.toFixed(2)}deg`;
     };
 
-    const orderedPacks = Array.isArray(backgroundPacks) && backgroundPacks.length > 0
+    const specialPacks = [
+      buildSpecialPack('__favorites__', 'Favorites', state.favoriteBackgroundIds || []),
+      buildSpecialPack('__recent__', 'Recent', state.recentBackgroundIds || []),
+    ].filter((pack) => Boolean(pack));
+
+    const regularPacks = Array.isArray(backgroundPacks) && backgroundPacks.length > 0
       ? backgroundPacks
         .map((pack) => ({
           id: pack.id,
@@ -2258,6 +2354,7 @@ function createAppView(model, audioService) {
           || String(pack.id || '').toLowerCase() === 'custom'
         ))
       : Array.from(backgroundsByPack.values());
+    const orderedPacks = [...specialPacks, ...regularPacks];
 
     orderedPacks.forEach((pack) => {
       const isCustomPack = String(pack.id || '').toLowerCase() === 'custom';
@@ -2332,7 +2429,7 @@ function createAppView(model, audioService) {
         const button = document.createElement('button');
         button.className = 'background-card';
         button.dataset.id = background.id;
-        button.dataset.packId = background.packId;
+        button.dataset.packId = pack.id;
         button.style.setProperty('--card-rotation', computeBackgroundCardRotation(background, index));
         button.type = 'button';
         button.title = background.displayName;
@@ -2350,6 +2447,10 @@ function createAppView(model, audioService) {
         image.loading = 'lazy';
         if (background.previewImagePath) image.src = fileToSrc(background.previewImagePath);
         photo.appendChild(image);
+
+        if (favoriteBackgroundIds.has(background.id)) {
+          photo.appendChild(createFavoriteHeartIcon('background-card-favorite-heart'));
+        }
 
         const copy = document.createElement('div');
         copy.className = 'background-card-copy';
@@ -2389,7 +2490,12 @@ function createAppView(model, audioService) {
 
         attachBackgroundCardInteractions(button, () => {
           const wasActive = state.selectedBackground?.id === background.id;
-          onBackgroundSelected(background, wasActive);
+          onBackgroundSelected?.(background, wasActive);
+        });
+        button.addEventListener('contextmenu', (event) => {
+          if (button.disabled) return;
+          event.preventDefault();
+          onBackgroundContextMenu?.(background, event);
         });
 
         packGrid.appendChild(button);
@@ -2935,10 +3041,10 @@ function createAppView(model, audioService) {
     updateFastForwardAvailability,
     applyCharacterFilters,
     applyBackgroundFilters,
-    showCharacterContextMenu,
-    hideCharacterContextMenu,
-    isCharacterContextMenuVisible,
-    isCharacterContextMenuTarget,
+    showFavoriteContextMenu,
+    hideFavoriteContextMenu,
+    isFavoriteContextMenuVisible,
+    isFavoriteContextMenuTarget,
     stopCardAnim,
     startCardIdleAnim,
     startCardSpeakThenIdle,
@@ -2947,6 +3053,9 @@ function createAppView(model, audioService) {
     runStartupSequence,
     buildCharacterGrid,
     buildBackgroundGrid,
+    getActiveBackgroundPackId,
+    getBackgroundPackScrollState,
+    restoreBackgroundPackState,
     updateSelectedCharacterCard,
     updateSelectedBackgroundCard,
     applySelectedBackground,

@@ -29,6 +29,7 @@ function startApp() {
   const spriteRenderer = view.spriteRenderer;
   const speechLoop = audioService.createSpeechLoop(spriteRenderer);
   const charactersById = new Map(characters.map((character) => [character.id, character]));
+  const backgroundsById = new Map(backgrounds.map((background) => [background.id, background]));
   const pauseChars = new Set(['.', ',', '!', '?', ':', ';']);
   const heldShortcutKeys = new Set();
   const keyboardModifierState = {
@@ -412,6 +413,7 @@ function startApp() {
     trailingText = '',
     iconSrc = '',
     iconAlt = '',
+    iconVariant = 'sprite',
   } = {}) {
     if (!state.shortcutVisualizerEnabled) return;
 
@@ -421,6 +423,7 @@ function startApp() {
       trailingText,
       iconSrc,
       iconAlt,
+      iconVariant,
     };
 
     if (transientVisualizerAlertTimer) {
@@ -462,6 +465,7 @@ function startApp() {
         trailingText: transientVisualizerAlert.trailingText,
         iconSrc: transientVisualizerAlert.iconSrc,
         iconAlt: transientVisualizerAlert.iconAlt,
+        iconVariant: transientVisualizerAlert.iconVariant,
       });
       return;
     }
@@ -551,9 +555,9 @@ function startApp() {
     const key = getCanonicalShortcutKey(event.code);
     if (key) heldShortcutKeys.add(key);
 
-    if (key === 'escape' && view.isCharacterContextMenuVisible()) {
+    if (key === 'escape' && view.isFavoriteContextMenuVisible()) {
       event.preventDefault();
-      closeCharacterContextMenu();
+      closeFavoriteContextMenu();
       setKeyboardPressedButtons([]);
       view.syncShortcutVisualizer();
       return;
@@ -622,21 +626,22 @@ function startApp() {
     }
   }
 
-  function persistCharacterIdList(storageKey, characterIds) {
+  function persistIdList(storageKey, itemIds) {
     try {
-      localStorage.setItem(storageKey, JSON.stringify(characterIds));
+      localStorage.setItem(storageKey, JSON.stringify(itemIds));
     } catch { }
   }
 
-  function sanitizeCharacterIdList(characterIds, {
+  function sanitizeIdList(itemIds, {
+    validIds = null,
     limit = Number.POSITIVE_INFINITY,
   } = {}) {
     const sanitized = [];
     const seen = new Set();
 
-    (Array.isArray(characterIds) ? characterIds : []).forEach((characterId) => {
-      const normalizedId = String(characterId || '').trim();
-      if (!normalizedId || seen.has(normalizedId) || !charactersById.has(normalizedId)) return;
+    (Array.isArray(itemIds) ? itemIds : []).forEach((itemId) => {
+      const normalizedId = String(itemId || '').trim();
+      if (!normalizedId || seen.has(normalizedId) || (validIds?.has && !validIds.has(normalizedId))) return;
       seen.add(normalizedId);
       sanitized.push(normalizedId);
     });
@@ -644,28 +649,74 @@ function startApp() {
     return sanitized.slice(0, limit);
   }
 
-  function loadCharacterIdListFromStorage(storageKey, {
+  function loadIdListFromStorage(storageKey, {
+    validIds = null,
     limit = Number.POSITIVE_INFINITY,
   } = {}) {
-    let parsedCharacterIds = [];
+    let parsedItemIds = [];
 
     try {
       const saved = localStorage.getItem(storageKey);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) parsedCharacterIds = parsed;
+        if (Array.isArray(parsed)) parsedItemIds = parsed;
       }
     } catch { }
 
-    const sanitizedCharacterIds = sanitizeCharacterIdList(parsedCharacterIds, {
+    const sanitizedItemIds = sanitizeIdList(parsedItemIds, {
+      validIds,
       limit,
     });
-    persistCharacterIdList(storageKey, sanitizedCharacterIds);
-    return sanitizedCharacterIds;
+    persistIdList(storageKey, sanitizedItemIds);
+    return sanitizedItemIds;
   }
 
-  function closeCharacterContextMenu() {
-    view.hideCharacterContextMenu();
+  function persistCharacterIdList(storageKey, characterIds) {
+    persistIdList(storageKey, characterIds);
+  }
+
+  function sanitizeCharacterIdList(characterIds, {
+    limit = Number.POSITIVE_INFINITY,
+  } = {}) {
+    return sanitizeIdList(characterIds, {
+      validIds: charactersById,
+      limit,
+    });
+  }
+
+  function loadCharacterIdListFromStorage(storageKey, {
+    limit = Number.POSITIVE_INFINITY,
+  } = {}) {
+    return loadIdListFromStorage(storageKey, {
+      validIds: charactersById,
+      limit,
+    });
+  }
+
+  function persistBackgroundIdList(storageKey, backgroundIds) {
+    persistIdList(storageKey, backgroundIds);
+  }
+
+  function sanitizeBackgroundIdList(backgroundIds, {
+    limit = Number.POSITIVE_INFINITY,
+  } = {}) {
+    return sanitizeIdList(backgroundIds, {
+      validIds: backgroundsById,
+      limit,
+    });
+  }
+
+  function loadBackgroundIdListFromStorage(storageKey, {
+    limit = Number.POSITIVE_INFINITY,
+  } = {}) {
+    return loadIdListFromStorage(storageKey, {
+      validIds: backgroundsById,
+      limit,
+    });
+  }
+
+  function closeFavoriteContextMenu() {
+    view.hideFavoriteContextMenu();
   }
 
   function renderCharacterGrid({
@@ -675,7 +726,7 @@ function startApp() {
     const previousScrollLeft = charGrid?.scrollLeft || 0;
     const previousScrollWidth = charGrid?.scrollWidth || 0;
 
-    closeCharacterContextMenu();
+    closeFavoriteContextMenu();
     view.buildCharacterGrid({
       onCharacterSelected: (character, wasActive) => {
         selectCharacter(character);
@@ -684,8 +735,9 @@ function startApp() {
       onCharacterContextMenu: (character, event) => {
         if (!character?.id) return;
         audioService.playMenuSound('click');
-        view.showCharacterContextMenu({
-          character,
+        view.showFavoriteContextMenu({
+          targetId: character.id,
+          targetType: 'character',
           isFavorite: state.favoriteCharacterIds.includes(character.id),
           x: event.clientX,
           y: event.clientY,
@@ -718,12 +770,55 @@ function startApp() {
     syncPlaybackUiState();
   }
 
+  function renderBackgroundGrid({
+    preserveActivePack = true,
+    preservePackScroll = true,
+  } = {}) {
+    const activePackId = preserveActivePack ? view.getActiveBackgroundPackId() : null;
+    const scrollLeftByPackId = preservePackScroll ? view.getBackgroundPackScrollState() : {};
+
+    closeFavoriteContextMenu();
+    view.buildBackgroundGrid({
+      onBackgroundSelected: (background) => {
+        audioService.playMenuSound('click');
+        selectBackground(background);
+      },
+      onBackgroundContextMenu: (background, event) => {
+        if (!background?.id) return;
+        audioService.playMenuSound('click');
+        view.showFavoriteContextMenu({
+          targetId: background.id,
+          targetType: 'background',
+          isFavorite: state.favoriteBackgroundIds.includes(background.id),
+          x: event.clientX,
+          y: event.clientY,
+          onToggleFavorite: () => {
+            toggleFavoriteBackground(background);
+          },
+        });
+      },
+    });
+    view.restoreBackgroundPackState({
+      activePackId,
+      scrollLeftByPackId,
+    });
+    view.updateSelectedBackgroundCard(state.selectedBackground);
+  }
+
   function persistFavoriteCharacters() {
     persistCharacterIdList(storageKeys.favoriteCharacters, state.favoriteCharacterIds);
   }
 
   function persistRecentCharacters() {
     persistCharacterIdList(storageKeys.recentCharacters, state.recentCharacterIds);
+  }
+
+  function persistFavoriteBackgrounds() {
+    persistBackgroundIdList(storageKeys.favoriteBackgrounds, state.favoriteBackgroundIds);
+  }
+
+  function persistRecentBackgrounds() {
+    persistBackgroundIdList(storageKeys.recentBackgrounds, state.recentBackgroundIds);
   }
 
   function moveCharacterToRecent(characterId) {
@@ -737,6 +832,19 @@ function startApp() {
     );
     persistRecentCharacters();
     renderCharacterGrid();
+  }
+
+  function moveBackgroundToRecent(backgroundId) {
+    if (!backgroundId || !backgroundsById.has(backgroundId)) return;
+
+    state.recentBackgroundIds = sanitizeBackgroundIdList(
+      [backgroundId, ...state.recentBackgroundIds],
+      {
+        limit: constants.MAX_RECENT_BACKGROUNDS,
+      },
+    );
+    persistRecentBackgrounds();
+    renderBackgroundGrid();
   }
 
   function toggleFavoriteCharacter(character) {
@@ -766,6 +874,37 @@ function startApp() {
 
     showTransientVisualizerAlert({
       action: `${nextAction} ${character.displayName} ${nextRelation}`,
+    });
+  }
+
+  function toggleFavoriteBackground(background) {
+    if (!background?.id || !backgroundsById.has(background.id)) return;
+
+    const isFavorite = state.favoriteBackgroundIds.includes(background.id);
+    const nextAction = isFavorite ? 'Removed' : 'Added';
+    const nextRelation = isFavorite ? 'from favorites' : 'to favorites';
+    const nextFavoriteIds = isFavorite
+      ? state.favoriteBackgroundIds.filter((backgroundId) => backgroundId !== background.id)
+      : [background.id, ...state.favoriteBackgroundIds];
+
+    state.favoriteBackgroundIds = sanitizeBackgroundIdList(nextFavoriteIds);
+    persistFavoriteBackgrounds();
+    renderBackgroundGrid();
+    audioService.playMenuSound(isFavorite ? 'favoriteRemove' : 'favoriteAdd');
+
+    if (background.previewImagePath) {
+      showTransientVisualizerAlert({
+        leadingText: nextAction,
+        trailingText: nextRelation,
+        iconSrc: view.fileToSrc(background.previewImagePath),
+        iconAlt: background.displayName,
+        iconVariant: 'thumbnail',
+      });
+      return;
+    }
+
+    showTransientVisualizerAlert({
+      action: `${nextAction} ${background.displayName} ${nextRelation}`,
     });
   }
 
@@ -809,6 +948,7 @@ function startApp() {
     }
 
     state.selectedBackground = background;
+    moveBackgroundToRecent(background.id);
     view.updateSelectedBackgroundCard(background);
     view.applySelectedBackground(background, true);
     persistSelectedBackground();
@@ -1144,7 +1284,7 @@ function startApp() {
     if (state.panelTransitionLock || panel === state.activePanel) return;
     if (panel === 'settings' && (state.isPlaying || state.isPaused)) return;
 
-    closeCharacterContextMenu();
+    closeFavoriteContextMenu();
     state.panelTransitionLock = true;
     const large = view.isLargeScreen();
     const previousPanel = state.activePanel;
@@ -1283,6 +1423,16 @@ function startApp() {
   function initRecentCharactersFromStorage() {
     state.recentCharacterIds = loadCharacterIdListFromStorage(storageKeys.recentCharacters, {
       limit: constants.MAX_RECENT_CHARACTERS,
+    });
+  }
+
+  function initFavoriteBackgroundsFromStorage() {
+    state.favoriteBackgroundIds = loadBackgroundIdListFromStorage(storageKeys.favoriteBackgrounds);
+  }
+
+  function initRecentBackgroundsFromStorage() {
+    state.recentBackgroundIds = loadBackgroundIdListFromStorage(storageKeys.recentBackgrounds, {
+      limit: constants.MAX_RECENT_BACKGROUNDS,
     });
   }
 
@@ -1463,13 +1613,13 @@ function startApp() {
   window.addEventListener('blur', () => {
     resetFastForwardState();
     resetShortcutVisualizerState();
-    closeCharacterContextMenu();
+    closeFavoriteContextMenu();
   });
 
   document.addEventListener('pointerdown', (event) => {
-    if (!view.isCharacterContextMenuVisible()) return;
-    if (view.isCharacterContextMenuTarget(event.target)) return;
-    closeCharacterContextMenu();
+    if (!view.isFavoriteContextMenuVisible()) return;
+    if (view.isFavoriteContextMenuTarget(event.target)) return;
+    closeFavoriteContextMenu();
   }, true);
 
   const REEL_TAP_STEP = 160;
@@ -1615,11 +1765,16 @@ function startApp() {
   }, true);
 
   refs.charGrid.addEventListener('scroll', () => {
-    closeCharacterContextMenu();
+    closeFavoriteContextMenu();
     view.updateReelArrows();
   });
+  refs.backgroundsSections?.addEventListener('scroll', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target?.closest('.background-pack-grid')) return;
+    closeFavoriteContextMenu();
+  }, true);
   refs.characterSearchInput?.addEventListener('input', () => {
-    closeCharacterContextMenu();
+    closeFavoriteContextMenu();
     view.syncCharacterSearchClearButton();
     view.applyCharacterFilters({
       resetScroll: true
@@ -1629,7 +1784,7 @@ function startApp() {
 
   refs.characterSearchClear?.addEventListener('click', () => {
     if (!refs.characterSearchInput) return;
-    closeCharacterContextMenu();
+    closeFavoriteContextMenu();
     refs.characterSearchInput.value = '';
     view.syncCharacterSearchClearButton();
     view.applyCharacterFilters({
@@ -1722,12 +1877,14 @@ function startApp() {
   view.syncCharacterSearchClearButton();
   initFavoriteCharactersFromStorage();
   initRecentCharactersFromStorage();
+  initFavoriteBackgroundsFromStorage();
+  initRecentBackgroundsFromStorage();
   renderCharacterGrid({
     preserveScroll: false,
   });
-  view.buildBackgroundGrid((background) => {
-    audioService.playMenuSound('click');
-    selectBackground(background);
+  renderBackgroundGrid({
+    preserveActivePack: false,
+    preservePackScroll: false,
   });
   requestAnimationFrame(view.updateReelArrows);
   initShortcutVisualizerFromStorage();

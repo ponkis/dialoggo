@@ -26,6 +26,7 @@ const PREVIEW_COLLAPSE_MS = 420;
 const FLIP_CARD_MS = 600;
 const PREVIEW_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const MAX_RECENT_CHARACTERS = 5;
+const MAX_RECENT_BACKGROUNDS = 5;
 const DIALOGUE_SHAKE_MARKER = '**';
 const DIALOGUE_ITALIC_MARKER = '_';
 const DIALOGUE_STRIKE_MARKER = '~~';
@@ -39,6 +40,8 @@ const storageKeys = {
   selectedBackground: 'dialoggo-selected-background',
   favoriteCharacters: 'dialoggo-favorite-characters',
   recentCharacters: 'dialoggo-recent-characters',
+  favoriteBackgrounds: 'dialoggo-favorite-backgrounds',
+  recentBackgrounds: 'dialoggo-recent-backgrounds',
 };
 const RESERVED_PACK_DIRECTORY_NAMES = new Set(['char', 'generic', 'gui']);
 const CUSTOM_PACK_ID = 'custom';
@@ -899,9 +902,12 @@ function createAppModel() {
       hideBrokenBackgrounds: false,
       favoriteCharacterIds: [],
       recentCharacterIds: [],
-      characterContextMenu: {
+      favoriteBackgroundIds: [],
+      recentBackgroundIds: [],
+      favoriteContextMenu: {
         visible: false,
-        targetCharacterId: null,
+        targetId: null,
+        targetType: null,
         x: 0,
         y: 0,
       },
@@ -927,6 +933,7 @@ function createAppModel() {
       N64_TEXT_FONT,
       DIALOGUE_INPUT_MAX_LENGTH,
       MAX_RECENT_CHARACTERS,
+      MAX_RECENT_BACKGROUNDS,
       PREVIEW_STRIP_HEIGHT,
       PREVIEW_COLLAPSE_MS,
       FLIP_CARD_MS,
