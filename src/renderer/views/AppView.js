@@ -2254,12 +2254,14 @@ function createAppView(model, audioService) {
   function buildBackgroundGrid({
     onBackgroundSelected = null,
     onBackgroundContextMenu = null,
+    activePackId = null,
+    scrollLeftByPackId = {},
   } = {}) {
     if (!refs.backgroundsSections) return;
 
     refs.backgroundsSections.innerHTML = '';
     backgroundPackSections = [];
-    activeBackgroundPackIdx = 0;
+    activeBackgroundPackIdx = -1;
     const fragment = document.createDocumentFragment();
     const backgroundsByPack = new Map();
     const backgroundsById = new Map(backgrounds.map((background) => [background.id, background]));
@@ -2356,10 +2358,13 @@ function createAppView(model, audioService) {
       : Array.from(backgroundsByPack.values());
     const orderedPacks = [...specialPacks, ...regularPacks];
 
-    orderedPacks.forEach((pack) => {
+    orderedPacks.forEach((pack, packIdx) => {
       const isCustomPack = String(pack.id || '').toLowerCase() === 'custom';
+      const isActive = activePackId !== null ? pack.id === activePackId : packIdx === 0;
+      if (isActive) activeBackgroundPackIdx = packIdx;
+
       const packSection = document.createElement('section');
-      packSection.className = 'background-pack-section';
+      packSection.className = `background-pack-section${isActive ? ' pack-active' : ''}`;
       packSection.dataset.packId = pack.id;
 
       const packTop = document.createElement('div');
@@ -2468,7 +2473,6 @@ function createAppView(model, audioService) {
         button.appendChild(photo);
         button.appendChild(copy);
 
-        // Randomly add tape decoration to some cards for organic polaroid feel
         const tapeSeed = `tape:${background?.id || ''}:${index}`;
         let tapeHash = 0;
         for (let ti = 0; ti < tapeSeed.length; ti += 1) {
@@ -2504,8 +2508,9 @@ function createAppView(model, audioService) {
       const gridWrapper = document.createElement('div');
       gridWrapper.className = 'background-pack-grid-wrapper';
 
+      const initialScrollLeft = Number(scrollLeftByPackId?.[pack.id]) || 0;
       const scrollArrowLeft = document.createElement('div');
-      scrollArrowLeft.className = 'bg-scroll-arrow bg-scroll-arrow-left hidden';
+      scrollArrowLeft.className = `bg-scroll-arrow bg-scroll-arrow-left${initialScrollLeft <= 2 ? ' hidden' : ''}`;
       const scrollArrowLeftHit = document.createElement('button');
       scrollArrowLeftHit.className = 'bg-scroll-arrow-hit';
       scrollArrowLeftHit.type = 'button';
@@ -2529,6 +2534,7 @@ function createAppView(model, audioService) {
         scrollArrowRight.classList.toggle('hidden', atEnd);
       }
 
+      packGrid.updateBgScrollArrows = updateBgScrollArrows;
       packGrid.addEventListener('scroll', updateBgScrollArrows);
       requestAnimationFrame(updateBgScrollArrows);
 
@@ -2553,9 +2559,46 @@ function createAppView(model, audioService) {
     });
 
     refs.backgroundsSections.appendChild(fragment);
-    showBackgroundPack(0);
+
+    // Restore scroll positions after elements are in the DOM to ensure layout context
+    backgroundPackSections.forEach((section) => {
+      const packId = section.dataset.packId;
+      const scrollLeft = Number(scrollLeftByPackId?.[packId]);
+      if (Number.isFinite(scrollLeft) && scrollLeft > 0) {
+        const grid = section.querySelector('.background-pack-grid');
+        if (grid) {
+          const prevBehavior = grid.style.scrollBehavior;
+          grid.style.scrollBehavior = 'auto';
+          grid.scrollLeft = scrollLeft;
+          // Force layout refresh for this grid specifically
+          void grid.offsetWidth;
+          
+          if (typeof grid.updateBgScrollArrows === 'function') {
+            grid.updateBgScrollArrows();
+          }
+
+          grid.style.scrollBehavior = prevBehavior;
+        }
+      }
+    });
+
+    if (activeBackgroundPackIdx < 0 && backgroundPackSections.length > 0) {
+      activeBackgroundPackIdx = 0;
+      backgroundPackSections[0].classList.add('pack-active');
+    }
+
+    updateBackgroundPackNavArrows();
     updateSelectedBackgroundCard(state.selectedBackground);
     applyBackgroundFilters();
+
+    requestAnimationFrame(() => {
+      syncBackgroundPackVerticalAlignment();
+      const activeSection = backgroundPackSections[activeBackgroundPackIdx];
+      if (activeSection) {
+        const grid = activeSection.querySelector('.background-pack-grid');
+        if (grid) grid.dispatchEvent(new Event('scroll'));
+      }
+    });
   }
 
   function updateSelectedCharacterCard(character) {

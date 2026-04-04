@@ -779,6 +779,8 @@ function startApp() {
 
     closeFavoriteContextMenu();
     view.buildBackgroundGrid({
+      activePackId,
+      scrollLeftByPackId,
       onBackgroundSelected: (background) => {
         audioService.playMenuSound('click');
         selectBackground(background);
@@ -798,10 +800,7 @@ function startApp() {
         });
       },
     });
-    view.restoreBackgroundPackState({
-      activePackId,
-      scrollLeftByPackId,
-    });
+
     view.updateSelectedBackgroundCard(state.selectedBackground);
   }
 
@@ -824,12 +823,16 @@ function startApp() {
   function moveCharacterToRecent(characterId) {
     if (!characterId || !charactersById.has(characterId)) return;
 
+    const previousTop = state.recentCharacterIds[0];
     state.recentCharacterIds = sanitizeCharacterIdList(
       [characterId, ...state.recentCharacterIds],
       {
         limit: constants.MAX_RECENT_CHARACTERS,
       },
     );
+
+    if (previousTop === characterId) return;
+
     persistRecentCharacters();
     renderCharacterGrid();
   }
@@ -837,12 +840,16 @@ function startApp() {
   function moveBackgroundToRecent(backgroundId) {
     if (!backgroundId || !backgroundsById.has(backgroundId)) return;
 
+    const previousTop = state.recentBackgroundIds[0];
     state.recentBackgroundIds = sanitizeBackgroundIdList(
       [backgroundId, ...state.recentBackgroundIds],
       {
         limit: constants.MAX_RECENT_BACKGROUNDS,
       },
     );
+
+    if (previousTop === backgroundId) return;
+
     persistRecentBackgrounds();
     renderBackgroundGrid();
   }
