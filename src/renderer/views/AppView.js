@@ -2062,10 +2062,15 @@ function createAppView(model, audioService) {
     onCharacterSelected = null,
     onCharacterContextMenu = null,
   } = {}) {
-    refs.charGrid.innerHTML = '';
-    stopAllCardAnimations();
-    cardAnimState.clear();
-    characterCardKeysById.clear();
+    if (!refs.charGrid) return;
+
+    // Map existing sections for reconciliation
+    const existingSections = new Map();
+    refs.charGrid.querySelectorAll('.character-pack-section').forEach((section) => {
+      const packId = section.dataset.packId;
+      if (packId) existingSections.set(packId, section);
+    });
+
     const fragment = document.createDocumentFragment();
     const missingCharacterFallbackPath = env.path.join(env.genericImgDir, '2.png');
     const hasMissingCharacterFallback = env.fs.existsSync(missingCharacterFallbackPath);
@@ -2116,28 +2121,104 @@ function createAppView(model, audioService) {
     const orderedPacks = [...specialPacks, ...regularPacks];
 
     orderedPacks.forEach((pack) => {
-      const packSection = document.createElement('section');
-      packSection.className = 'character-pack-section';
-      packSection.dataset.packId = pack.id;
+      let packSection = existingSections.get(pack.id);
+      let packStrip;
+      const isNewSection = !packSection;
 
-      const packHeading = document.createElement('span');
-      packHeading.className = 'character-pack-heading';
-      packHeading.textContent = pack.displayName;
+      if (isNewSection) {
+        packSection = document.createElement('section');
+        packSection.className = 'character-pack-section';
+        packSection.dataset.packId = pack.id;
 
-      const packSeparator = document.createElement('span');
-      packSeparator.className = 'character-pack-separator';
-      packSeparator.setAttribute('aria-hidden', 'true');
-      packSection.appendChild(packSeparator);
-      packSection.appendChild(packHeading);
+        const packSeparator = document.createElement('span');
+        packSeparator.className = 'character-pack-separator';
+        packSeparator.setAttribute('aria-hidden', 'true');
+        packSection.appendChild(packSeparator);
 
-      const packStrip = document.createElement('div');
-      packStrip.className = 'character-pack-strip';
+        const packHeading = document.createElement('span');
+        packHeading.className = 'character-pack-heading';
+        packSection.appendChild(packHeading);
 
-      pack.characters.forEach((character) => {
-        const cardKey = `${pack.id}::${character.id}::${packStrip.childElementCount}`;
-        const button = document.createElement('button');
-        button.className = 'char-btn';
-        button.dataset.id = character.id;
+        packStrip = document.createElement('div');
+        packStrip.className = 'character-pack-strip';
+        packSection.appendChild(packStrip);
+      } else {
+        packStrip = packSection.querySelector('.character-pack-strip');
+        existingSections.delete(pack.id);
+      }
+
+      packSection.querySelector('.character-pack-heading').textContent = pack.displayName;
+
+      // Reconcile buttons within the pack strip
+      const existingButtons = new Map();
+      packStrip.querySelectorAll('.char-btn').forEach((btn) => {
+        const charId = btn.dataset.id;
+        if (charId) existingButtons.set(charId, btn);
+      });
+
+      pack.characters.forEach((character, index) => {
+        const cardKey = `${pack.id}::${character.id}::${index}`;
+        let button = existingButtons.get(character.id);
+        const isNewButton = !button;
+
+        if (isNewButton) {
+          button = document.createElement('button');
+          button.className = 'char-btn';
+          button.dataset.id = character.id;
+
+          const spriteWrap = document.createElement('div');
+          spriteWrap.className = 'char-btn-sprite';
+
+          const spriteImage = document.createElement('img');
+          spriteImage.alt = character.displayName;
+          spriteWrap.appendChild(spriteImage);
+
+          const label = document.createElement('span');
+          label.className = 'char-btn-label';
+
+          const labelText = document.createElement('span');
+          labelText.className = 'char-btn-label-text';
+          label.appendChild(labelText);
+
+          button.appendChild(spriteWrap);
+          button.appendChild(label);
+
+          button.addEventListener('mouseenter', () => {
+            if (button.disabled) return;
+            const currentCardKey = button.dataset.cardKey;
+            if (state.selectedCharacter?.id === character.id) return;
+            if (currentCardKey) startCardIdleAnim(currentCardKey);
+          });
+
+          button.addEventListener('mouseleave', () => {
+            if (button.disabled) return;
+            const currentCardKey = button.dataset.cardKey;
+            if (!currentCardKey) return;
+
+            if (state.selectedCharacter?.id === character.id) {
+              const cardState = cardAnimState.get(currentCardKey);
+              if (cardState?.mode !== 'speak') startCardIdleAnim(currentCardKey);
+              return;
+            }
+
+            stopCardAnim(currentCardKey);
+            restoreCardPreviewImage(cardAnimState.get(currentCardKey));
+          });
+
+          button.addEventListener('click', () => {
+            if (button.disabled) return;
+            const wasActive = state.selectedCharacter?.id === character.id;
+            onCharacterSelected?.(character, wasActive);
+          });
+
+          button.addEventListener('contextmenu', (event) => {
+            if (button.disabled) return;
+            event.preventDefault();
+            onCharacterContextMenu?.(character, event);
+          });
+        }
+
+        // Update button state (new or reused)
         button.dataset.cardKey = cardKey;
         button.dataset.packId = character.packId;
         button.dataset.searchIndex = model.normalizeCharacterSearch([
@@ -2147,105 +2228,103 @@ function createAppView(model, audioService) {
           character.packId,
         ].join(' '));
         button.disabled = !character.isAvailable;
-        if (!character.isAvailable) button.classList.add('unavailable');
+        button.classList.toggle('unavailable', !character.isAvailable);
         button.title = character.displayName;
 
-        const spriteWrap = document.createElement('div');
-        spriteWrap.className = 'char-btn-sprite';
-
-        const spriteImage = document.createElement('img');
+        const spriteImage = button.querySelector('.char-btn-sprite img');
         const previewPath = character.previewSpritePath || null;
         const defaultImagePath = previewPath || (hasMissingCharacterFallback ? missingCharacterFallbackPath : null);
         const usesMissingIcon = !previewPath && Boolean(defaultImagePath);
-        if (defaultImagePath) spriteImage.src = fileToSrc(defaultImagePath);
-        spriteImage.classList.toggle('missing-char-icon', usesMissingIcon);
+        
+        if (spriteImage && defaultImagePath && (isNewButton || spriteImage.dataset.srcPath !== defaultImagePath)) {
+          spriteImage.src = fileToSrc(defaultImagePath);
+          spriteImage.dataset.srcPath = defaultImagePath;
+        }
+        if (spriteImage) spriteImage.classList.toggle('missing-char-icon', usesMissingIcon);
 
-        spriteImage.alt = character.displayName;
-        spriteWrap.appendChild(spriteImage);
+        const label = button.querySelector('.char-btn-label');
+        const labelText = button.querySelector('.char-btn-label-text');
+        if (labelText) labelText.textContent = character.displayName;
 
-        const label = document.createElement('span');
-        label.className = 'char-btn-label';
-
-        if (favoriteCharacterIds.has(character.id)) {
-          label.appendChild(createFavoriteHeartIcon());
+        // Reconcile Favorite Heart
+        const existingHeart = label.querySelector('.favorite-heart-icon');
+        const isFavorite = favoriteCharacterIds.has(character.id);
+        if (isFavorite && !existingHeart) {
+          label.insertBefore(createFavoriteHeartIcon(), labelText);
+        } else if (!isFavorite && existingHeart) {
+          existingHeart.remove();
         }
 
-        const labelText = document.createElement('span');
-        labelText.className = 'char-btn-label-text';
-        labelText.textContent = character.displayName;
-        label.appendChild(labelText);
-
-        button.appendChild(spriteWrap);
-        button.appendChild(label);
-
+        // Reconcile Warning Badge
+        const existingBadge = button.querySelector('.warning-badge');
         if (!character.isAvailable) {
           const warningPath = env.path.join(env.guiImgDir, '1.png');
           if (env.fs.existsSync(warningPath)) {
-            const badge = document.createElement('img');
-            badge.className = 'warning-badge';
+            let badge = existingBadge;
+            if (!badge) {
+              badge = document.createElement('img');
+              badge.className = 'warning-badge';
+              button.appendChild(badge);
+            }
             badge.src = fileToSrc(warningPath);
             badge.alt = 'Unavailable';
             badge.title = (!character.hasAllSprites && !character.hasAnySound) ?
               'Missing sprite frames and no usable sounds' :
               (!character.hasAllSprites ? 'Missing sprite frames' : 'No usable sounds found');
-            button.appendChild(badge);
           }
+        } else if (existingBadge) {
+          existingBadge.remove();
         }
 
-        cardAnimState.set(cardKey, {
-          timer: null,
-          runId: 0,
-          frameIndex: 0,
-          direction: 1,
-          mode: 'idle',
-          img: spriteImage,
-          defaultImagePath,
-          usesMissingIcon,
-          char: character,
-        });
+        // Update animation map
+        if (isNewButton) {
+          cardAnimState.set(cardKey, {
+            timer: null,
+            runId: 0,
+            frameIndex: 0,
+            direction: 1,
+            mode: 'idle',
+            img: spriteImage,
+            defaultImagePath,
+            usesMissingIcon,
+            char: character,
+          });
+        } else {
+          // Update existing state with new cardKey if it changed
+          const oldCardKey = button.dataset.oldCardKey;
+          if (oldCardKey && oldCardKey !== cardKey) {
+            const state = cardAnimState.get(oldCardKey);
+            if (state) {
+              cardAnimState.delete(oldCardKey);
+              cardAnimState.set(cardKey, state);
+            }
+          }
+        }
+        button.dataset.oldCardKey = cardKey;
+
         if (!characterCardKeysById.has(character.id)) {
           characterCardKeysById.set(character.id, new Set());
         }
         characterCardKeysById.get(character.id).add(cardKey);
 
-        button.addEventListener('mouseenter', () => {
-          if (button.disabled) return;
-          if (state.selectedCharacter?.id === character.id) return;
-          startCardIdleAnim(cardKey);
-        });
-
-        button.addEventListener('mouseleave', () => {
-          if (button.disabled) return;
-
-          if (state.selectedCharacter?.id === character.id) {
-            const cardState = cardAnimState.get(cardKey);
-            if (cardState?.mode !== 'speak') startCardIdleAnim(cardKey);
-            return;
-          }
-
-          stopCardAnim(cardKey);
-          restoreCardPreviewImage(cardAnimState.get(cardKey));
-        });
-
-        button.addEventListener('click', () => {
-          if (button.disabled) return;
-          const wasActive = state.selectedCharacter?.id === character.id;
-          onCharacterSelected?.(character, wasActive);
-        });
-
-        button.addEventListener('contextmenu', (event) => {
-          if (button.disabled) return;
-          event.preventDefault();
-          onCharacterContextMenu?.(character, event);
-        });
-
         packStrip.appendChild(button);
+        existingButtons.delete(character.id);
       });
 
-      packSection.appendChild(packStrip);
+      // Cleanup stale buttons
+      existingButtons.forEach((btn) => {
+        const cKey = btn.dataset.cardKey;
+        if (cKey) cardAnimState.delete(cKey);
+        btn.remove();
+      });
+
       fragment.appendChild(packSection);
     });
 
+    // Cleanup stale sections
+    existingSections.forEach((section) => section.remove());
+
+    refs.charGrid.innerHTML = '';
     refs.charGrid.appendChild(fragment);
 
     applyCharacterFilters();
@@ -2376,14 +2455,19 @@ function createAppView(model, audioService) {
       let scrollArrowRightHit;
       let updateBgScrollArrows;
 
+      const existingButtons = new Map();
       if (packSection) {
         // Reuse existing section and its core pieces
         packSection.className = `background-pack-section${isActive ? ' pack-active' : ''}`;
         packSection.querySelector('.background-pack-heading').textContent = pack.displayName;
         packSection.querySelector('.background-pack-count').textContent = `${pack.backgrounds.length} background${pack.backgrounds.length === 1 ? '' : 's'}`;
         packGrid = packSection.querySelector('.background-pack-grid');
-        packGrid.innerHTML = ''; // Clearing and rebuilding only the background card buttons
         
+        // Map existing buttons for reconciliation
+        packGrid.querySelectorAll('.background-card').forEach((btn) => {
+          if (btn.dataset.id) existingButtons.set(btn.dataset.id, btn);
+        });
+
         scrollArrowLeft = packSection.querySelector('.bg-scroll-arrow-left');
         scrollArrowRight = packSection.querySelector('.bg-scroll-arrow-right');
         scrollArrowLeftHit = scrollArrowLeft.querySelector('.bg-scroll-arrow-hit');
@@ -2494,64 +2578,98 @@ function createAppView(model, audioService) {
       }
 
       if (isCustomPack) {
-        const uploadButton = document.createElement('button');
-        uploadButton.className = 'bg-upload-btn background-pack-anchor';
-        uploadButton.dataset.packId = pack.id;
-        uploadButton.type = 'button';
-        uploadButton.title = 'Upload background';
-        uploadButton.innerHTML = `<svg viewBox="0 0 24 24" fill="none">
-          <path d="M12 5v14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
-          <path d="M5 12h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
-        </svg>`;
-        attachBackgroundCardInteractions(uploadButton, () => {
-          audioService.playMenuSound('click');
-        });
+        let uploadButton = packGrid.querySelector('.bg-upload-btn');
+        if (!uploadButton) {
+          uploadButton = document.createElement('button');
+          uploadButton.className = 'bg-upload-btn background-pack-anchor';
+          uploadButton.dataset.packId = pack.id;
+          uploadButton.type = 'button';
+          uploadButton.title = 'Upload background';
+          uploadButton.innerHTML = `<svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+            <path d="M5 12h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"></path>
+          </svg>`;
+          attachBackgroundCardInteractions(uploadButton, () => {
+            audioService.playMenuSound('click');
+          });
+        }
         packGrid.appendChild(uploadButton);
+      } else {
+        const staleUpload = packGrid.querySelector('.bg-upload-btn');
+        if (staleUpload) staleUpload.remove();
       }
 
       pack.backgrounds.forEach((background, index) => {
-        const button = document.createElement('button');
-        button.className = 'background-card';
-        button.dataset.id = background.id;
-        button.dataset.packId = pack.id;
-        button.style.setProperty('--card-rotation', computeBackgroundCardRotation(background, index));
-        button.type = 'button';
-        button.title = background.displayName;
-        button.disabled = !background.isAvailable;
-        if (!background.isAvailable) button.classList.add('unavailable');
-        if (index === 0 && pack.backgrounds.length > 2) button.classList.add('background-card-featured');
-        if (!background.hasBuiltImage) button.classList.add('background-card-fallback');
+        let button = existingButtons.get(background.id);
+        const isNew = !button;
 
-        const photo = document.createElement('div');
-        photo.className = 'background-card-photo';
+        if (isNew) {
+          button = document.createElement('button');
+          button.className = 'background-card';
+          button.dataset.id = background.id;
+          button.dataset.packId = pack.id;
+          button.type = 'button';
 
-        const image = document.createElement('img');
-        image.className = 'background-card-image';
-        image.alt = background.displayName;
-        image.loading = 'lazy';
-        if (background.previewImagePath) image.src = fileToSrc(background.previewImagePath);
-        photo.appendChild(image);
+          const photo = document.createElement('div');
+          photo.className = 'background-card-photo';
 
-        if (favoriteBackgroundIds.has(background.id)) {
-          photo.appendChild(createFavoriteHeartIcon('background-card-favorite-heart'));
+          const image = document.createElement('img');
+          image.className = 'background-card-image';
+          image.alt = background.displayName;
+          image.loading = 'lazy';
+          if (background.previewImagePath) image.src = fileToSrc(background.previewImagePath);
+          photo.appendChild(image);
+
+          const copy = document.createElement('div');
+          copy.className = 'background-card-copy';
+
+          const title = document.createElement('span');
+          title.className = 'background-card-title';
+
+          const meta = document.createElement('span');
+          meta.className = 'background-card-meta';
+
+          copy.appendChild(title);
+          if (!isCustomPack) copy.appendChild(meta);
+          button.appendChild(photo);
+          button.appendChild(copy);
+
+          attachBackgroundCardInteractions(button, () => {
+            const wasActive = state.selectedBackground?.id === background.id;
+            onBackgroundSelected?.(background, wasActive);
+          });
+          button.addEventListener('contextmenu', (event) => {
+            if (button.disabled) return;
+            event.preventDefault();
+            onBackgroundContextMenu?.(background, event);
+          });
         }
 
-        const copy = document.createElement('div');
-        copy.className = 'background-card-copy';
+        // Update button state (for both new and reused buttons)
+        button.title = background.displayName;
+        button.disabled = !background.isAvailable;
+        button.classList.toggle('unavailable', !background.isAvailable);
+        button.classList.toggle('background-card-featured', index === 0 && pack.backgrounds.length > 2);
+        button.classList.toggle('background-card-fallback', !background.hasBuiltImage);
+        button.style.setProperty('--card-rotation', computeBackgroundCardRotation(background, index));
 
-        const title = document.createElement('span');
-        title.className = 'background-card-title';
-        title.textContent = truncateTextToFit(background.displayName, 124);
+        const photo = button.querySelector('.background-card-photo');
+        const title = button.querySelector('.background-card-title');
+        const meta = button.querySelector('.background-card-meta');
 
-        const meta = document.createElement('span');
-        meta.className = 'background-card-meta';
-        meta.textContent = background.packDisplayName;
+        if (title) title.textContent = truncateTextToFit(background.displayName, 124);
+        if (meta) meta.textContent = background.packDisplayName;
 
-        copy.appendChild(title);
-        if (!isCustomPack) copy.appendChild(meta);
-        button.appendChild(photo);
-        button.appendChild(copy);
+        // Reconcile Favorite Heart
+        const existingHeart = photo.querySelector('.background-card-favorite-heart');
+        const isFavorite = favoriteBackgroundIds.has(background.id);
+        if (isFavorite && !existingHeart) {
+          photo.appendChild(createFavoriteHeartIcon('background-card-favorite-heart'));
+        } else if (!isFavorite && existingHeart) {
+          existingHeart.remove();
+        }
 
+        // Reconcile Tape (if present)
         const tapeSeed = `tape:${background?.id || ''}:${index}`;
         let tapeHash = 0;
         for (let ti = 0; ti < tapeSeed.length; ti += 1) {
@@ -2559,30 +2677,31 @@ function createAppView(model, audioService) {
           tapeHash |= 0;
         }
         const tapeChance = (Math.abs(tapeHash) % 1000) / 1000;
+        const existingTape = button.querySelector('.background-card-tape');
+
         if (tapeChance < 0.45) {
-          const tape = document.createElement('div');
-          tape.className = 'background-card-tape';
+          let tape = existingTape;
+          if (!tape) {
+            tape = document.createElement('div');
+            tape.className = 'background-card-tape';
+            button.appendChild(tape);
+          }
           const tapeLeftPercent = 20 + ((Math.abs(tapeHash >> 3) % 400) / 10);
           const tapeRotation = ((Math.abs(tapeHash >> 7) % 300) / 10) - 15;
           const tapeWidth = 32 + ((Math.abs(tapeHash >> 11) % 160) / 10);
           tape.style.left = `${tapeLeftPercent}%`;
           tape.style.transform = `translateX(-50%) rotate(${tapeRotation.toFixed(1)}deg)`;
           tape.style.width = `${tapeWidth.toFixed(0)}px`;
-          button.appendChild(tape);
+        } else if (existingTape) {
+          existingTape.remove();
         }
 
-        attachBackgroundCardInteractions(button, () => {
-          const wasActive = state.selectedBackground?.id === background.id;
-          onBackgroundSelected?.(background, wasActive);
-        });
-        button.addEventListener('contextmenu', (event) => {
-          if (button.disabled) return;
-          event.preventDefault();
-          onBackgroundContextMenu?.(background, event);
-        });
-
         packGrid.appendChild(button);
+        existingButtons.delete(background.id);
       });
+
+      // Remove buttons that are no longer present
+      existingButtons.forEach((btn) => btn.remove());
 
       fragment.appendChild(packSection);
       backgroundPackSections.push(packSection);
