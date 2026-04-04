@@ -2259,7 +2259,12 @@ function createAppView(model, audioService) {
   } = {}) {
     if (!refs.backgroundsSections) return;
 
-    refs.backgroundsSections.innerHTML = '';
+    const existingSections = new Map();
+    refs.backgroundsSections.querySelectorAll('.background-pack-section').forEach((section) => {
+      const packId = section.dataset.packId;
+      if (packId) existingSections.set(packId, section);
+    });
+
     backgroundPackSections = [];
     activeBackgroundPackIdx = -1;
     const fragment = document.createDocumentFragment();
@@ -2363,56 +2368,130 @@ function createAppView(model, audioService) {
       const isActive = activePackId !== null ? pack.id === activePackId : packIdx === 0;
       if (isActive) activeBackgroundPackIdx = packIdx;
 
-      const packSection = document.createElement('section');
-      packSection.className = `background-pack-section${isActive ? ' pack-active' : ''}`;
-      packSection.dataset.packId = pack.id;
+      let packSection = existingSections.get(pack.id);
+      let packGrid;
+      let scrollArrowLeft;
+      let scrollArrowRight;
+      let scrollArrowLeftHit;
+      let scrollArrowRightHit;
+      let updateBgScrollArrows;
 
-      const packTop = document.createElement('div');
-      packTop.className = 'background-pack-top';
+      if (packSection) {
+        // Reuse existing section and its core pieces
+        packSection.className = `background-pack-section${isActive ? ' pack-active' : ''}`;
+        packSection.querySelector('.background-pack-heading').textContent = pack.displayName;
+        packSection.querySelector('.background-pack-count').textContent = `${pack.backgrounds.length} background${pack.backgrounds.length === 1 ? '' : 's'}`;
+        packGrid = packSection.querySelector('.background-pack-grid');
+        packGrid.innerHTML = ''; // Clearing and rebuilding only the background card buttons
+        
+        scrollArrowLeft = packSection.querySelector('.bg-scroll-arrow-left');
+        scrollArrowRight = packSection.querySelector('.bg-scroll-arrow-right');
+        scrollArrowLeftHit = scrollArrowLeft.querySelector('.bg-scroll-arrow-hit');
+        scrollArrowRightHit = scrollArrowRight.querySelector('.bg-scroll-arrow-hit');
+        updateBgScrollArrows = packGrid.updateBgScrollArrows;
+      } else {
+        // Build new section
+        packSection = document.createElement('section');
+        packSection.className = `background-pack-section${isActive ? ' pack-active' : ''}`;
+        packSection.dataset.packId = pack.id;
 
-      const packHeader = document.createElement('div');
-      packHeader.className = 'background-pack-header';
+        const packTop = document.createElement('div');
+        packTop.className = 'background-pack-top';
 
-      const prevArrow = document.createElement('button');
-      prevArrow.className = 'background-pack-nav-arrow pack-nav-prev';
-      prevArrow.type = 'button';
-      prevArrow.title = 'Previous pack';
-      prevArrow.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      prevArrow.addEventListener('click', () => navigateBackgroundPack(-1));
+        const packHeader = document.createElement('div');
+        packHeader.className = 'background-pack-header';
 
-      const headerInfo = document.createElement('div');
-      headerInfo.className = 'background-pack-header-info';
+        const prevArrow = document.createElement('button');
+        prevArrow.className = 'background-pack-nav-arrow pack-nav-prev';
+        prevArrow.type = 'button';
+        prevArrow.title = 'Previous pack';
+        prevArrow.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M15 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        prevArrow.addEventListener('click', () => navigateBackgroundPack(-1));
 
-      const packHeading = document.createElement('span');
-      packHeading.className = 'background-pack-heading';
-      packHeading.textContent = pack.displayName;
+        const headerInfo = document.createElement('div');
+        headerInfo.className = 'background-pack-header-info';
 
-      const packCount = document.createElement('span');
-      packCount.className = 'background-pack-count';
-      packCount.textContent = `${pack.backgrounds.length} background${pack.backgrounds.length === 1 ? '' : 's'}`;
+        const packHeading = document.createElement('span');
+        packHeading.className = 'background-pack-heading';
+        packHeading.textContent = pack.displayName;
 
-      const nextArrow = document.createElement('button');
-      nextArrow.className = 'background-pack-nav-arrow pack-nav-next';
-      nextArrow.type = 'button';
-      nextArrow.title = 'Next pack';
-      nextArrow.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      nextArrow.addEventListener('click', () => navigateBackgroundPack(1));
+        const packCount = document.createElement('span');
+        packCount.className = 'background-pack-count';
+        packCount.textContent = `${pack.backgrounds.length} background${pack.backgrounds.length === 1 ? '' : 's'}`;
 
-      const packDivider = document.createElement('span');
-      packDivider.className = 'background-pack-divider';
-      packDivider.setAttribute('aria-hidden', 'true');
+        const nextArrow = document.createElement('button');
+        nextArrow.className = 'background-pack-nav-arrow pack-nav-next';
+        nextArrow.type = 'button';
+        nextArrow.title = 'Next pack';
+        nextArrow.innerHTML = '<svg viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        nextArrow.addEventListener('click', () => navigateBackgroundPack(1));
 
-      headerInfo.appendChild(packHeading);
-      headerInfo.appendChild(packCount);
-      packHeader.appendChild(prevArrow);
-      packHeader.appendChild(headerInfo);
-      packHeader.appendChild(nextArrow);
-      packTop.appendChild(packHeader);
-      packTop.appendChild(packDivider);
-      packSection.appendChild(packTop);
+        const packDivider = document.createElement('span');
+        packDivider.className = 'background-pack-divider';
+        packDivider.setAttribute('aria-hidden', 'true');
 
-      const packGrid = document.createElement('div');
-      packGrid.className = 'background-pack-grid';
+        headerInfo.appendChild(packHeading);
+        headerInfo.appendChild(packCount);
+        packHeader.appendChild(prevArrow);
+        packHeader.appendChild(headerInfo);
+        packHeader.appendChild(nextArrow);
+        packTop.appendChild(packHeader);
+        packTop.appendChild(packDivider);
+        packSection.appendChild(packTop);
+
+        packGrid = document.createElement('div');
+        packGrid.className = 'background-pack-grid';
+
+        const gridWrapper = document.createElement('div');
+        gridWrapper.className = 'background-pack-grid-wrapper';
+
+        const initialScrollLeft = Number(scrollLeftByPackId?.[pack.id]) || 0;
+        scrollArrowLeft = document.createElement('div');
+        scrollArrowLeft.className = `bg-scroll-arrow bg-scroll-arrow-left${initialScrollLeft <= 2 ? ' hidden' : ''}`;
+        scrollArrowLeftHit = document.createElement('button');
+        scrollArrowLeftHit.className = 'bg-scroll-arrow-hit';
+        scrollArrowLeftHit.type = 'button';
+        scrollArrowLeftHit.title = 'Scroll left';
+        scrollArrowLeftHit.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>';
+        scrollArrowLeft.appendChild(scrollArrowLeftHit);
+
+        scrollArrowRight = document.createElement('div');
+        scrollArrowRight.className = 'bg-scroll-arrow bg-scroll-arrow-right hidden';
+        scrollArrowRightHit = document.createElement('button');
+        scrollArrowRightHit.className = 'bg-scroll-arrow-hit';
+        scrollArrowRightHit.type = 'button';
+        scrollArrowRightHit.title = 'Scroll right';
+        scrollArrowRightHit.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
+        scrollArrowRight.appendChild(scrollArrowRightHit);
+
+        updateBgScrollArrows = () => {
+          const atStart = packGrid.scrollLeft <= 2;
+          const atEnd = packGrid.scrollLeft + packGrid.clientWidth >= packGrid.scrollWidth - 2;
+          scrollArrowLeft.classList.toggle('hidden', atStart);
+          scrollArrowRight.classList.toggle('hidden', atEnd);
+        };
+
+        packGrid.updateBgScrollArrows = updateBgScrollArrows;
+        packGrid.addEventListener('scroll', updateBgScrollArrows);
+        requestAnimationFrame(updateBgScrollArrows);
+
+        const BG_SCROLL_STEP = 180;
+        scrollArrowLeftHit.addEventListener('click', () => {
+          if (scrollArrowLeft.classList.contains('hidden')) return;
+          audioService.playMenuSound('arrowLeft');
+          packGrid.scrollBy({ left: -BG_SCROLL_STEP, behavior: 'smooth' });
+        });
+        scrollArrowRightHit.addEventListener('click', () => {
+          if (scrollArrowRight.classList.contains('hidden')) return;
+          audioService.playMenuSound('arrowRight');
+          packGrid.scrollBy({ left: BG_SCROLL_STEP, behavior: 'smooth' });
+        });
+
+        gridWrapper.appendChild(packGrid);
+        packSection.appendChild(gridWrapper);
+        packSection.appendChild(scrollArrowLeft);
+        packSection.appendChild(scrollArrowRight);
+      }
 
       if (isCustomPack) {
         const uploadButton = document.createElement('button');
@@ -2505,80 +2584,33 @@ function createAppView(model, audioService) {
         packGrid.appendChild(button);
       });
 
-      const gridWrapper = document.createElement('div');
-      gridWrapper.className = 'background-pack-grid-wrapper';
-
-      const initialScrollLeft = Number(scrollLeftByPackId?.[pack.id]) || 0;
-      const scrollArrowLeft = document.createElement('div');
-      scrollArrowLeft.className = `bg-scroll-arrow bg-scroll-arrow-left${initialScrollLeft <= 2 ? ' hidden' : ''}`;
-      const scrollArrowLeftHit = document.createElement('button');
-      scrollArrowLeftHit.className = 'bg-scroll-arrow-hit';
-      scrollArrowLeftHit.type = 'button';
-      scrollArrowLeftHit.title = 'Scroll left';
-      scrollArrowLeftHit.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>';
-      scrollArrowLeft.appendChild(scrollArrowLeftHit);
-
-      const scrollArrowRight = document.createElement('div');
-      scrollArrowRight.className = 'bg-scroll-arrow bg-scroll-arrow-right';
-      const scrollArrowRightHit = document.createElement('button');
-      scrollArrowRightHit.className = 'bg-scroll-arrow-hit';
-      scrollArrowRightHit.type = 'button';
-      scrollArrowRightHit.title = 'Scroll right';
-      scrollArrowRightHit.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>';
-      scrollArrowRight.appendChild(scrollArrowRightHit);
-
-      function updateBgScrollArrows() {
-        const atStart = packGrid.scrollLeft <= 2;
-        const atEnd = packGrid.scrollLeft + packGrid.clientWidth >= packGrid.scrollWidth - 2;
-        scrollArrowLeft.classList.toggle('hidden', atStart);
-        scrollArrowRight.classList.toggle('hidden', atEnd);
-      }
-
-      packGrid.updateBgScrollArrows = updateBgScrollArrows;
-      packGrid.addEventListener('scroll', updateBgScrollArrows);
-      requestAnimationFrame(updateBgScrollArrows);
-
-      const BG_SCROLL_STEP = 180;
-      scrollArrowLeftHit.addEventListener('click', () => {
-        if (scrollArrowLeft.classList.contains('hidden')) return;
-        audioService.playMenuSound('arrowLeft');
-        packGrid.scrollBy({ left: -BG_SCROLL_STEP, behavior: 'smooth' });
-      });
-      scrollArrowRightHit.addEventListener('click', () => {
-        if (scrollArrowRight.classList.contains('hidden')) return;
-        audioService.playMenuSound('arrowRight');
-        packGrid.scrollBy({ left: BG_SCROLL_STEP, behavior: 'smooth' });
-      });
-
-      gridWrapper.appendChild(packGrid);
-      packSection.appendChild(gridWrapper);
-      packSection.appendChild(scrollArrowLeft);
-      packSection.appendChild(scrollArrowRight);
       fragment.appendChild(packSection);
       backgroundPackSections.push(packSection);
     });
 
+    refs.backgroundsSections.innerHTML = '';
     refs.backgroundsSections.appendChild(fragment);
 
-    // Restore scroll positions after elements are in the DOM to ensure layout context
+    // Restore scroll positions and update navigation arrows after elements are in the DOM to ensure layout context
     backgroundPackSections.forEach((section) => {
       const packId = section.dataset.packId;
       const scrollLeft = Number(scrollLeftByPackId?.[packId]);
-      if (Number.isFinite(scrollLeft) && scrollLeft > 0) {
-        const grid = section.querySelector('.background-pack-grid');
-        if (grid) {
-          const prevBehavior = grid.style.scrollBehavior;
-          grid.style.scrollBehavior = 'auto';
-          grid.scrollLeft = scrollLeft;
-          // Force layout refresh for this grid specifically
-          void grid.offsetWidth;
-          
-          if (typeof grid.updateBgScrollArrows === 'function') {
-            grid.updateBgScrollArrows();
-          }
+      const grid = section.querySelector('.background-pack-grid');
+      if (!grid) return;
 
-          grid.style.scrollBehavior = prevBehavior;
-        }
+      const hasSavedScroll = Number.isFinite(scrollLeft) && scrollLeft > 0;
+      if (hasSavedScroll) {
+        const prevBehavior = grid.style.scrollBehavior;
+        grid.style.scrollBehavior = 'auto';
+        grid.scrollLeft = scrollLeft;
+        grid.style.scrollBehavior = prevBehavior;
+      }
+      
+      // Force layout refresh for this grid specifically to ensure accurate scrollWidth/clientWidth
+      void grid.offsetWidth;
+      
+      if (typeof grid.updateBgScrollArrows === 'function') {
+        grid.updateBgScrollArrows();
       }
     });
 
