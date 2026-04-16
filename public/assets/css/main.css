@@ -2567,6 +2567,32 @@ img {
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.55);
 }
 
+.guide-step-copy {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.guide-shot-card {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid rgba(188, 148, 230, 0.32);
+  background: linear-gradient(180deg, rgba(70, 40, 118, 0.35) 0%, rgba(26, 12, 52, 0.82) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 12px rgba(0, 0, 0, 0.28),
+    0 2px 8px rgba(0, 0, 0, 0.28);
+}
+
+.guide-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
 /* Playback demo tiles */
 .guide-demo-grid {
   display: grid;
@@ -2660,48 +2686,98 @@ img {
 .guide-keycaps {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   flex-wrap: wrap;
-  justify-self: start;
+  justify-self: center;
+  align-self: center;
 }
 
-.guide-keycap {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 26px;
-  height: 22px;
-  padding: 0 6px;
-  font-family: 'Courier New', monospace;
-  font-size: 9.5px;
-  font-weight: 700;
-  color: rgba(252, 238, 210, 0.96);
-  background:
-    linear-gradient(180deg, #d9bafa 0%, #8e5ed8 45%, #4e2b8c 100%);
-  border: 1px solid rgba(20, 8, 42, 0.85);
-  border-radius: 4px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    inset 0 -2px 3px rgba(40, 14, 70, 0.55),
-    0 2px 0 rgba(20, 8, 42, 0.85),
-    0 3px 3px rgba(0, 0, 0, 0.5);
-  text-shadow: 0 1px 1px rgba(20, 4, 44, 0.6);
-  letter-spacing: 0.4px;
+.guide-keycaps .guide-shortcut-keycap {
+  width: 40px;
+  height: 32px;
 }
 
-.guide-keycap--inline {
-  min-width: 22px;
-  height: 18px;
-  padding: 0 4px;
+.guide-keycaps .guide-shortcut-keycap .shortcut-keycap-3dwrapper {
+  perspective: 80px;
+}
+
+.guide-keycaps .guide-shortcut-keycap .shortcut-keycap-cover {
+  width: 36px;
+  height: 28px;
+  border-radius: 7px;
+  padding-bottom: 4px;
+}
+
+.guide-keycaps .guide-shortcut-keycap .shortcut-keycap-button {
+  width: 32px;
+  height: 24px;
+  border-radius: 5px;
   font-size: 8.5px;
-  vertical-align: -3px;
+  letter-spacing: 0.04em;
+}
+
+.guide-keycaps .guide-shortcut-keycap[data-key="space"] {
+  width: 66px;
+}
+
+.guide-keycaps .guide-shortcut-keycap[data-key="space"] .shortcut-keycap-cover {
+  width: 62px;
+}
+
+.guide-keycaps .guide-shortcut-keycap[data-key="space"] .shortcut-keycap-button {
+  width: 58px;
+}
+
+.guide-keycaps .guide-shortcut-keycap[data-key="shift"] {
+  width: 48px;
+}
+
+.guide-keycaps .guide-shortcut-keycap[data-key="shift"] .shortcut-keycap-cover {
+  width: 44px;
+}
+
+.guide-keycaps .guide-shortcut-keycap[data-key="shift"] .shortcut-keycap-button {
+  width: 40px;
 }
 
 .guide-key-plus {
-  color: rgba(218, 196, 244, 0.7);
-  font-size: 10px;
-  font-weight: 700;
-  margin: 0 1px;
+  align-self: center;
+  margin: 0;
+}
+
+.guide-inline-keycaps,
+.guide-inline-control {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+}
+
+.guide-inline-keycaps {
+  margin: 0 3px;
+}
+
+.guide-inline-keycaps .guide-shortcut-keycap {
+  width: 30px;
+  height: 24px;
+}
+
+.guide-inline-keycaps .guide-shortcut-keycap .shortcut-keycap-3dwrapper {
+  perspective: 66px;
+}
+
+.guide-inline-keycaps .guide-shortcut-keycap .shortcut-keycap-cover {
+  width: 27px;
+  height: 21px;
+  border-radius: 6px;
+  padding-bottom: 3px;
+}
+
+.guide-inline-keycaps .guide-shortcut-keycap .shortcut-keycap-button {
+  width: 24px;
+  height: 18px;
+  border-radius: 4px;
+  font-size: 7.5px;
+  letter-spacing: 0.03em;
 }
 
 .guide-shortcut-info,
@@ -2742,26 +2818,31 @@ img {
 
 /* Dialogue modifiers */
 .guide-modifier-key {
-  justify-self: start;
+  justify-self: center;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  font-family: monospace;
+  font-size: 10px;
+  line-height: 1.35;
 }
 
-.guide-modifier-key code {
-  font-family: 'Courier New', monospace;
-  font-size: 10px;
-  padding: 3px 8px;
-  background:
-    linear-gradient(180deg, rgba(10, 4, 22, 0.7) 0%, rgba(20, 8, 40, 0.55) 100%);
-  border: 1px solid rgba(180, 140, 224, 0.35);
-  color: rgba(244, 224, 255, 0.95);
-  border-radius: 3px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    inset 0 0 5px rgba(0, 0, 0, 0.45);
-  display: inline-block;
+.guide-modifier-key--inline {
+  display: inline-flex;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+.guide-modifier-key .text-input-modifier,
+.guide-modifier-key .text-input-emphasis,
+.guide-modifier-key .text-input-italic,
+.guide-modifier-key .text-input-strikethrough {
+  font-size: inherit;
 }
 
 .guide-modifier-label--shaky {
-  animation: guide-shake 0.45s infinite;
   display: inline-block;
 }
 
@@ -2775,12 +2856,12 @@ img {
   text-decoration-thickness: 2px;
 }
 
-@keyframes guide-shake {
-  0%, 100% { transform: translate(0, 0); }
-  20% { transform: translate(-0.8px, -0.6px); }
-  40% { transform: translate(0.7px, 0.8px); }
-  60% { transform: translate(-0.6px, 0.6px); }
-  80% { transform: translate(0.8px, -0.7px); }
+.guide-shake-preview,
+.guide-modifier-label--shaky {
+  animation: dialogue-char-shake var(--dialogue-char-shake-duration, 292ms) steps(1, end) infinite;
+  animation-delay: var(--dialogue-char-shake-delay, -180ms);
+  transform-origin: 50% 70%;
+  will-change: transform;
 }
 
 /* Feature list */
@@ -2813,6 +2894,41 @@ img {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 1px 1px rgba(0, 0, 0, 0.45);
 }
 
+.guide-media-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.guide-media-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 200px);
+  gap: 10px;
+  align-items: center;
+  padding: 9px 10px;
+  background: linear-gradient(180deg, rgba(50, 24, 90, 0.48) 0%, rgba(26, 12, 52, 0.7) 100%);
+  border: 1px solid rgba(178, 136, 224, 0.2);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 0 8px rgba(0, 0, 0, 0.2);
+  font-size: 9.5px;
+  line-height: 1.5;
+}
+
+.guide-media-entry--text {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.guide-media-copy {
+  min-width: 0;
+}
+
+.guide-media-entry .guide-shot-card {
+  justify-self: end;
+  max-width: 220px;
+}
+
 .guide-pill {
   display: inline-flex;
   align-items: center;
@@ -2827,56 +2943,28 @@ img {
   border: 1px solid rgba(20, 8, 42, 0.8);
   border-radius: 999px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(0, 0, 0, 0.5);
-  vertical-align: -2px;
+  vertical-align: middle;
   letter-spacing: 0.2px;
 }
 
-/* Favorites demo */
-.guide-favorite-demo {
-  display: flex;
-  align-items: center;
+.guide-inline-control {
+  margin: 0 2px;
+}
+
+.guide-shot-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  padding: 10px;
-  background: linear-gradient(180deg, rgba(60, 30, 108, 0.5) 0%, rgba(30, 14, 58, 0.78) 100%);
-  border: 1px solid rgba(178, 136, 224, 0.22);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    inset 0 0 10px rgba(0, 0, 0, 0.25);
 }
 
-.guide-favorite-card {
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background:
-    linear-gradient(180deg, #3a1c66 0%, #231048 60%, #150827 100%);
-  border: 1px solid rgba(188, 148, 230, 0.35);
-  border-radius: 3px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 -2px 6px rgba(0, 0, 0, 0.4),
-    0 1px 2px rgba(0, 0, 0, 0.5);
-  flex-shrink: 0;
+.guide-shot-card--pair {
+  min-height: 120px;
 }
 
-.guide-favorite-star {
-  width: 22px;
-  height: 22px;
-  color: #ffd65a;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
-}
-
-.guide-favorite-arrow {
-  font-size: 14px;
-  color: rgba(210, 188, 240, 0.7);
-}
-
-.guide-favorite-copy {
-  font-size: 9.5px;
-  color: rgba(220, 200, 244, 0.8);
-  letter-spacing: 0.3px;
+.guide-shot-card--pair .guide-shot {
+  min-height: 120px;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* Settings list */
@@ -2970,6 +3058,21 @@ img {
 
   .guide-demo-grid {
     grid-template-columns: 1fr;
+  }
+
+  .guide-media-entry,
+  .guide-shot-pair {
+    grid-template-columns: 1fr;
+  }
+
+  .guide-media-entry .guide-shot-card {
+    max-width: none;
+    justify-self: stretch;
+  }
+
+  .guide-keycaps,
+  .guide-modifier-key {
+    justify-self: start;
   }
 }
 

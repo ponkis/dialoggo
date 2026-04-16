@@ -1304,6 +1304,7 @@ function startApp() {
       if (panel === 'settings') {
         view.syncSettingsLayoutMode('settings');
         refs.sleeveBackgrounds.classList.remove('active');
+        refs.sleeveGuide?.classList.remove('active');
         refs.sleeveSettings.classList.add('active');
 
         if (!large && !hasCollapsedPreviewFlow && refs.panelWrapper) {
