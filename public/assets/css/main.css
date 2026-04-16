@@ -2683,61 +2683,68 @@ img {
     inset 0 0 8px rgba(0, 0, 0, 0.22);
 }
 
+.guide-shortcut-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .guide-keycaps {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  justify-self: center;
+  justify-self: start;
   align-self: center;
+  flex: 0 0 auto;
 }
 
 .guide-keycaps .guide-shortcut-keycap {
-  width: 40px;
-  height: 32px;
+  width: 34px;
+  height: 28px;
 }
 
 .guide-keycaps .guide-shortcut-keycap .shortcut-keycap-3dwrapper {
-  perspective: 80px;
+  perspective: 72px;
 }
 
 .guide-keycaps .guide-shortcut-keycap .shortcut-keycap-cover {
-  width: 36px;
-  height: 28px;
-  border-radius: 7px;
-  padding-bottom: 4px;
+  width: 31px;
+  height: 24px;
+  border-radius: 6px;
+  padding-bottom: 3px;
 }
 
 .guide-keycaps .guide-shortcut-keycap .shortcut-keycap-button {
-  width: 32px;
-  height: 24px;
-  border-radius: 5px;
-  font-size: 8.5px;
-  letter-spacing: 0.04em;
+  width: 28px;
+  height: 21px;
+  border-radius: 4px;
+  font-size: 7.5px;
+  letter-spacing: 0.03em;
 }
 
 .guide-keycaps .guide-shortcut-keycap[data-key="space"] {
-  width: 66px;
+  width: 57px;
 }
 
 .guide-keycaps .guide-shortcut-keycap[data-key="space"] .shortcut-keycap-cover {
-  width: 62px;
+  width: 53px;
 }
 
 .guide-keycaps .guide-shortcut-keycap[data-key="space"] .shortcut-keycap-button {
-  width: 58px;
+  width: 49px;
 }
 
 .guide-keycaps .guide-shortcut-keycap[data-key="shift"] {
-  width: 48px;
+  width: 41px;
 }
 
 .guide-keycaps .guide-shortcut-keycap[data-key="shift"] .shortcut-keycap-cover {
-  width: 44px;
+  width: 38px;
 }
 
 .guide-keycaps .guide-shortcut-keycap[data-key="shift"] .shortcut-keycap-button {
-  width: 40px;
+  width: 35px;
 }
 
 .guide-key-plus {
@@ -2788,6 +2795,10 @@ img {
   min-width: 0;
 }
 
+.guide-shortcut-info {
+  flex: 1 1 auto;
+}
+
 .guide-shortcut-label,
 .guide-modifier-label {
   font-size: 10px;
@@ -2818,7 +2829,7 @@ img {
 
 /* Dialogue modifiers */
 .guide-modifier-key {
-  justify-self: center;
+  justify-self: start;
   align-self: center;
   display: inline-flex;
   align-items: center;
@@ -2827,6 +2838,16 @@ img {
   font-family: monospace;
   font-size: 10px;
   line-height: 1.35;
+}
+
+.guide-modifier-key:not(.guide-modifier-key--inline) {
+  padding: 3px 8px;
+  background: linear-gradient(180deg, rgba(10, 4, 22, 0.7) 0%, rgba(20, 8, 40, 0.55) 100%);
+  border: 1px solid rgba(180, 140, 224, 0.35);
+  border-radius: 3px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 0 5px rgba(0, 0, 0, 0.45);
 }
 
 .guide-modifier-key--inline {
@@ -2856,12 +2877,17 @@ img {
   text-decoration-thickness: 2px;
 }
 
-.guide-shake-preview,
 .guide-modifier-label--shaky {
   animation: dialogue-char-shake var(--dialogue-char-shake-duration, 292ms) steps(1, end) infinite;
   animation-delay: var(--dialogue-char-shake-delay, -180ms);
   transform-origin: 50% 70%;
   will-change: transform;
+}
+
+.guide-shake-preview {
+  animation: none;
+  transform: none;
+  will-change: auto;
 }
 
 /* Feature list */
