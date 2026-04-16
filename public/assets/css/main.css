@@ -2689,6 +2689,12 @@ img {
   gap: 12px;
 }
 
+.guide-modifier-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .guide-keycaps {
   display: inline-flex;
   align-items: center;
@@ -2799,6 +2805,10 @@ img {
   flex: 1 1 auto;
 }
 
+.guide-modifier-info {
+  flex: 1 1 auto;
+}
+
 .guide-shortcut-label,
 .guide-modifier-label {
   font-size: 10px;
@@ -2838,6 +2848,7 @@ img {
   font-family: monospace;
   font-size: 10px;
   line-height: 1.35;
+  flex: 0 0 auto;
 }
 
 .guide-modifier-key:not(.guide-modifier-key--inline) {
