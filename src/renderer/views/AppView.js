@@ -49,6 +49,7 @@ function createAppView(model, audioService) {
     settingsPanel: document.getElementById('settings-panel'),
     backgroundsPanel: document.getElementById('backgrounds-panel'),
     backgroundsSections: document.getElementById('backgrounds-sections'),
+    guidePanel: document.getElementById('guide-panel'),
     flipCard: document.getElementById('flip-card'),
     sleeveCamera: document.getElementById('sleeve-tab-camera'),
     sleeveBackgrounds: document.getElementById('sleeve-tab-backgrounds'),
@@ -2934,9 +2935,11 @@ function createAppView(model, audioService) {
   function setFrontPanel(panel) {
     refs.controlsPanel?.classList.toggle('active', panel === 'controls');
     refs.backgroundsPanel?.classList.toggle('active', panel === 'backgrounds');
+    refs.guidePanel?.classList.toggle('active', panel === 'guide');
 
     refs.controlsPanel?.setAttribute('aria-hidden', panel !== 'controls' ? 'true' : 'false');
     refs.backgroundsPanel?.setAttribute('aria-hidden', panel !== 'backgrounds' ? 'true' : 'false');
+    refs.guidePanel?.setAttribute('aria-hidden', panel !== 'guide' ? 'true' : 'false');
   }
 
   function setActiveBackPanel(panel) {
@@ -3173,6 +3176,7 @@ function createAppView(model, audioService) {
     setFrontPanel('controls');
     setActiveBackPanel(null);
     refs.sleeveBackgrounds.classList.remove('active');
+    refs.sleeveGuide?.classList.remove('active');
     refs.sleeveSettings.classList.remove('active');
     state.frontPanel = 'controls';
     state.activePanel = 'controls';

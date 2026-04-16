@@ -1327,6 +1327,7 @@ function startApp() {
       } else if (panel === 'backgrounds') {
         refs.sleeveSettings.classList.remove('active');
         refs.sleeveBackgrounds.classList.add('active');
+        refs.sleeveGuide?.classList.remove('active');
         audioService.playMenuSound('settingsOpen');
         await view.flipPanel(previousPanel, 'backgrounds');
         state.frontPanel = 'backgrounds';
@@ -1342,9 +1343,29 @@ function startApp() {
             suppressPlaceholder: true,
           });
         }
+      } else if (panel === 'guide') {
+        refs.sleeveSettings.classList.remove('active');
+        refs.sleeveBackgrounds.classList.remove('active');
+        refs.sleeveGuide?.classList.add('active');
+        audioService.playMenuSound('settingsOpen');
+        await view.flipPanel(previousPanel, 'guide');
+        state.frontPanel = 'guide';
+        state.activePanel = 'guide';
+        view.syncSettingsLayoutMode('controls');
+
+        if (leavingSettings && hasCollapsedPreviewFlow) {
+          await view.expandPreviewAfterControls({
+            keepPlaceholderSuppressed: true,
+          });
+        } else {
+          syncFrontPanelLayout({
+            suppressPlaceholder: true,
+          });
+        }
       } else {
         refs.sleeveSettings.classList.remove('active');
         refs.sleeveBackgrounds.classList.remove('active');
+        refs.sleeveGuide?.classList.remove('active');
         audioService.playMenuSound('settingsClose');
         await view.flipPanel(previousPanel, 'controls');
         state.frontPanel = 'controls';
@@ -1819,7 +1840,9 @@ function startApp() {
   });
 
   refs.sleeveGuide?.addEventListener('click', () => {
-    audioService.playMenuSound('forbidden');
+    if (refs.sleeveGuide.getAttribute('aria-disabled') === 'true') return;
+    audioService.playMenuSound('click');
+    void showPanel(state.activePanel === 'guide' ? 'controls' : 'guide');
   });
 
   refs.sleeveCharacter?.addEventListener('click', () => {
