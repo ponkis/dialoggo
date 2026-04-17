@@ -42,6 +42,9 @@ const storageKeys = {
   recentCharacters: 'dialoggo-recent-characters',
   favoriteBackgrounds: 'dialoggo-favorite-backgrounds',
   recentBackgrounds: 'dialoggo-recent-backgrounds',
+  hiddenCharacters: 'dialoggo-hidden-characters',
+  hiddenBackgrounds: 'dialoggo-hidden-backgrounds',
+  hiddenCharactersCollapsed: 'dialoggo-hidden-characters-collapsed',
 };
 const RESERVED_PACK_DIRECTORY_NAMES = new Set(['char', 'generic', 'gui']);
 const CUSTOM_PACK_ID = 'custom';
@@ -904,6 +907,9 @@ function createAppModel() {
       recentCharacterIds: [],
       favoriteBackgroundIds: [],
       recentBackgroundIds: [],
+      hiddenCharacterIds: [],
+      hiddenBackgroundIds: [],
+      hiddenCharactersCollapsed: true,
       favoriteContextMenu: {
         visible: false,
         targetId: null,

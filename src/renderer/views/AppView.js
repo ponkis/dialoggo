@@ -158,6 +158,46 @@ function createAppView(model, audioService) {
     });
   }
 
+  function createEyeIcon({
+    open = true,
+    wrapperClassName = '',
+    svgClassName = '',
+  } = {}) {
+    const icon = document.createElement('span');
+    if (wrapperClassName) icon.className = wrapperClassName;
+    icon.setAttribute('aria-hidden', 'true');
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 256 256');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '16');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    if (svgClassName) svg.setAttribute('class', svgClassName);
+
+    const eyeShape = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    eyeShape.setAttribute('d', 'M16,128c22-44,62-72,112-72s90,28,112,72c-22,44-62,72-112,72S38,172,16,128Z');
+    svg.appendChild(eyeShape);
+
+    const pupil = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    pupil.setAttribute('cx', '128');
+    pupil.setAttribute('cy', '128');
+    pupil.setAttribute('r', '28');
+    pupil.setAttribute('fill', 'currentColor');
+    pupil.setAttribute('stroke', 'none');
+    svg.appendChild(pupil);
+
+    if (!open) {
+      const slash = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      slash.setAttribute('d', 'M40,40L216,216');
+      svg.appendChild(slash);
+    }
+
+    icon.appendChild(svg);
+    return icon;
+  }
+
   function buildFavoriteContextMenuContent(action, isFavorite) {
     const icon = createHeartIcon({
       filled: isFavorite,
@@ -169,13 +209,30 @@ function createAppView(model, audioService) {
     action.replaceChildren(icon, label);
   }
 
+  function buildHideContextMenuContent(action, isHidden) {
+    const icon = createEyeIcon({
+      open: !isHidden,
+      wrapperClassName: 'favorite-context-menu-action-icon',
+    });
+    const label = document.createElement('span');
+    label.className = 'favorite-context-menu-action-label';
+    label.textContent = isHidden ? 'Unhide' : 'Hide';
+    action.replaceChildren(icon, label);
+  }
+
+  function createContextMenuActionButton() {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'favorite-context-menu-action';
+    button.setAttribute('role', 'menuitem');
+    button.addEventListener('contextmenu', (event) => {
+      event.preventDefault();
+    });
+    return button;
+  }
+
   function ensureFavoriteContextMenu() {
-    if (favoriteContextMenu && favoriteContextMenuAction) {
-      return {
-        menu: favoriteContextMenu,
-        action: favoriteContextMenuAction,
-      };
-    }
+    if (favoriteContextMenu) return favoriteContextMenu;
 
     favoriteContextMenu = document.createElement('div');
     favoriteContextMenu.className = 'favorite-context-menu';
@@ -183,59 +240,39 @@ function createAppView(model, audioService) {
     favoriteContextMenu.setAttribute('role', 'menu');
     favoriteContextMenu.setAttribute('aria-hidden', 'true');
 
-    favoriteContextMenuAction = document.createElement('button');
-    favoriteContextMenuAction.type = 'button';
-    favoriteContextMenuAction.className = 'favorite-context-menu-action';
-    favoriteContextMenuAction.setAttribute('role', 'menuitem');
-    favoriteContextMenuAction.addEventListener('contextmenu', (event) => {
-      event.preventDefault();
-    });
-
-    favoriteContextMenu.appendChild(favoriteContextMenuAction);
     document.body.appendChild(favoriteContextMenu);
-
-    return {
-      menu: favoriteContextMenu,
-      action: favoriteContextMenuAction,
-    };
+    return favoriteContextMenu;
   }
 
   function hideFavoriteContextMenu() {
-    if (!favoriteContextMenu || !favoriteContextMenuAction) {
-      state.favoriteContextMenu.visible = false;
-      state.favoriteContextMenu.targetId = null;
-      state.favoriteContextMenu.targetType = null;
-      state.favoriteContextMenu.x = 0;
-      state.favoriteContextMenu.y = 0;
-      return;
-    }
-
     state.favoriteContextMenu.visible = false;
     state.favoriteContextMenu.targetId = null;
     state.favoriteContextMenu.targetType = null;
     state.favoriteContextMenu.x = 0;
     state.favoriteContextMenu.y = 0;
+    favoriteContextMenuAction = null;
+
+    if (!favoriteContextMenu) return;
     favoriteContextMenu.hidden = true;
     favoriteContextMenu.setAttribute('aria-hidden', 'true');
     delete favoriteContextMenu.dataset.targetId;
     delete favoriteContextMenu.dataset.targetType;
-    favoriteContextMenuAction.onclick = null;
+    favoriteContextMenu.replaceChildren();
   }
 
   function showFavoriteContextMenu({
     targetId,
     targetType = 'character',
     isFavorite = false,
+    isHidden = false,
     x = 0,
     y = 0,
     onToggleFavorite = null,
+    onToggleHidden = null,
   } = {}) {
     if (!targetId) return;
 
-    const {
-      menu,
-      action,
-    } = ensureFavoriteContextMenu();
+    const menu = ensureFavoriteContextMenu();
 
     state.favoriteContextMenu.visible = true;
     state.favoriteContextMenu.targetId = targetId;
@@ -245,11 +282,38 @@ function createAppView(model, audioService) {
 
     menu.dataset.targetId = targetId;
     menu.dataset.targetType = targetType;
-    buildFavoriteContextMenuContent(action, isFavorite);
-    action.onclick = (event) => {
-      event.preventDefault();
-      onToggleFavorite?.();
-    };
+    menu.replaceChildren();
+
+    let firstAction = null;
+
+    if (onToggleHidden) {
+      const hideAction = createContextMenuActionButton();
+      buildHideContextMenuContent(hideAction, isHidden);
+      hideAction.onclick = (event) => {
+        event.preventDefault();
+        onToggleHidden?.();
+      };
+      menu.appendChild(hideAction);
+      if (!firstAction) firstAction = hideAction;
+    }
+
+    if (onToggleFavorite && !isHidden) {
+      const favAction = createContextMenuActionButton();
+      buildFavoriteContextMenuContent(favAction, isFavorite);
+      favAction.onclick = (event) => {
+        event.preventDefault();
+        onToggleFavorite?.();
+      };
+      menu.appendChild(favAction);
+      if (!firstAction) firstAction = favAction;
+    }
+
+    favoriteContextMenuAction = firstAction;
+
+    if (!firstAction) {
+      hideFavoriteContextMenu();
+      return;
+    }
 
     menu.hidden = false;
     menu.setAttribute('aria-hidden', 'false');
@@ -272,7 +336,7 @@ function createAppView(model, audioService) {
     state.favoriteContextMenu.y = clampedTop;
 
     requestAnimationFrame(() => {
-      action.focus({
+      firstAction.focus({
         preventScroll: true,
       });
     });
@@ -1425,7 +1489,8 @@ function createAppView(model, audioService) {
 
     document.querySelectorAll('.char-btn').forEach((button) => {
       const searchIndex = button.dataset.searchIndex || '';
-      const matchesSearch = !query || searchIndex.includes(query);
+      const isHiddenChar = button.dataset.hidden === 'true';
+      const matchesSearch = !query || (!isHiddenChar && searchIndex.includes(query));
 
       button.classList.toggle('search-hidden', !matchesSearch);
       const visible = matchesSearch && !button.classList.contains('hidden-broken');
@@ -1462,6 +1527,14 @@ function createAppView(model, audioService) {
       refs.charGrid.scrollLeft = 0;
     }
 
+    requestAnimationFrame(updateReelArrows);
+  }
+
+  function setHiddenCharactersCollapsed(collapsed) {
+    if (!refs.charGrid) return;
+    const section = refs.charGrid.querySelector('.character-pack-section[data-pack-id="__hidden__"]');
+    if (!section) return;
+    section.classList.toggle('is-collapsed', Boolean(collapsed));
     requestAnimationFrame(updateReelArrows);
   }
 
@@ -2062,6 +2135,7 @@ function createAppView(model, audioService) {
   function buildCharacterGrid({
     onCharacterSelected = null,
     onCharacterContextMenu = null,
+    onToggleHiddenCollapsed = null,
   } = {}) {
     if (!refs.charGrid) return;
 
@@ -2077,9 +2151,11 @@ function createAppView(model, audioService) {
     const hasMissingCharacterFallback = env.fs.existsSync(missingCharacterFallbackPath);
     const charactersByPack = new Map();
     const charactersById = new Map(characters.map((character) => [character.id, character]));
-    const favoriteCharacterIds = new Set(state.favoriteCharacterIds || []);
+    const hiddenCharacterIdsSet = new Set(state.hiddenCharacterIds || []);
+    const favoriteCharacterIds = new Set((state.favoriteCharacterIds || []).filter((id) => !hiddenCharacterIdsSet.has(id)));
 
     characters.forEach((character) => {
+      if (hiddenCharacterIdsSet.has(character.id)) return;
       if (!charactersByPack.has(character.packId)) {
         charactersByPack.set(character.packId, {
           id: character.packId,
@@ -2106,8 +2182,9 @@ function createAppView(model, audioService) {
     };
 
     const specialPacks = [
-      buildSpecialPack('__favorites__', 'Favorites', state.favoriteCharacterIds || []),
-      buildSpecialPack('__recent__', 'Recent', state.recentCharacterIds || []),
+      buildSpecialPack('__hidden__', 'Hidden', state.hiddenCharacterIds || []),
+      buildSpecialPack('__favorites__', 'Favorites', (state.favoriteCharacterIds || []).filter((id) => !hiddenCharacterIdsSet.has(id))),
+      buildSpecialPack('__recent__', 'Recent', (state.recentCharacterIds || []).filter((id) => !hiddenCharacterIdsSet.has(id))),
     ].filter((pack) => Boolean(pack));
 
     const regularPacks = Array.isArray(packs) && packs.length > 0
@@ -2122,6 +2199,7 @@ function createAppView(model, audioService) {
     const orderedPacks = [...specialPacks, ...regularPacks];
 
     orderedPacks.forEach((pack) => {
+      const isHiddenPack = pack.id === '__hidden__';
       let packSection = existingSections.get(pack.id);
       let packStrip;
       const isNewSection = !packSection;
@@ -2138,6 +2216,12 @@ function createAppView(model, audioService) {
 
         const packHeading = document.createElement('span');
         packHeading.className = 'character-pack-heading';
+        const packHeadingChevron = document.createElement('span');
+        packHeadingChevron.className = 'character-pack-heading-chevron';
+        packHeadingChevron.setAttribute('aria-hidden', 'true');
+        const packHeadingLabel = document.createElement('span');
+        packHeadingLabel.className = 'character-pack-heading-label';
+        packHeading.append(packHeadingChevron, packHeadingLabel);
         packSection.appendChild(packHeading);
 
         packStrip = document.createElement('div');
@@ -2148,7 +2232,27 @@ function createAppView(model, audioService) {
         existingSections.delete(pack.id);
       }
 
-      packSection.querySelector('.character-pack-heading').textContent = pack.displayName;
+      const headingEl = packSection.querySelector('.character-pack-heading');
+      headingEl.querySelector('.character-pack-heading-label').textContent = pack.displayName;
+
+      packSection.classList.toggle('character-pack-section-hidden', isHiddenPack);
+      packSection.classList.toggle('is-collapsed', isHiddenPack && Boolean(state.hiddenCharactersCollapsed));
+      if (isHiddenPack) {
+        headingEl.setAttribute('role', 'button');
+        headingEl.setAttribute('tabindex', '0');
+        headingEl.onclick = () => onToggleHiddenCollapsed?.();
+        headingEl.onkeydown = (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            onToggleHiddenCollapsed?.();
+          }
+        };
+      } else {
+        headingEl.removeAttribute('role');
+        headingEl.removeAttribute('tabindex');
+        headingEl.onclick = null;
+        headingEl.onkeydown = null;
+      }
 
       // Reconcile buttons within the pack strip
       const existingButtons = new Map();
@@ -2222,6 +2326,11 @@ function createAppView(model, audioService) {
         // Update button state (new or reused)
         button.dataset.cardKey = cardKey;
         button.dataset.packId = character.packId;
+        if (isHiddenPack) {
+          button.dataset.hidden = 'true';
+        } else {
+          delete button.dataset.hidden;
+        }
         button.dataset.searchIndex = model.normalizeCharacterSearch([
           character.displayName,
           character.folderName,
@@ -2350,9 +2459,11 @@ function createAppView(model, audioService) {
     const fragment = document.createDocumentFragment();
     const backgroundsByPack = new Map();
     const backgroundsById = new Map(backgrounds.map((background) => [background.id, background]));
-    const favoriteBackgroundIds = new Set(state.favoriteBackgroundIds || []);
+    const hiddenBackgroundIdsSet = new Set(state.hiddenBackgroundIds || []);
+    const favoriteBackgroundIds = new Set((state.favoriteBackgroundIds || []).filter((id) => !hiddenBackgroundIdsSet.has(id)));
 
     backgrounds.forEach((background) => {
+      if (hiddenBackgroundIdsSet.has(background.id)) return;
       if (!backgroundsByPack.has(background.packId)) {
         backgroundsByPack.set(background.packId, {
           id: background.packId,
@@ -2425,8 +2536,9 @@ function createAppView(model, audioService) {
     };
 
     const specialPacks = [
-      buildSpecialPack('__favorites__', 'Favorites', state.favoriteBackgroundIds || []),
-      buildSpecialPack('__recent__', 'Recent', state.recentBackgroundIds || []),
+      buildSpecialPack('__hidden__', 'Hidden', state.hiddenBackgroundIds || []),
+      buildSpecialPack('__favorites__', 'Favorites', (state.favoriteBackgroundIds || []).filter((id) => !hiddenBackgroundIdsSet.has(id))),
+      buildSpecialPack('__recent__', 'Recent', (state.recentBackgroundIds || []).filter((id) => !hiddenBackgroundIdsSet.has(id))),
     ].filter((pack) => Boolean(pack));
 
     const regularPacks = Array.isArray(backgroundPacks) && backgroundPacks.length > 0
@@ -3241,6 +3353,7 @@ function createAppView(model, audioService) {
     applyBackgroundFilters,
     showFavoriteContextMenu,
     hideFavoriteContextMenu,
+    setHiddenCharactersCollapsed,
     isFavoriteContextMenuVisible,
     isFavoriteContextMenuTarget,
     stopCardAnim,

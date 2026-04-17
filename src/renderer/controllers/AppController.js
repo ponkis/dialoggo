@@ -739,13 +739,18 @@ function startApp() {
           targetId: character.id,
           targetType: 'character',
           isFavorite: state.favoriteCharacterIds.includes(character.id),
+          isHidden: state.hiddenCharacterIds.includes(character.id),
           x: event.clientX,
           y: event.clientY,
           onToggleFavorite: () => {
             toggleFavoriteCharacter(character);
           },
+          onToggleHidden: () => {
+            toggleHiddenCharacter(character);
+          },
         });
       },
+      onToggleHiddenCollapsed: toggleHiddenCharactersCollapsed,
     });
 
     if (state.hideBrokenChars) {
@@ -792,10 +797,14 @@ function startApp() {
           targetId: background.id,
           targetType: 'background',
           isFavorite: state.favoriteBackgroundIds.includes(background.id),
+          isHidden: state.hiddenBackgroundIds.includes(background.id),
           x: event.clientX,
           y: event.clientY,
           onToggleFavorite: () => {
             toggleFavoriteBackground(background);
+          },
+          onToggleHidden: () => {
+            toggleHiddenBackground(background);
           },
         });
       },
@@ -818,6 +827,20 @@ function startApp() {
 
   function persistRecentBackgrounds() {
     persistBackgroundIdList(storageKeys.recentBackgrounds, state.recentBackgroundIds);
+  }
+
+  function persistHiddenCharacters() {
+    persistCharacterIdList(storageKeys.hiddenCharacters, state.hiddenCharacterIds);
+  }
+
+  function persistHiddenBackgrounds() {
+    persistBackgroundIdList(storageKeys.hiddenBackgrounds, state.hiddenBackgroundIds);
+  }
+
+  function persistHiddenCharactersCollapsed() {
+    try {
+      localStorage.setItem(storageKeys.hiddenCharactersCollapsed, String(state.hiddenCharactersCollapsed));
+    } catch { }
   }
 
   function moveCharacterToRecent(characterId) {
@@ -913,6 +936,82 @@ function startApp() {
     showTransientVisualizerAlert({
       action: `${nextAction} ${background.displayName} ${nextRelation}`,
     });
+  }
+
+  function toggleHiddenCharacter(character) {
+    if (!character?.id || !charactersById.has(character.id)) return;
+
+    const isHidden = state.hiddenCharacterIds.includes(character.id);
+    const nextAction = isHidden ? 'Unhid' : 'Hid';
+    const nextIds = isHidden
+      ? state.hiddenCharacterIds.filter((characterId) => characterId !== character.id)
+      : [character.id, ...state.hiddenCharacterIds];
+
+    state.hiddenCharacterIds = sanitizeCharacterIdList(nextIds);
+
+    if (!isHidden && state.favoriteCharacterIds.includes(character.id)) {
+      state.favoriteCharacterIds = state.favoriteCharacterIds.filter((characterId) => characterId !== character.id);
+      persistFavoriteCharacters();
+    }
+
+    persistHiddenCharacters();
+    renderCharacterGrid();
+    audioService.playMenuSound('click');
+
+    if (character.previewSpritePath) {
+      showTransientVisualizerAlert({
+        leadingText: nextAction,
+        iconSrc: view.fileToSrc(character.previewSpritePath),
+        iconAlt: character.displayName,
+      });
+      return;
+    }
+
+    showTransientVisualizerAlert({
+      action: `${nextAction} ${character.displayName}`,
+    });
+  }
+
+  function toggleHiddenBackground(background) {
+    if (!background?.id || !backgroundsById.has(background.id)) return;
+
+    const isHidden = state.hiddenBackgroundIds.includes(background.id);
+    const nextAction = isHidden ? 'Unhid' : 'Hid';
+    const nextIds = isHidden
+      ? state.hiddenBackgroundIds.filter((backgroundId) => backgroundId !== background.id)
+      : [background.id, ...state.hiddenBackgroundIds];
+
+    state.hiddenBackgroundIds = sanitizeBackgroundIdList(nextIds);
+
+    if (!isHidden && state.favoriteBackgroundIds.includes(background.id)) {
+      state.favoriteBackgroundIds = state.favoriteBackgroundIds.filter((backgroundId) => backgroundId !== background.id);
+      persistFavoriteBackgrounds();
+    }
+
+    persistHiddenBackgrounds();
+    renderBackgroundGrid();
+    audioService.playMenuSound('click');
+
+    if (background.previewImagePath) {
+      showTransientVisualizerAlert({
+        leadingText: nextAction,
+        iconSrc: view.fileToSrc(background.previewImagePath),
+        iconAlt: background.displayName,
+        iconVariant: 'thumbnail',
+      });
+      return;
+    }
+
+    showTransientVisualizerAlert({
+      action: `${nextAction} ${background.displayName}`,
+    });
+  }
+
+  function toggleHiddenCharactersCollapsed() {
+    state.hiddenCharactersCollapsed = !state.hiddenCharactersCollapsed;
+    persistHiddenCharactersCollapsed();
+    audioService.playMenuSound('click');
+    view.setHiddenCharactersCollapsed(state.hiddenCharactersCollapsed);
   }
 
   function selectCharacter(character) {
@@ -1465,6 +1564,37 @@ function startApp() {
     });
   }
 
+  function initHiddenCharactersFromStorage() {
+    state.hiddenCharacterIds = loadCharacterIdListFromStorage(storageKeys.hiddenCharacters);
+    if (state.hiddenCharacterIds.length && state.favoriteCharacterIds.length) {
+      const hiddenSet = new Set(state.hiddenCharacterIds);
+      const filtered = state.favoriteCharacterIds.filter((characterId) => !hiddenSet.has(characterId));
+      if (filtered.length !== state.favoriteCharacterIds.length) {
+        state.favoriteCharacterIds = filtered;
+        persistFavoriteCharacters();
+      }
+    }
+  }
+
+  function initHiddenBackgroundsFromStorage() {
+    state.hiddenBackgroundIds = loadBackgroundIdListFromStorage(storageKeys.hiddenBackgrounds);
+    if (state.hiddenBackgroundIds.length && state.favoriteBackgroundIds.length) {
+      const hiddenSet = new Set(state.hiddenBackgroundIds);
+      const filtered = state.favoriteBackgroundIds.filter((backgroundId) => !hiddenSet.has(backgroundId));
+      if (filtered.length !== state.favoriteBackgroundIds.length) {
+        state.favoriteBackgroundIds = filtered;
+        persistFavoriteBackgrounds();
+      }
+    }
+  }
+
+  function initHiddenCharactersCollapsedFromStorage() {
+    try {
+      const saved = localStorage.getItem(storageKeys.hiddenCharactersCollapsed);
+      if (saved !== null) state.hiddenCharactersCollapsed = saved !== 'false';
+    } catch { }
+  }
+
   function applyHideBrokenChars() {
     document.querySelectorAll('.char-btn.unavailable').forEach((button) => {
       button.classList.toggle('hidden-broken', state.hideBrokenChars);
@@ -1910,6 +2040,9 @@ function startApp() {
   initRecentCharactersFromStorage();
   initFavoriteBackgroundsFromStorage();
   initRecentBackgroundsFromStorage();
+  initHiddenCharactersFromStorage();
+  initHiddenBackgroundsFromStorage();
+  initHiddenCharactersCollapsedFromStorage();
   renderCharacterGrid({
     preserveScroll: false,
   });
