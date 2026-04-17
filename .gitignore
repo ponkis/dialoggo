@@ -139,3 +139,4 @@ dist
 .pnp.*
 package-lock.json
 .claude/worktrees/brave-newton-15226d/
+.claude/settings.local.json
