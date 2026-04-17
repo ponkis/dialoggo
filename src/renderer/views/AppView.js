@@ -286,7 +286,7 @@ function createAppView(model, audioService) {
 
     let firstAction = null;
 
-    if (onToggleHidden) {
+    if (onToggleHidden && !isFavorite) {
       const hideAction = createContextMenuActionButton();
       buildHideContextMenuContent(hideAction, isHidden);
       hideAction.onclick = (event) => {

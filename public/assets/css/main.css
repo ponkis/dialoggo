@@ -4651,6 +4651,10 @@ img {
   color: #c4c4c4;
 }
 
+.character-pack-section-hidden.is-collapsed {
+  align-self: stretch;
+}
+
 .character-pack-section-hidden.is-collapsed .character-pack-strip {
   display: none;
 }
