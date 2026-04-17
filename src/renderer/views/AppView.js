@@ -2357,7 +2357,7 @@ function createAppView(model, audioService) {
         if (labelText) labelText.textContent = character.displayName;
 
         // Reconcile Favorite Heart
-        const existingHeart = label.querySelector('.favorite-heart-icon');
+        const existingHeart = label.querySelector('.char-btn-favorite-heart');
         const isFavorite = favoriteCharacterIds.has(character.id);
         if (isFavorite && !existingHeart) {
           label.insertBefore(createFavoriteHeartIcon(), labelText);
