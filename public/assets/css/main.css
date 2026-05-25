@@ -72,6 +72,10 @@ body {
   -webkit-app-region: no-drag;
 }
 
+body.viewer-open {
+  padding-right: 0 !important;
+}
+
 .startup-overlay {
   position: fixed;
   top: var(--bar-height);
@@ -2591,6 +2595,16 @@ img {
   width: 100%;
   height: auto;
   object-fit: cover;
+  cursor: pointer;
+}
+
+.guide-shot:focus-visible {
+  outline: 2px solid rgba(255, 223, 126, 0.9);
+  outline-offset: 3px;
+}
+
+.guide-image-viewer.viewer-container {
+  z-index: 12000;
 }
 
 /* Playback demo tiles */

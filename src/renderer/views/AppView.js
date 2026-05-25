@@ -1,3 +1,5 @@
+const Viewer = require('viewerjs');
+
 function createAppView(model, audioService) {
   const {
     env,
@@ -71,6 +73,7 @@ function createAppView(model, audioService) {
   };
   let favoriteContextMenu = null;
   let favoriteContextMenuAction = null;
+  let guideImageViewer = null;
 
   let n64PixelScratch = null;
   let n64DialogueTextHi = null;
@@ -3034,6 +3037,79 @@ function createAppView(model, audioService) {
     }
   }
 
+  function getCharacterFooterText() {
+    const packCount = Array.isArray(packs) && packs.length > 0
+      ? packs.filter((pack) => Number(pack?.characterCount) > 0).length
+      : new Set(characters.map((character) => character.packId)).size;
+
+    return packCount > 0
+      ? `${characters.length} chars / ${packCount} packs`
+      : `${characters.length} chars`;
+  }
+
+  function getBackgroundFooterText() {
+    const packCount = Array.isArray(backgroundPacks) && backgroundPacks.length > 0
+      ? backgroundPacks.filter((pack) => (
+        Number(pack?.backgroundCount) > 0
+        || String(pack?.id || '').toLowerCase() === 'custom'
+      )).length
+      : new Set(backgrounds.map((background) => background.packId)).size;
+
+    return packCount > 0
+      ? `${backgrounds.length} backgrounds / ${packCount} packs`
+      : `${backgrounds.length} backgrounds`;
+  }
+
+  function syncFooterCatalogText(panel = state.frontPanel || state.activePanel || 'controls') {
+    if (!refs.charCount) return;
+    refs.charCount.textContent = panel === 'backgrounds'
+      ? getBackgroundFooterText()
+      : getCharacterFooterText();
+  }
+
+  function initializeGuideImageViewer() {
+    if (!refs.guidePanel || guideImageViewer) return;
+
+    const guideImages = Array.from(refs.guidePanel.querySelectorAll('img.guide-shot'));
+    if (guideImages.length === 0) return;
+
+    guideImages.forEach((image) => {
+      image.tabIndex = 0;
+      image.setAttribute('role', 'button');
+      image.title = 'Open screenshot';
+      image.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        event.preventDefault();
+
+        const viewIndex = guideImages.indexOf(image);
+        if (viewIndex >= 0) guideImageViewer?.view(viewIndex);
+      });
+    });
+
+    guideImageViewer = new Viewer(refs.guidePanel, {
+      button: true,
+      className: 'guide-image-viewer',
+      filter(image) {
+        return image.classList.contains('guide-shot');
+      },
+      fullscreen: false,
+      navbar: true,
+      rotatable: false,
+      scalable: false,
+      title: [1, (image) => image.alt || 'Guide screenshot'],
+      toolbar: {
+        zoomIn: 1,
+        zoomOut: 1,
+        oneToOne: 1,
+        reset: 1,
+        prev: 1,
+        next: 1,
+      },
+      transition: true,
+      zIndex: 12000,
+    });
+  }
+
   function setPreviewPlaceholderSuppressed(suppressed) {
     previewPlaceholderExplicitSuppression = suppressed === true;
     syncPreviewPlaceholderState();
@@ -3052,6 +3128,7 @@ function createAppView(model, audioService) {
     refs.controlsPanel?.setAttribute('aria-hidden', panel !== 'controls' ? 'true' : 'false');
     refs.backgroundsPanel?.setAttribute('aria-hidden', panel !== 'backgrounds' ? 'true' : 'false');
     refs.guidePanel?.setAttribute('aria-hidden', panel !== 'guide' ? 'true' : 'false');
+    syncFooterCatalogText(panel);
   }
 
   function setActiveBackPanel(panel) {
@@ -3308,12 +3385,7 @@ function createAppView(model, audioService) {
   }
 
   refs.versionLabel.textContent = `v${env.appVersion}`;
-  const packCount = Array.isArray(packs) && packs.length > 0
-    ? packs.filter((pack) => Number(pack?.characterCount) > 0).length
-    : new Set(characters.map((character) => character.packId)).size;
-  refs.charCount.textContent = packCount > 0
-    ? `${characters.length} chars / ${packCount} packs`
-    : `${characters.length} chars`;
+  initializeGuideImageViewer();
   setFrontPanel(state.frontPanel || 'controls');
   setActiveBackPanel(state.activePanel === 'settings' ? 'settings' : null);
   setFlipCardPanel(state.activePanel === 'settings' ? 'settings' : null);
