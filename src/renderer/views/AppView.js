@@ -31,6 +31,7 @@ function createAppView(model, audioService) {
     previewBackgroundNext: document.getElementById('preview-background-next'),
     panelWrapper: document.querySelector('.panel-wrapper'),
     bottombar: document.querySelector('.bottombar'),
+    brandLink: document.getElementById('brand-link'),
     placeholder: document.getElementById('preview-placeholder'),
     placeholderAnim: document.getElementById('placeholder-anim'),
     startupOverlay: document.getElementById('startup-overlay'),
@@ -3384,7 +3385,8 @@ function createAppView(model, audioService) {
     syncPreviewPlaceholderState();
   }
 
-  refs.versionLabel.textContent = `v${env.appVersion}`;
+  if (refs.versionLabel) refs.versionLabel.textContent = `v${env.appVersion}`;
+  if (refs.brandLink && env.appHomepage) refs.brandLink.href = env.appHomepage;
   initializeGuideImageViewer();
   setFrontPanel(state.frontPanel || 'controls');
   setActiveBackPanel(state.activePanel === 'settings' ? 'settings' : null);

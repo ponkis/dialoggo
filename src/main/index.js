@@ -16,13 +16,29 @@ const {
 const {
   createMainWindow
 } = require('./windows/createMainWindow');
+const {
+  APP_METADATA,
+} = require('../shared/appMetadata');
 
 let mainWindow = null;
+
+app.setName(APP_METADATA.productName);
+if (process.platform === 'win32') {
+  app.setAppUserModelId(APP_METADATA.appId);
+}
+app.setAboutPanelOptions({
+  applicationName: APP_METADATA.productName,
+  applicationVersion: app.getVersion(),
+  version: app.getVersion(),
+  copyright: APP_METADATA.copyright,
+  website: APP_METADATA.homepage,
+});
+
 const logger = getLogger(app);
 
 crashReporter.start({
-  productName: 'Dialoggo',
-  companyName: 'ponkis',
+  productName: APP_METADATA.productName,
+  companyName: APP_METADATA.companyName,
   submitURL: '',
   uploadToServer: false,
   compress: true,

@@ -17,6 +17,9 @@
 
 /* Tokens */
 :root {
+  --font-ui: "Outfit", sans-serif;
+  --font-hand: "Over the Rainbow", cursive;
+
   --bg-deep: #1a1008;
   --bg-base: #2a1c0e;
   --bg-surface: #3a2816;
@@ -63,7 +66,7 @@
 }
 
 body {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-ui);
   background: var(--bg-deep);
   overflow: hidden;
   height: 100vh;
@@ -152,7 +155,7 @@ body.startup-complete .startup-loading {
 }
 
 .startup-loading-text {
-  font-family: 'Over the Rainbow', cursive;
+  font-family: var(--font-hand);
   font-size: 26px;
   font-weight: 400;
   letter-spacing: 0.8px;
@@ -925,7 +928,7 @@ img {
 }
 
 .preview-placeholder span {
-  font-family: 'Over the Rainbow', cursive;
+  font-family: var(--font-hand);
   font-size: 26px;
   font-weight: 400;
   letter-spacing: 0.8px;
@@ -2169,7 +2172,7 @@ img {
 }
 
 .background-card-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-ui);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.65px;
@@ -4732,7 +4735,7 @@ img {
   background: transparent;
   border: none;
   color: var(--text-secondary);
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-ui);
   font-size: 8px;
   letter-spacing: 0.6px;
   text-transform: uppercase;
@@ -4861,7 +4864,7 @@ img {
   border: none;
   background: transparent;
   color: var(--text-primary);
-  font-family: 'Outfit', sans-serif;
+  font-family: var(--font-ui);
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.55px;

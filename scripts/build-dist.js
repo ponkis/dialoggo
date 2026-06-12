@@ -2,6 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const webpack = require('webpack');
 const webpackConfig = require('../webpack.config');
+const {
+  APP_METADATA,
+} = require('../src/shared/appMetadata');
 
 const rootDir = path.resolve(__dirname, '..');
 const publicDir = path.join(rootDir, 'public');
@@ -82,10 +85,13 @@ function writeDistPackageJson() {
 
   const distPackageJson = {
     name: pkg.name,
+    productName: pkg.productName || APP_METADATA.productName,
     version: pkg.version,
     description: pkg.description,
-    author: pkg.author,
+    author: pkg.author || APP_METADATA.author,
+    homepage: pkg.homepage || APP_METADATA.homepage,
     license: pkg.license,
+    private: true,
     main: 'main/index.js',
   };
 

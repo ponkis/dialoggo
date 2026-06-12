@@ -1,20 +1,32 @@
 {
   "name": "dialoggo",
+  "productName": "Dialoggo",
   "version": "1.0.0",
+  "private": true,
+  "description": "Retro dialogue generator for Banjo-Kazooie and Banjo-Tooie style scenes.",
+  "author": "ponkis",
+  "homepage": "https://ponkis.xyz",
+  "license": "MIT",
   "main": "src/main/index.js",
   "scripts": {
     "start": "electron .",
     "start:dist": "electron dist",
     "build": "node scripts/build-dist.js",
+    "test": "node scripts/validate-project.js",
+    "verify": "npm run test && npm run build && npm run audit:licenses",
     "audit:deps": "npm audit",
     "audit:licenses": "node scripts/audit-licenses.js",
-    "licenses:summary": "license-checker --summary",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "licenses:summary": "license-checker --summary"
   },
-  "keywords": [],
-  "author": "",
-  "license": "MIT",
-  "description": "Banjo-Kazooie / Tooie dialogue generator",
+  "keywords": [
+    "dialogue",
+    "electron",
+    "banjo-kazooie",
+    "banjo-tooie"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
   "devDependencies": {
     "electron": "^41.0.3",
     "license-checker": "^25.0.1",

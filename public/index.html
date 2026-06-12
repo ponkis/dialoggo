@@ -4,7 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: file: https://ponkis.xyz; media-src 'self' file:; font-src 'self' https://fonts.gstatic.com; connect-src 'none'; object-src 'none'; base-uri 'self'; frame-src 'none';">
   <title>Dialoggo</title>
+  <meta name="description" content="Retro dialogue generator made by ponkis.">
+  <meta name="author" content="ponkis">
+  <meta name="theme-color" content="#1a1008">
   <link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <link rel="shortcut icon" href="./favicon.ico" />
@@ -764,8 +769,9 @@
         <span class="status-dot" id="status-dot"></span>
       </div>
       <div class="bottombar-right">
-        <span class="bottombar-info">Powered by</span>
-        <a href="https://ponkis.xyz" target="_blank" rel="noopener noreferrer" class="powered-link">
+        <span class="bottombar-info">Made by</span>
+        <a href="https://ponkis.xyz" target="_blank" rel="noopener noreferrer" class="powered-link" id="brand-link"
+          aria-label="Open ponkis website">
           <img src="https://ponkis.xyz/assets/img/global/logo.png" alt="Ponkis" class="powered-logo">
         </a>
       </div>

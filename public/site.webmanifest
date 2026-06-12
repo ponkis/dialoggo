@@ -1,6 +1,12 @@
 {
   "name": "Dialoggo",
   "short_name": "Dialoggo",
+  "description": "Retro dialogue generator made by ponkis.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "theme_color": "#1a1008",
+  "background_color": "#1a1008",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",
@@ -15,7 +21,8 @@
       "purpose": "maskable"
     }
   ],
-  "theme_color": "#e4e6d6",
-  "background_color": "#e4e6d6",
-  "display": "standalone"
+  "categories": [
+    "entertainment",
+    "utilities"
+  ]
 }

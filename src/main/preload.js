@@ -14,6 +14,9 @@ const {
   assertSafeAbsolutePath,
   toSafeFileUrl,
 } = require('../shared/security/safePaths');
+const {
+  APP_METADATA,
+} = require('../shared/appMetadata');
 
 const appPaths = resolveAppPaths();
 const assetsPaths = {
@@ -38,6 +41,14 @@ const packageJson = safeReadJsonFile(appPaths.packageJsonPath, {
   label: 'Application package.json',
   maxBytes: 32 * 1024,
 });
+const runtimeMetadata = {
+  appId: APP_METADATA.appId,
+  appName: packageJson.productName || APP_METADATA.productName,
+  appAuthor: packageJson.author || APP_METADATA.author,
+  appHomepage: packageJson.homepage || APP_METADATA.homepage,
+  appVersion: packageJson.version || APP_METADATA.versionFallback,
+  companyName: APP_METADATA.companyName,
+};
 
 function resolveRendererPath(targetPath) {
   return assertSafeAbsolutePath(targetPath, allowedRendererRoots, 'renderer asset path');
@@ -108,7 +119,7 @@ function logMessage(level, message, meta) {
 
 const bridge = {
   runtime: {
-    appVersion: packageJson.version || '0.0.0',
+    ...runtimeMetadata,
     platform: process.platform,
     paths: assetsPaths,
   },

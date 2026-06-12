@@ -1,5 +1,8 @@
 const path = require('path');
 const log = require('electron-log/main');
+const {
+  APP_METADATA,
+} = require('../../shared/appMetadata');
 
 let configuredLogger = null;
 
@@ -34,7 +37,7 @@ function getLogger(app) {
   log.initialize();
   log.transports.file.level = 'info';
   log.transports.console.level = process.env.NODE_ENV === 'development' ? 'debug' : 'info';
-  log.transports.file.resolvePathFn = () => path.join(app.getPath('userData'), 'logs', 'dialoggo.log');
+  log.transports.file.resolvePathFn = () => path.join(app.getPath('userData'), 'logs', APP_METADATA.logFileName);
 
   configuredLogger = log;
   return configuredLogger;

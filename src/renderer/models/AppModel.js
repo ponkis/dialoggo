@@ -57,6 +57,9 @@ function createEnvironment() {
   const bridge = getDialoggoBridge();
   const {
     paths,
+    appName,
+    appAuthor,
+    appHomepage,
     appVersion,
     platform,
   } = bridge.runtime;
@@ -78,6 +81,9 @@ function createEnvironment() {
     guiImgDir: paths.guiImgDir,
     guiAnimDir: paths.guiAnimDir,
     startupRevealSoundPath: bridge.path.join(paths.sndDir, 'gui', '6.wav'),
+    appName,
+    appAuthor,
+    appHomepage,
     appVersion,
     platform,
     log: bridge.log,

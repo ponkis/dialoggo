@@ -1,2 +1,11 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Normalize text files to LF for stable cross-platform diffs.
+* text=auto eol=lf
+
+# Binary assets
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.svg binary
+*.ttf binary
+*.wav binary
