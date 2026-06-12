@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(node -e \"require\\('./src/renderer/models/AppModel.js'\\); console.log\\('AppModel OK'\\);\")",
-      "Bash(node --check \"src/renderer/views/AppView.js\")",
-      "Bash(node --check \"src/renderer/controllers/AppController.js\")"
-    ]
-  }
-}
