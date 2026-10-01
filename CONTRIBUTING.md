@@ -1,27 +1,31 @@
 # Contributing
 
-Thanks for helping improve Dialoggo. Bug reports, clear feature proposals, and focused pull requests are welcome.
+Thank you for helping improve Dialoggo. Small, focused changes are easiest to review.
 
-## Before opening a pull request
+## Set up a development environment
 
-1. Open an issue for a substantial change so its scope can be discussed first.
-2. Keep each pull request focused and describe the user-visible effect.
-3. Do not include generated output, dependency folders, credentials, personal data, or media whose redistribution rights are unclear.
-4. Update the relevant documentation when behavior or architecture changes.
-
-## Local checks
-
-Install dependencies and run the app with `npm ci` and `npm start`. Before submitting, run:
+Dialoggo requires Node.js 20.11 or newer. npm is included with Node.js. From the repository root:
 
 ```bash
-npm run verify
+npm ci
+npm start
 ```
 
-This checks repository metadata, builds the app bundle, and audits dependency licenses. If a change affects Electron window behavior, manually check the source app and the generated bundle with `npm run start:dist`.
+## Before submitting a change
 
-## Architecture and security
+1. Open an issue for a substantial change so its scope can be discussed first.
+2. Do not include generated output, dependency folders, credentials, personal data, or media whose redistribution rights are unclear.
+3. Update the relevant documentation when behavior or architecture changes.
+4. Run `npm run verify`. This checks repository metadata, builds the app bundle, and audits dependency licenses.
+5. If a change affects Electron window behavior, manually check both the source app and the generated bundle with `npm run start:dist`.
+6. Follow the process boundaries in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Keep renderer code on the narrow preload bridge; do not expose general Node APIs or unrestricted IPC.
+7. Preserve the Content Security Policy and validate new file paths or external URLs at the privileged boundary.
+8. The build copies everything in `public/` into the app bundle. Verify rights and add attribution for third-party media; review [NOTICE.md](NOTICE.md).
 
-Follow the process boundaries in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Keep renderer code on the narrow preload bridge; do not expose general Node APIs or unrestricted IPC. Preserve the Content Security Policy and validate any new file paths or external URLs at the privileged boundary.
+## Pull requests
 
-The build copies everything in `public/` into the app bundle. Verify rights and add attribution for third-party media before adding assets; review [NOTICE.md](NOTICE.md).
+- Explain the user-visible effect and motivation.
+- Keep each pull request focused and leave unrelated cleanup out.
+- Include screenshots or recordings for visual changes when they make the result easier to review.
 
+By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
