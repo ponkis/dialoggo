@@ -1,7 +1,7 @@
-Dialoggo source code is released under the MIT License.
+Dialoggo application code is released under the MIT License. That license does not grant rights to media bundled with the app.
 
-The assets and sounds included in this project are the property of Rare and Microsoft. They are referenced here for compatibility and preservation purposes only and remain subject to their respective owners' rights.
+The contents of `public/assets/` include character art, backgrounds, sound recordings, fonts, configuration data, and other third-party material. Some imagery and audio relate to Banjo-Kazooie and Banjo-Tooie and are associated with Rare and Microsoft. Other items may have separate creators and terms. Attribution in a filename or configuration file is not a grant of redistribution rights.
 
-If you plan to publish or redistribute this project, review the contents of `public/assets/` and replace any third-party or franchise-owned media with assets you have permission to distribute.
+Before redistributing the application or reusing any bundled item, review the rights for each asset and replace content that you do not have permission to distribute. Custom character packs added by contributors or users are subject to their own rights and permissions.
 
 For legal questions or takedown concerns, contact: legal@ponkis.xyz

@@ -9,7 +9,7 @@
   "license": "MIT",
   "main": "src/main/index.js",
   "scripts": {
-    "start": "electron .",
+    "start": "node scripts/start-dev.js",
     "start:dist": "electron dist",
     "build": "node scripts/build-dist.js",
     "test": "node scripts/validate-project.js",

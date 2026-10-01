@@ -160,18 +160,4 @@ const bridge = {
   },
 };
 
-globalThis.dialoggo = bridge;
 contextBridge.exposeInMainWorld('dialoggo', bridge);
-
-window.addEventListener('DOMContentLoaded', () => {
-  try {
-    require('../renderer/index.js');
-  } catch (error) {
-    console.error('[Dialoggo] preload failed to load renderer entry', error);
-    logMessage('error', 'Preload failed to load renderer entry', {
-      name: error?.name,
-      message: error?.message,
-      stack: error?.stack,
-    });
-  }
-});

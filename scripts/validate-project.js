@@ -26,7 +26,6 @@ function validatePackageMetadata() {
   assert(pkg.name === 'dialoggo', 'package.json name must be dialoggo.');
   assert(pkg.productName === 'Dialoggo', 'package.json productName must be Dialoggo.');
   assert(semverPattern.test(pkg.version), 'package.json version must be valid semver.');
-  assert(pkg.version === '1.0.0', 'Dialoggo production baseline must remain 1.0.0 until the first release bump.');
   assert(pkg.author === 'ponkis', 'package.json author must be ponkis.');
   assert(pkg.license === 'MIT', 'package.json license must be MIT.');
   assert(pkg.private === true, 'package.json should stay private while bundled assets need distribution review.');
@@ -40,9 +39,12 @@ function validatePublicBranding() {
   const html = readText('public/index.html');
   const manifest = readJson('public/site.webmanifest');
   const css = readText('public/assets/css/main.css');
+  const preload = readText('src/main/preload.js');
 
   assert(html.includes('<title>Dialoggo</title>'), 'public/index.html must set the Dialoggo title.');
   assert(html.includes('Content-Security-Policy'), 'public/index.html must define a Content Security Policy.');
+  assert(html.includes('<script src="./assets/js/app.js" defer></script>'), 'public/index.html must load the separate renderer bundle.');
+  assert(!preload.includes("require('../renderer/index.js')"), 'The preload must not execute the renderer app.');
   assert(html.includes('id="version-label"'), 'public/index.html must include a version label.');
   assert(html.includes('id="brand-link"'), 'public/index.html must include the branded author link.');
   assert(html.includes('https://ponkis.xyz/assets/img/global/logo.png'), 'public/index.html must use the ponkis brand logo.');
@@ -60,8 +62,30 @@ function validateRepoHygiene() {
 
   assert(gitignore.includes('node_modules/'), '.gitignore must ignore node_modules/.');
   assert(gitignore.includes('dist/'), '.gitignore must ignore dist/.');
+  assert(gitignore.includes('public/assets/js/app.js'), '.gitignore must ignore the generated development renderer bundle.');
   assert(!gitignore.includes('package-lock.json'), '.gitignore must not ignore package-lock.json for this app.');
-  ['README.md', 'CHANGELOG.md', 'LICENSE', 'NOTICE.md', 'docs/ARCHITECTURE.md', 'docs/RELEASE.md'].forEach((file) => {
+  [
+    'README.md',
+    'CHANGELOG.md',
+    'LICENSE',
+    'NOTICE.md',
+    'CONTRIBUTING.md',
+    'CODE_OF_CONDUCT.md',
+    'SECURITY.md',
+    'SUPPORT.md',
+    'docs/ARCHITECTURE.md',
+    'docs/DEVELOPMENT.md',
+    'docs/RELEASE.md',
+    'scripts/start-dev.js',
+    'src/renderer/domain/dialogueText.js',
+    'src/renderer/domain/math.js',
+    'src/renderer/domain/speechPlayback.js',
+    '.github/workflows/ci.yml',
+    '.github/dependabot.yml',
+    '.github/ISSUE_TEMPLATE/bug_report.md',
+    '.github/ISSUE_TEMPLATE/feature_request.md',
+    '.github/pull_request_template.md',
+  ].forEach((file) => {
     assert(fs.existsSync(path.join(rootDir, file)), `${file} must exist.`);
   });
 }

@@ -8,6 +8,8 @@ build/
 coverage/
 *.lcov
 *.tgz
+# Development renderer bundle; the release copy is generated under dist/.
+public/assets/js/app.js
 
 # Logs and diagnostics
 logs/

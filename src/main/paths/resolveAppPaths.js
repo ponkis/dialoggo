@@ -28,10 +28,6 @@ function resolveAppPaths() {
       path.join(appRoot, 'main', 'preload.js'),
       path.join(appRoot, 'src', 'main', 'preload.js'),
     ]),
-    rendererEntryPath: findExistingPath([
-      path.join(appRoot, 'src', 'renderer', 'index.js'),
-      path.join(publicDir, 'assets', 'js', 'app.js'),
-    ]),
   };
 }
 
