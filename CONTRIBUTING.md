@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for helping improve Dialoggo. Small, focused changes are easiest to review.
+Thank you for helping improve Dialoggo. Bug reports, clear feature proposals, and small, focused pull requests are welcome.
 
 ## Set up a development environment
 
