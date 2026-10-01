@@ -30,7 +30,7 @@
   "devDependencies": {
     "electron": "^41.0.3",
     "license-checker": "^25.0.1",
-    "webpack": "^5.105.4",
+    "webpack": "^5.111.1",
     "webpack-obfuscator": "^3.6.0"
   },
   "dependencies": {
