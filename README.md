@@ -1,6 +1,6 @@
 # Dialoggo
 <p align="center">
-![Dialoggo logo lol](public/assets/img/packs/bk/loggo/i1.png)
+  <img src="public/assets/img/packs/bk/loggo/i1.png" alt="Dialoggo logo lol">
 </p>
 Dialoggo is an Electron desktop app for building and playing retro dialogue scenes inspired by Banjo-Kazooie and Banjo-Tooie. Pick a character and backdrop, write a line, then preview it with animated sprites and voice clips.
 
