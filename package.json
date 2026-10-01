@@ -34,7 +34,7 @@
     "webpack-obfuscator": "^3.6.0"
   },
   "dependencies": {
-    "electron-log": "^5.4.3",
+    "electron-log": "^5.4.4",
     "viewerjs": "^1.11.7"
   }
 }
