@@ -35,6 +35,6 @@
   },
   "dependencies": {
     "electron-log": "^5.4.3",
-    "viewerjs": "^1.11.7"
+    "viewerjs": "^1.15.0"
   }
 }
