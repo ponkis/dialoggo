@@ -73,6 +73,7 @@ function validateRepoHygiene() {
     'CODE_OF_CONDUCT.md',
     'SECURITY.md',
     'SUPPORT.md',
+    'public/web-app-manifest-512x512.png',
     'docs/ARCHITECTURE.md',
     'docs/DEVELOPMENT.md',
     'docs/RELEASE.md',

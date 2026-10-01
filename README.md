@@ -3,6 +3,10 @@
 Dialoggo is an Electron desktop app for building and playing retro dialogue scenes inspired by Banjo-Kazooie and Banjo-Tooie. Pick a character and backdrop, write a line, then preview it with animated sprites and voice clips.
 
 <p align="center">
+  <img src="public/web-app-manifest-512x512.png" alt="Dialoggo logo" width="160">
+</p>
+
+<p align="center">
   <a href="https://github.com/ponkis/dialoggo/actions/workflows/ci.yml"><img src="https://github.com/ponkis/dialoggo/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-8b72e8.svg" alt="MIT license"></a>
   <img src="https://img.shields.io/badge/Node.js-20.11%2B-43853d.svg" alt="Node.js 20.11 or newer">

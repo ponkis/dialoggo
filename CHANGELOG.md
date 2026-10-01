@@ -9,6 +9,7 @@ All notable changes to Dialoggo are tracked here.
 - Split the renderer page bundle from the privileged preload, keeping app UI code out of the preload context.
 - Added a development launcher that builds the page bundle before opening the source app.
 - Made metadata validation compatible with future semantic-version releases.
+- Added the Dialoggo app icon to the README as the project logo.
 - Clarified bundled-media rights and repository release practices.
 
 ## [1.0.0]
