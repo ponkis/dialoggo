@@ -1,5 +1,3 @@
-<div align="center">
-
 # Dialoggo
 
 ![Dialoggo logo lol](public/assets/img/packs/bk/loggo/i1.png)
