@@ -1,14 +1,18 @@
-# Dialoggo
-<p align="center">
-  <img src="public/assets/img/packs/bk/loggo/i1.png" alt="Dialoggo logo lol">
-</p>
-Dialoggo is an Electron desktop app for building and playing retro dialogue scenes inspired by Banjo-Kazooie and Banjo-Tooie. Pick a character and backdrop, write a line, then preview it with animated sprites and voice clips.
+<div align="center">
 
-<p align="center">
-  <a href="https://github.com/ponkis/dialoggo/actions/workflows/ci.yml"><img src="https://github.com/ponkis/dialoggo/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-8b72e8.svg" alt="MIT license"></a>
-  <img src="https://img.shields.io/badge/Node.js-20.11%2B-43853d.svg" alt="Node.js 20.11 or newer">
-</p>
+# Dialoggo
+
+![Dialoggo logo](public/assets/img/packs/bk/loggo/i1.png)
+
+A retro dialogue scene editor inspired by Banjo-Kazooie and Banjo-Tooie.
+
+[![CI status](https://github.com/ponkis/dialoggo/actions/workflows/ci.yml/badge.svg)](https://github.com/ponkis/dialoggo/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-8b72e8.svg)](LICENSE)
+![Node.js 20.11+](https://img.shields.io/badge/Node.js-20.11%2B-43853d.svg)
+
+</div>
+
+Choose a character and backdrop, write a line, then preview it with animated sprites and voice clips.
 
 ## Features
 
