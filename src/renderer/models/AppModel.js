@@ -92,6 +92,7 @@ function createEnvironment() {
     guiImgDir: paths.guiImgDir,
     guiAnimDir: paths.guiAnimDir,
     startupRevealSoundPath: bridge.path.join(paths.sndDir, 'gui', '6.wav'),
+    shutdownSoundPath: bridge.path.join(paths.sndDir, 'gui', '7.wav'),
     appName,
     appAuthor,
     appHomepage,

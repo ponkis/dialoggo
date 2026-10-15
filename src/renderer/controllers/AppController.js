@@ -274,7 +274,7 @@ function startApp() {
   }
 
   function areKeyboardShortcutsBlocked() {
-    return state.activePanel === 'settings';
+    return isTallPanel(state.activePanel);
   }
 
   function canUsePlaybackKeyboardShortcut(target) {
@@ -1386,25 +1386,34 @@ function startApp() {
     view.syncPreviewPlaceholderState();
   }
 
+  function isTallPanel(panel) {
+    return panel === 'settings' || panel === 'guide';
+  }
+
+  function setActiveSleeve(panel) {
+    refs.sleeveSettings.classList.toggle('active', panel === 'settings');
+    refs.sleeveBackgrounds.classList.toggle('active', panel === 'backgrounds');
+    refs.sleeveGuide?.classList.toggle('active', panel === 'guide');
+  }
+
   async function showPanel(panel) {
     if (state.panelTransitionLock || panel === state.activePanel) return;
-    if (panel === 'settings' && (state.isPlaying || state.isPaused)) return;
+    if (isTallPanel(panel) && (state.isPlaying || state.isPaused)) return;
 
     closeFavoriteContextMenu();
     state.panelTransitionLock = true;
     const large = view.isLargeScreen();
     const previousPanel = state.activePanel;
     const hasCollapsedPreviewFlow = refs.app?.classList.contains('settings-panel-open');
-    const leavingSettings = previousPanel === 'settings';
+    const leavingTallPanel = isTallPanel(previousPanel);
     view.setPreviewPlaceholderPanelIntent(panel);
     view.setPreviewPlaceholderSuppressed(panel !== 'controls');
 
     try {
-      if (panel === 'settings') {
+      setActiveSleeve(panel);
+
+      if (isTallPanel(panel)) {
         view.syncSettingsLayoutMode('settings');
-        refs.sleeveBackgrounds.classList.remove('active');
-        refs.sleeveGuide?.classList.remove('active');
-        refs.sleeveSettings.classList.add('active');
 
         if (!large && !hasCollapsedPreviewFlow && refs.panelWrapper) {
           refs.panelWrapper.dataset.naturalPanelHeight = String(
@@ -1421,61 +1430,26 @@ function startApp() {
         }
 
         audioService.playMenuSound('settingsOpen');
-        await view.flipPanel(previousPanel, 'settings');
-        state.activePanel = 'settings';
+        await view.flipPanel(previousPanel, panel);
+        if (panel === 'guide') state.frontPanel = 'guide';
+        state.activePanel = panel;
         resetShortcutVisualizerState();
-      } else if (panel === 'backgrounds') {
-        refs.sleeveSettings.classList.remove('active');
-        refs.sleeveBackgrounds.classList.add('active');
-        refs.sleeveGuide?.classList.remove('active');
-        audioService.playMenuSound('settingsOpen');
-        await view.flipPanel(previousPanel, 'backgrounds');
-        state.frontPanel = 'backgrounds';
-        state.activePanel = 'backgrounds';
-        view.syncSettingsLayoutMode('controls');
-
-        if (leavingSettings && hasCollapsedPreviewFlow) {
-          await view.expandPreviewAfterControls({
-            keepPlaceholderSuppressed: true,
-          });
-        } else {
-          syncFrontPanelLayout({
-            suppressPlaceholder: true,
-          });
-        }
-      } else if (panel === 'guide') {
-        refs.sleeveSettings.classList.remove('active');
-        refs.sleeveBackgrounds.classList.remove('active');
-        refs.sleeveGuide?.classList.add('active');
-        audioService.playMenuSound('settingsOpen');
-        await view.flipPanel(previousPanel, 'guide');
-        state.frontPanel = 'guide';
-        state.activePanel = 'guide';
-        view.syncSettingsLayoutMode('controls');
-
-        if (leavingSettings && hasCollapsedPreviewFlow) {
-          await view.expandPreviewAfterControls({
-            keepPlaceholderSuppressed: true,
-          });
-        } else {
-          syncFrontPanelLayout({
-            suppressPlaceholder: true,
-          });
-        }
       } else {
-        refs.sleeveSettings.classList.remove('active');
-        refs.sleeveBackgrounds.classList.remove('active');
-        refs.sleeveGuide?.classList.remove('active');
-        audioService.playMenuSound('settingsClose');
-        await view.flipPanel(previousPanel, 'controls');
-        state.frontPanel = 'controls';
-        state.activePanel = 'controls';
+        const toControls = panel === 'controls';
+        audioService.playMenuSound(toControls ? 'settingsClose' : 'settingsOpen');
+        await view.flipPanel(previousPanel, panel);
+        state.frontPanel = panel;
+        state.activePanel = panel;
         view.syncSettingsLayoutMode('controls');
 
-        if (leavingSettings && hasCollapsedPreviewFlow) {
-          await view.expandPreviewAfterControls();
+        if (leavingTallPanel && hasCollapsedPreviewFlow) {
+          await view.expandPreviewAfterControls({
+            keepPlaceholderSuppressed: !toControls,
+          });
         } else {
-          syncFrontPanelLayout();
+          syncFrontPanelLayout({
+            suppressPlaceholder: !toControls,
+          });
         }
       }
     } finally {
@@ -1495,6 +1469,7 @@ function startApp() {
     const blocked = state.isPlaying || state.isPaused || state.stopRequested;
     setBlockedState(refs.sleeveSettings, blocked, 'Settings', 'Settings');
     setBlockedState(refs.sleeveBackgrounds, false, 'Backgrounds', 'Backgrounds');
+    setBlockedState(refs.sleeveGuide, blocked, 'Guide', 'Guide');
     setBlockedState(refs.sleeveCharacter, blocked, 'Character', 'Character');
     setBlockedState(refs.sleeveCamera, blocked, 'Export', 'Export');
   }
@@ -1663,7 +1638,8 @@ function startApp() {
     bridge.windowControls.minimize();
   });
 
-  document.getElementById('btn-close')?.addEventListener('click', () => {
+  document.getElementById('btn-close')?.addEventListener('click', async () => {
+    await view.runShutdownSequence();
     bridge.windowControls.close();
   });
 

@@ -37,9 +37,9 @@
   <!-- Title Bar -->
   <div class="titlebar">
     <div class="titlebar-controls">
-      <button class="stoplight stoplight-close" id="btn-close"></button>
-      <button class="stoplight stoplight-minimize" id="btn-minimize"></button>
-      <button class="stoplight stoplight-maximize" id="btn-maximize" aria-disabled="true"></button>
+      <button class="stoplight stoplight-close" id="btn-close" title="Close" aria-label="Close"></button>
+      <button class="stoplight stoplight-minimize" id="btn-minimize" title="Minimize" aria-label="Minimize"></button>
+      <button class="stoplight stoplight-maximize" id="btn-maximize" aria-disabled="true" title="Maximize" aria-label="Maximize"></button>
     </div>
   </div>
   <!-- App -->
@@ -218,7 +218,7 @@
               <div class="button-base"></div>
             </button>
             <div class="reel-wrapper">
-              <div class="reel-arrow reel-arrow-left" id="reel-arrow-left">
+              <div class="reel-arrow reel-arrow-left" id="reel-arrow-left" title="Scroll left">
                 <svg viewBox="0 0 24 24" fill="none">
                   <path d="M15 19l-7-7 7-7" />
                 </svg>
@@ -228,7 +228,7 @@
                 <div class="character-grid" id="character-grid"></div>
                 <div class="character-search-empty" id="character-search-empty">No characters found.</div>
                 <div class="reel-sprockets reel-sprockets-bottom"></div>
-                <div class="reel-arrow reel-arrow-right" id="reel-arrow-right">
+                <div class="reel-arrow reel-arrow-right" id="reel-arrow-right" title="Scroll right">
                   <svg viewBox="0 0 24 24" fill="none">
                     <path d="M9 5l7 7-7 7" />
                   </svg>
@@ -770,7 +770,7 @@
         <span class="status-dot" id="status-dot"></span>
       </div>
       <div class="bottombar-right">
-        <span class="bottombar-info">Made by</span>
+        <span class="bottombar-info">Powered by</span>
         <a href="https://ponkis.xyz" target="_blank" rel="noopener noreferrer" class="powered-link" id="brand-link"
           aria-label="Open ponkis website">
           <img src="https://ponkis.xyz/assets/img/global/logo.png" alt="Ponkis" class="powered-logo">

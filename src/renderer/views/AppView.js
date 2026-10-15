@@ -1586,7 +1586,6 @@ function createAppView(model, audioService) {
     activeBackgroundPackIdx = safeIndex;
     updateBackgroundPackNavArrows();
     requestAnimationFrame(() => {
-      syncBackgroundPackVerticalAlignment();
       const activeSection = backgroundPackSections[activeBackgroundPackIdx];
       if (activeSection) {
         const grid = activeSection.querySelector('.background-pack-grid');
@@ -1606,28 +1605,6 @@ function createAppView(model, audioService) {
       audioService.playMenuSound('click');
       showBackgroundPack(visibleIndices[nextPos]);
     }
-  }
-
-  function syncBackgroundPackVerticalAlignment() {
-    const isCompactLayout = window.matchMedia('(max-width: 720px)').matches;
-
-    backgroundPackSections.forEach((section) => {
-      const packTop = section.querySelector('.background-pack-top');
-      const packGrid = section.querySelector('.background-pack-grid');
-      if (!packTop || !packGrid) return;
-
-      const gridStyle = window.getComputedStyle(packGrid);
-      const paddingTop = Number.parseFloat(gridStyle.paddingTop) || 0;
-      const paddingBottom = Number.parseFloat(gridStyle.paddingBottom) || 0;
-      const visualPaddingOffset = (paddingBottom - paddingTop) / 2;
-      const offset = isCompactLayout
-        ? 0
-        : (-(packTop.getBoundingClientRect().height / 2) + visualPaddingOffset);
-
-      packGrid.style.setProperty('--background-pack-grid-offset', `${offset}px`);
-      const gridWrapper = packGrid.closest('.background-pack-grid-wrapper');
-      if (gridWrapper) gridWrapper.style.setProperty('--background-pack-grid-offset', `${offset}px`);
-    });
   }
 
   function applyBackgroundFilters() {
@@ -1986,6 +1963,7 @@ function createAppView(model, audioService) {
       env.path.join(env.sndDir, 'gui', '4.wav'),
       env.path.join(env.sndDir, 'gui', '5.wav'),
       env.startupRevealSoundPath,
+      env.shutdownSoundPath,
     ].filter((filePath, index, values) => (
       values.indexOf(filePath) === index && env.fs.existsSync(filePath)
     ));
@@ -2044,13 +2022,15 @@ function createAppView(model, audioService) {
     ctx.globalCompositeOperation = 'source-over';
   }
 
-  async function playStartupIntroAnimation() {
-    if (!refs.startupIntroCanvas) {
+  async function playStartupIntroAnimation(canvas = refs.startupIntroCanvas, options = {}) {
+    const reverse = options.reverse === true;
+
+    if (!canvas) {
       await model.sleep(constants.STARTUP_INTRO_MS);
       return;
     }
 
-    const ctx = refs.startupIntroCanvas.getContext('2d');
+    const ctx = canvas.getContext('2d');
     if (!ctx) {
       await model.sleep(constants.STARTUP_INTRO_MS);
       return;
@@ -2072,9 +2052,9 @@ function createAppView(model, audioService) {
 
         const elapsed = timestamp - startTimestamp;
         const progress = Math.max(0, Math.min(1, elapsed / constants.STARTUP_INTRO_MS));
-        const viewport = resizeStartupIntroCanvas(refs.startupIntroCanvas, ctx);
+        const viewport = resizeStartupIntroCanvas(canvas, ctx);
 
-        drawStartupIntroFrame(ctx, jiggyPath, viewport.width, viewport.height, progress);
+        drawStartupIntroFrame(ctx, jiggyPath, viewport.width, viewport.height, reverse ? 1 - progress : progress);
 
         if (progress < 1) {
           requestAnimationFrame(tick);
@@ -2086,6 +2066,49 @@ function createAppView(model, audioService) {
 
       requestAnimationFrame(tick);
     });
+  }
+
+  async function playShutdownSound() {
+    if (!env.shutdownSoundPath || !env.fs.existsSync(env.shutdownSoundPath)) return;
+
+    try {
+      const buffer = await audioService.loadAudioBuffer(env.shutdownSoundPath);
+      audioService.playAudioBuffer(buffer, {
+        volume: audioService.getMenuSoundVolumeGain(),
+      });
+    } catch { }
+  }
+
+  let shutdownSequencePromise = null;
+
+  function runShutdownSequence() {
+    if (shutdownSequencePromise) return shutdownSequencePromise;
+
+    shutdownSequencePromise = (async () => {
+      if (document.body.classList.contains('startup-active')) return;
+
+      const overlay = document.createElement('div');
+      overlay.className = 'shutdown-overlay';
+      overlay.setAttribute('aria-hidden', 'true');
+      const canvas = document.createElement('canvas');
+      canvas.className = 'startup-intro-canvas';
+      overlay.appendChild(canvas);
+      document.body.appendChild(overlay);
+      document.body.classList.add('shutdown-running');
+
+      try {
+        await playShutdownSound();
+        await Promise.race([
+          playStartupIntroAnimation(canvas, { reverse: true }),
+          model.sleep(constants.STARTUP_INTRO_MS + 180),
+        ]);
+        await model.sleep(120);
+      } catch (error) {
+        console.warn('[Dialoggo] shutdown outro failed', error);
+      }
+    })();
+
+    return shutdownSequencePromise;
   }
 
   async function runStartupSequence() {
@@ -2535,7 +2558,7 @@ function createAppView(model, audioService) {
         hash |= 0;
       }
       const normalized = ((Math.abs(hash) % 1000) / 1000);
-      const rotation = (normalized * 8) - 4;
+      const rotation = (normalized * 5) - 2.5;
       return `${rotation.toFixed(2)}deg`;
     };
 
@@ -2860,7 +2883,6 @@ function createAppView(model, audioService) {
     applyBackgroundFilters();
 
     requestAnimationFrame(() => {
-      syncBackgroundPackVerticalAlignment();
       const activeSection = backgroundPackSections[activeBackgroundPackIdx];
       if (activeSection) {
         const grid = activeSection.querySelector('.background-pack-grid');
@@ -3018,17 +3040,33 @@ function createAppView(model, audioService) {
     }, PREVIEW_BACKGROUND_TRANSITION_MS + 40);
 
     if (hasPreviewImage && isUserAction) {
-      const renderStackedText = (el, str) => {
+      const renderStackedText = (el, str, options = {}) => {
         const arr = Array.from(str || '');
         const len = arr.length;
-        el.innerHTML = arr.map((char, i) => {
-          const z = len - i;
-          if (char === ' ') return `<span class="space" style="z-index: ${z};">&nbsp;</span>`;
-          return `<span style="z-index: ${z};">${char}</span>`;
-        }).join('');
+        el.replaceChildren(...arr.map((char, i) => {
+          const span = document.createElement('span');
+          span.style.zIndex = String(len - i);
+          if (char === ' ') {
+            span.className = 'space';
+            span.textContent = ' ';
+            return span;
+          }
+
+          span.textContent = char;
+          if (options.funky) {
+            // Deterministic wobble so the same title always gets the same tilt.
+            const seed = Math.sin((char.codePointAt(0) * 12.9898) + (i * 78.233)) * 43758.5453;
+            const jitter = seed - Math.floor(seed);
+            const direction = i % 2 === 0 ? -1 : 1;
+            const rotate = direction * (4 + (jitter * 7));
+            const lift = (jitter - 0.5) * 8;
+            span.style.transform = `translateY(${lift.toFixed(1)}px) rotate(${rotate.toFixed(1)}deg)`;
+          }
+          return span;
+        }));
       };
-      
-      renderStackedText(refs.bannerTitle, background?.displayName || '');
+
+      renderStackedText(refs.bannerTitle, background?.displayName || '', { funky: true });
       renderStackedText(refs.bannerSubtitle, background?.packDisplayName ? `( ${background.packDisplayName} )` : '');
       refs.banner.classList.remove('active');
       void refs.banner.offsetWidth;
@@ -3393,7 +3431,6 @@ function createAppView(model, audioService) {
   setFlipCardPanel(state.activePanel === 'settings' ? 'settings' : null);
   applySelectedBackground(state.selectedBackground);
   window.addEventListener('resize', syncDialogueInputHighlight);
-  window.addEventListener('resize', syncBackgroundPackVerticalAlignment);
   syncDialogueInputHighlightMetrics();
   syncPreviewPlaceholderState();
   syncShortcutVisualizer();
@@ -3436,6 +3473,7 @@ function createAppView(model, audioService) {
     startPlaceholderAnim,
     stopPlaceholderAnim,
     runStartupSequence,
+    runShutdownSequence,
     buildCharacterGrid,
     buildBackgroundGrid,
     getActiveBackgroundPackId,
