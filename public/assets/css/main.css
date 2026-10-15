@@ -1796,25 +1796,20 @@ img {
   min-height: 0;
   align-items: center;
   box-sizing: border-box;
-  padding: 0;
+  padding: 32px 0;
   overflow: hidden;
-  container-type: size;
-  /* Card height is roughly its width + 30px; size cards to fit the room left after the shadow padding. */
-  --background-card-width: clamp(84px, calc(100cqh - 76px), 150px);
 }
 
 .background-pack-grid {
   display: flex;
-  gap: 18px;
+  gap: 12px;
   flex-wrap: nowrap;
   overflow-x: auto;
-  overflow-y: hidden;
-  align-items: stretch;
-  box-sizing: border-box;
-  max-height: 100%;
-  padding: 16px 22px 30px;
+  align-items: flex-start;
+  padding: 40px 16px 60px;
+  margin-bottom: -26px;
   width: 100%;
-  scroll-padding-inline: 22px;
+  transform: translateY(var(--background-pack-grid-offset, 0px));
   scroll-behavior: smooth;
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -1917,13 +1912,13 @@ img {
   -webkit-appearance: none;
   position: relative;
   isolation: isolate;
-  z-index: 0;
-  width: var(--background-card-width, 140px);
-  min-width: var(--background-card-width, 140px);
+  width: 140px;
+  min-width: 140px;
   min-height: 0;
   flex-shrink: 0;
   padding: 7px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   gap: 7px;
   text-align: left;
@@ -1980,7 +1975,6 @@ img {
 }
 
 .background-card:hover:not(:disabled):not(.active) {
-  z-index: 2;
   --card-scale: 1.04;
   border-color: rgba(216, 187, 122, 0.86);
   box-shadow:
@@ -2021,7 +2015,6 @@ img {
 
 .background-card.active,
 .background-card.active:hover {
-  z-index: 1;
   --card-scale: 1.06;
   border-color: rgba(245, 208, 120, 1);
   box-shadow:
@@ -2120,10 +2113,11 @@ img {
   appearance: none;
   -webkit-appearance: none;
   position: relative;
-  width: var(--background-card-width, 140px);
-  min-width: var(--background-card-width, 140px);
-  min-height: 0;
-  align-self: stretch;
+  width: 140px;
+  min-width: 140px;
+  min-height: 174px;
+  height: 174px;
+  align-self: flex-start;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -2172,7 +2166,8 @@ img {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  min-height: 19px;
+  min-width: 0;
+  min-height: 0;
   padding: 0 1px 1px;
   align-items: flex-start;
   justify-content: flex-start;
@@ -2199,6 +2194,10 @@ img {
   letter-spacing: 0.8px;
   color: rgba(93, 80, 56, 0.76);
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 @keyframes background-card-click-ring {
@@ -2318,12 +2317,17 @@ img {
   }
 
   .background-pack-grid-wrapper {
-    --background-card-width: clamp(80px, calc(100cqh - 66px), 120px);
+    padding: 16px 0;
   }
 
   .background-pack-grid {
-    padding: 12px 14px 24px;
-    scroll-padding-inline: 14px;
+    padding: 8px 10px 24px;
+    transform: none;
+  }
+
+  .background-card {
+    width: 120px;
+    min-width: 120px;
   }
 }
 

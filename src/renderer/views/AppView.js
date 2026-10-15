@@ -108,7 +108,6 @@ function createAppView(model, audioService) {
     { x: -2.5, y: -1.5 },
   ];
 
-  const _truncCtx = document.createElement('canvas').getContext('2d');
   const shortcutKeyLabelMap = new Map([
     ['ctrl', 'Ctrl'],
     ['shift', 'Shift'],
@@ -352,28 +351,6 @@ function createAppView(model, audioService) {
 
   function isFavoriteContextMenuTarget(target) {
     return Boolean(favoriteContextMenu && target instanceof Node && favoriteContextMenu.contains(target));
-  }
-
-  function truncateTextToFit(text, maxWidth, fontStyle = '800 9px Outfit', letterSpacing = 0.65) {
-    if (!text) return text;
-    _truncCtx.font = fontStyle;
-
-    const measure = (str) => {
-      const upper = str.toUpperCase();
-      return _truncCtx.measureText(upper).width + (upper.length - 1) * letterSpacing;
-    };
-
-    if (measure(text) <= maxWidth) return text;
-
-    const words = text.split(' ');
-    const suffix = '...';
-
-    for (let count = words.length - 1; count >= 1; count--) {
-      const candidate = words.slice(0, count).join(' ') + suffix;
-      if (measure(candidate) <= maxWidth) return candidate;
-    }
-
-    return text;
   }
 
   function appendShortcutVisualizerActionText(host, text) {
@@ -1586,6 +1563,7 @@ function createAppView(model, audioService) {
     activeBackgroundPackIdx = safeIndex;
     updateBackgroundPackNavArrows();
     requestAnimationFrame(() => {
+      syncBackgroundPackVerticalAlignment();
       const activeSection = backgroundPackSections[activeBackgroundPackIdx];
       if (activeSection) {
         const grid = activeSection.querySelector('.background-pack-grid');
@@ -1605,6 +1583,28 @@ function createAppView(model, audioService) {
       audioService.playMenuSound('click');
       showBackgroundPack(visibleIndices[nextPos]);
     }
+  }
+
+  function syncBackgroundPackVerticalAlignment() {
+    const isCompactLayout = window.matchMedia('(max-width: 720px)').matches;
+
+    backgroundPackSections.forEach((section) => {
+      const packTop = section.querySelector('.background-pack-top');
+      const packGrid = section.querySelector('.background-pack-grid');
+      if (!packTop || !packGrid) return;
+
+      const gridStyle = window.getComputedStyle(packGrid);
+      const paddingTop = Number.parseFloat(gridStyle.paddingTop) || 0;
+      const paddingBottom = Number.parseFloat(gridStyle.paddingBottom) || 0;
+      const visualPaddingOffset = (paddingBottom - paddingTop) / 2;
+      const offset = isCompactLayout
+        ? 0
+        : (-(packTop.getBoundingClientRect().height / 2) + visualPaddingOffset);
+
+      packGrid.style.setProperty('--background-pack-grid-offset', `${offset}px`);
+      const gridWrapper = packGrid.closest('.background-pack-grid-wrapper');
+      if (gridWrapper) gridWrapper.style.setProperty('--background-pack-grid-offset', `${offset}px`);
+    });
   }
 
   function applyBackgroundFilters() {
@@ -2558,7 +2558,7 @@ function createAppView(model, audioService) {
         hash |= 0;
       }
       const normalized = ((Math.abs(hash) % 1000) / 1000);
-      const rotation = (normalized * 5) - 2.5;
+      const rotation = (normalized * 8) - 4;
       return `${rotation.toFixed(2)}deg`;
     };
 
@@ -2797,7 +2797,7 @@ function createAppView(model, audioService) {
         const title = button.querySelector('.background-card-title');
         const meta = button.querySelector('.background-card-meta');
 
-        if (title) title.textContent = truncateTextToFit(background.displayName, 124);
+        if (title) title.textContent = background.displayName;
         if (meta) meta.textContent = background.packDisplayName;
 
         // Reconcile Favorite Heart
@@ -2883,6 +2883,7 @@ function createAppView(model, audioService) {
     applyBackgroundFilters();
 
     requestAnimationFrame(() => {
+      syncBackgroundPackVerticalAlignment();
       const activeSection = backgroundPackSections[activeBackgroundPackIdx];
       if (activeSection) {
         const grid = activeSection.querySelector('.background-pack-grid');
@@ -3431,6 +3432,7 @@ function createAppView(model, audioService) {
   setFlipCardPanel(state.activePanel === 'settings' ? 'settings' : null);
   applySelectedBackground(state.selectedBackground);
   window.addEventListener('resize', syncDialogueInputHighlight);
+  window.addEventListener('resize', syncBackgroundPackVerticalAlignment);
   syncDialogueInputHighlightMetrics();
   syncPreviewPlaceholderState();
   syncShortcutVisualizer();
