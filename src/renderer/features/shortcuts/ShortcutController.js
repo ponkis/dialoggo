@@ -78,7 +78,7 @@ function createShortcutController({
   }
 
   function areShortcutsBlocked() {
-    return isTallPanel(state.activePanel);
+    return state.modalOpen || isTallPanel(state.activePanel);
   }
 
   function canUsePlaybackShortcut(target) {

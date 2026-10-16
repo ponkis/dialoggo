@@ -31,6 +31,29 @@ const bridge = {
       return ipcRenderer.invoke(IPC_CHANNELS.catalogGet);
     },
   },
+  updates: {
+    check() {
+      return ipcRenderer.invoke(IPC_CHANNELS.updatesCheck);
+    },
+    download() {
+      return ipcRenderer.invoke(IPC_CHANNELS.updatesDownload);
+    },
+    cancelDownload() {
+      ipcRenderer.send(IPC_CHANNELS.updatesCancelDownload);
+    },
+    install() {
+      return ipcRenderer.invoke(IPC_CHANNELS.updatesInstall);
+    },
+    /** Subscribes to download progress; returns an unsubscribe function. */
+    onProgress(listener) {
+      const handler = (_event, progress) => listener({
+        receivedBytes: Number(progress?.receivedBytes) || 0,
+        totalBytes: Number(progress?.totalBytes) || null,
+      });
+      ipcRenderer.on(IPC_CHANNELS.updatesProgress, handler);
+      return () => ipcRenderer.removeListener(IPC_CHANNELS.updatesProgress, handler);
+    },
+  },
   window: {
     minimize() {
       ipcRenderer.send(IPC_CHANNELS.windowMinimize);

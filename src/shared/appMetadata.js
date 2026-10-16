@@ -6,6 +6,7 @@ const APP_METADATA = Object.freeze({
   author: 'ponkis',
   homepage: 'https://ponkis.xyz',
   repositoryUrl: 'https://github.com/ponkis/dialoggo',
+  githubRepository: 'ponkis/dialoggo',
   versionFallback: '1.0.0',
   copyright: 'Copyright (c) 2026 ponkis',
   logFileName: 'dialoggo.log',

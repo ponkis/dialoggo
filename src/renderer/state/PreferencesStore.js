@@ -13,6 +13,7 @@ const STORAGE_KEYS = Object.freeze({
   hiddenCharacters: 'dialoggo-hidden-characters',
   hiddenBackgrounds: 'dialoggo-hidden-backgrounds',
   hiddenCharactersCollapsed: 'dialoggo-hidden-characters-collapsed',
+  checkUpdatesOnStartup: 'dialoggo-check-updates-on-startup',
 });
 
 /**

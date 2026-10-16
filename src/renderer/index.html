@@ -304,6 +304,41 @@
               </div>
               <div class="settings-category-block">
                 <div class="settings-category-head">
+                  <span id="settings-cat-updates" class="settings-category-title">Updates</span>
+                </div>
+                <section class="settings-category" aria-labelledby="settings-cat-updates">
+                  <div class="settings-stitch settings-stitch--under-title" aria-hidden="true"></div>
+                  <div class="settings-category-body">
+                    <div class="setting-row" role="group" aria-label="Check for updates on startup">
+                      <div class="setting-info">
+                        <span class="setting-label">Check on startup</span>
+                        <span class="setting-desc">Looks for a new Dialoggo release each time the app opens.</span>
+                      </div>
+                      <div class="uiverse-rocker-host" title="Check for updates on startup">
+                        <label class="uiverse-rocker-switch" id="switch-check-updates">
+                          <input type="checkbox" id="input-check-updates" aria-label="Check for updates on startup" checked>
+                          <div class="uiverse-switch-button">
+                            <div class="uiverse-light"></div>
+                            <div class="uiverse-dots"></div>
+                            <div class="uiverse-characters"></div>
+                            <div class="uiverse-shine"></div>
+                            <div class="uiverse-shadow"></div>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                    <div class="setting-row" role="group" aria-label="Check for updates">
+                      <div class="setting-info">
+                        <span class="setting-label" id="update-version-label">Version</span>
+                        <span class="setting-desc" id="update-status-text" aria-live="polite">Checks GitHub for a newer release.</span>
+                      </div>
+                      <button type="button" class="settings-action-button" id="btn-check-updates">Check now</button>
+                    </div>
+                  </div>
+                </section>
+              </div>
+              <div class="settings-category-block">
+                <div class="settings-category-head">
                   <span id="settings-cat-misc" class="settings-category-title">Misc</span>
                 </div>
                 <section class="settings-category" aria-labelledby="settings-cat-misc">
@@ -732,6 +767,10 @@
                       <dt>Hide broken backgrounds</dt>
                       <dd>Same idea for backgrounds — anything that can't load is filtered out of the pack.</dd>
                     </div>
+                    <div class="guide-settings-row">
+                      <dt>Check on startup</dt>
+                      <dd>Looks for a newer Dialoggo release when the app opens. Use <strong>Check now</strong> to look at any time; updates are only downloaded after you confirm.</dd>
+                    </div>
                   </dl>
                 </div>
               </section>
@@ -752,6 +791,24 @@
                     </li>
                     <li>Favorites persist between sessions. Clear them by right-clicking again.</li>
                   </ul>
+                </div>
+              </section>
+
+              <section class="guide-section guide-section--legal" aria-labelledby="guide-sec-legal">
+                <div class="guide-section-head">
+                  <span id="guide-sec-legal" class="guide-section-title">Credits &amp; Legal</span>
+                </div>
+                <div class="guide-stitch guide-stitch--under-title" aria-hidden="true"></div>
+                <div class="guide-section-body">
+                  <p class="guide-copy">
+                    Dialoggo is a free, unofficial fan project. It is not affiliated with, endorsed by, or sponsored by Rare, Microsoft, Nintendo, or any other rights holder.
+                  </p>
+                  <p class="guide-copy">
+                    Banjo-Kazooie, Banjo-Tooie, and their characters, artwork, music, and sound effects are the property of their respective owners, including Rare Ltd. and Microsoft. Custom characters and backgrounds belong to their original creators and rights holders, and may come from other franchises or works. No ownership of any bundled asset is claimed.
+                  </p>
+                  <p class="guide-copy">
+                    Rights holders can request removal of any asset at <span class="guide-email">legal@ponkis.xyz</span>.
+                  </p>
                 </div>
               </section>
             </div>

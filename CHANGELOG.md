@@ -4,6 +4,11 @@ All notable changes to Dialoggo are tracked here.
 
 ## [Unreleased]
 
+### Added
+
+- Built-in update checker, modeled on Mystral's. It checks GitHub releases at startup or from Settings → Updates, downloads the installer with progress, cancel, and retry, verifies it against the release's `SHA256SUMS.txt`, launches it, and shows "Update installed" with a "What's new?" link after updating.
+- A Credits & Legal section in the Guide, a disclaimer in the README, and a rewritten `NOTICE.md` that clarifies ownership of bundled Banjo-Kazooie, Banjo-Tooie, and custom assets.
+
 ### Architecture
 
 - Split the code by Electron process into `src/main`, `src/preload`, `src/renderer`, and `src/shared`.

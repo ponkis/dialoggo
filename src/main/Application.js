@@ -1,4 +1,7 @@
 const {
+  spawn,
+} = require('child_process');
+const {
   APP_METADATA,
 } = require('../shared/appMetadata');
 const {
@@ -14,10 +17,18 @@ const {
   createCatalogService,
 } = require('./services/catalog/CatalogService');
 const {
+  recordLaunchVersion,
+} = require('./services/updates/lastRunVersion');
+const {
+  createUpdateService,
+} = require('./services/updates/UpdateService');
+const {
   createMainWindow,
 } = require('./windows/createMainWindow');
 
 const SMOKE_TEST_TIMEOUT_MS = 30000;
+// The renderer closes the window after its outro; this is only a fallback.
+const QUIT_AFTER_INSTALL_FALLBACK_MS = 8000;
 
 /**
  * Owns the Electron lifecycle for the main process: the single-instance lock,
@@ -37,10 +48,42 @@ class Application {
     this.logger = logger;
     this.smokeTest = smokeTest;
     this.mainWindow = null;
+    this.updatedFrom = null;
     this.catalogService = createCatalogService({
       assetsDir: paths.assetsDir,
       rendererDir: paths.rendererDir,
       logger,
+    });
+    this.updateService = this.createUpdateService();
+  }
+
+  /** Updates are applied only by packaged production builds; others link to the release page. */
+  canApplyUpdates() {
+    return this.electron.app.isPackaged && this.environment.isProduction;
+  }
+
+  createUpdateService() {
+    const {
+      app,
+      net,
+      shell,
+    } = this.electron;
+    const version = app.getVersion() || APP_METADATA.versionFallback;
+
+    return createUpdateService({
+      fetchImpl: (...args) => net.fetch(...args),
+      currentVersion: version,
+      repository: APP_METADATA.githubRepository,
+      repositoryUrl: APP_METADATA.repositoryUrl,
+      userAgent: `${APP_METADATA.productName}/${version} (+${APP_METADATA.repositoryUrl})`,
+      tempDir: app.getPath('temp'),
+      canApplyUpdates: this.canApplyUpdates(),
+      launchInstaller: (installerPath) => launchDetached(installerPath),
+      openDiskImage: async (imagePath) => {
+        const error = await shell.openPath(imagePath);
+        if (error) throw new Error(error);
+      },
+      logger: this.logger,
     });
   }
 
@@ -86,6 +129,16 @@ class Application {
       version: app.getVersion(),
       userData: app.getPath('userData'),
     });
+
+    if (!this.smokeTest) {
+      this.updatedFrom = recordLaunchVersion({
+        userDataDir: app.getPath('userData'),
+        currentVersion: app.getVersion(),
+        repositoryUrl: APP_METADATA.repositoryUrl,
+      });
+      if (this.updatedFrom) this.logger.info('First launch after an update', this.updatedFrom);
+    }
+    void this.updateService.cleanupStaleDownloads();
 
     registerAssetProtocolHandler({
       protocol,
@@ -137,6 +190,10 @@ class Application {
       getMainWindow: () => this.mainWindow,
       getAppInfo: () => this.getAppInfo(),
       onRendererReady: (summary) => this.onRendererReady(summary),
+      updateService: this.updateService,
+      onInstallLaunched: () => {
+        setTimeout(() => this.electron.app.quit(), QUIT_AFTER_INSTALL_FALLBACK_MS).unref();
+      },
     });
   }
 
@@ -154,6 +211,9 @@ class Application {
       companyName: APP_METADATA.companyName,
       environment: this.environment.name,
       platform: process.platform,
+      repositoryUrl: APP_METADATA.repositoryUrl,
+      canApplyUpdates: this.canApplyUpdates(),
+      updatedFrom: this.updatedFrom,
     };
   }
 
@@ -212,6 +272,20 @@ class Application {
 
     this.electron.app.exit(code);
   }
+}
+
+function launchDetached(executablePath) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(executablePath, [], {
+      detached: true,
+      stdio: 'ignore',
+    });
+    child.once('error', reject);
+    child.once('spawn', () => {
+      child.unref();
+      resolve();
+    });
+  });
 }
 
 module.exports = {

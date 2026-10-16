@@ -24,28 +24,21 @@ Dialoggo uses semantic versioning, and `package.json` is the single source of tr
 
 A version with a prerelease suffix (for example `1.2.0-beta.1`) is published as a GitHub prerelease.
 
-## Checklist
+## Releasing
 
-1. On `dev`, bump the version. This updates `package.json` and the lockfile together without creating a tag:
+This works like Mystral: you change one file, commit, and run one script.
 
-   ```bash
-   npm version minor --no-git-tag-version
-   ```
-
-2. Add the release notes to `CHANGELOG.md`.
-3. Run `npm run verify` and fix any failures.
-4. Run `npm run package` and work through [SMOKE_TEST.md](../SMOKE_TEST.md) with the packaged build.
-5. Review `NOTICE.md` if bundled media changed.
-6. Commit and push `dev`. Wait for CI to pass.
-7. Promote and release:
+1. On `dev`, change `"version"` in `package.json` (for example `1.0.0` to `1.0.1`), and add notes to `CHANGELOG.md`.
+2. Commit and push `dev`.
+3. Run:
 
    ```bash
    npm run promote:release
    ```
 
-   This merges `dev` into `main` with a merge commit, pushes `main`, then creates and pushes the `vX.Y.Z` tag. The Release workflow takes it from there.
+The script merges `dev` into `main`, pushes `main`, then creates and pushes the `vX.Y.Z` tag. The Release workflow builds every platform and publishes the GitHub release. Installed copies of Dialoggo offer the update the next time they start.
 
-To promote without releasing, run `npm run promote`. Add `-- --dry-run` to preview the push and tag steps.
+To merge into `main` without releasing, run `npm run promote`.
 
 ## Re-running a release
 

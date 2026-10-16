@@ -49,6 +49,15 @@ Test the packaged app from `release/` (on Windows, run the `-setup.exe` installe
 - The "hide broken" toggles hide unavailable characters and backgrounds.
 - Guide screenshots open in the image viewer, which also opens with Enter or Space.
 
+## Updates
+
+- Settings → Updates shows the running version. **Check now** reports "No updates found" when up to date, or shows a clear error offline.
+- With an older version installed, the startup check offers "Update available" with a working "What's new?" link. "Not now" leaves the app alone.
+- Downloading shows progress. Cancel reports that nothing changed. "Download and install" runs the installer and closes the app.
+- The first launch after updating shows "Update installed" once.
+- Turning off "Check on startup" stops the automatic prompt.
+- Space and other playback shortcuts do nothing while a dialog is open.
+
 ## Install and uninstall (Windows)
 
 - The installer lets you choose the install directory and creates Start menu and desktop shortcuts.
