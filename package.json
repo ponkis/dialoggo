@@ -7,14 +7,31 @@
   "author": "ponkis",
   "homepage": "https://ponkis.xyz",
   "license": "MIT",
-  "main": "src/main/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ponkis/dialoggo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ponkis/dialoggo/issues"
+  },
+  "main": "dist/main/index.js",
   "scripts": {
-    "start": "node scripts/start-dev.js",
+    "start": "node scripts/dev.js",
     "start:dist": "electron dist",
-    "build": "node scripts/build-dist.js",
-    "test": "node scripts/validate-project.js",
-    "verify": "npm run test && npm run build && npm run audit:licenses",
-    "audit:deps": "npm audit",
+    "build": "node scripts/build.js",
+    "build:dev": "node scripts/build.js --env=development",
+    "package": "node scripts/package.js",
+    "package:dir": "node scripts/package.js --dir",
+    "package:dev": "node scripts/package.js --env=development",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "node --test \"test/**/*.test.js\"",
+    "test:smoke": "node scripts/smoke-test.js",
+    "validate": "node scripts/validate-project.js",
+    "verify": "npm run lint && npm run validate && npm test && npm run build && npm run audit:licenses",
+    "promote": "node scripts/promote-dev-to-main.js",
+    "promote:release": "node scripts/promote-dev-to-main.js --release",
+    "audit:deps": "npm audit --omit=dev",
     "audit:licenses": "node scripts/audit-licenses.js",
     "licenses:summary": "license-checker --summary"
   },
@@ -25,16 +42,22 @@
     "banjo-tooie"
   ],
   "engines": {
-    "node": ">=20.11"
+    "node": ">=22.12"
   },
   "devDependencies": {
-    "electron": "^41.0.3",
+    "@eslint/js": "^10.0.1",
+    "electron": "^41.10.7",
+    "electron-builder": "^26.15.3",
+    "electron-log": "^5.4.3",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
     "license-checker": "^25.0.1",
+    "viewerjs": "^1.11.7",
     "webpack": "^5.105.4",
     "webpack-obfuscator": "^3.6.0"
   },
-  "dependencies": {
-    "electron-log": "^5.4.3",
-    "viewerjs": "^1.11.7"
+  "allowScripts": {
+    "electron": true,
+    "electron-winstaller": true
   }
 }

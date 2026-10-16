@@ -1,25 +1,35 @@
 const {
-  startApp
-} = require('./controllers/AppController');
+  startApp,
+} = require('./app/startApp');
 const {
   getDialoggoBridge,
-} = require('./runtime/getBridge');
+} = require('./core/bridge');
 
 function normalizeError(error) {
   if (error instanceof Error) return error;
   return new Error(String(error || 'Unknown startup error'));
 }
 
-function renderFatalStartupError(rawError) {
-  const error = normalizeError(rawError);
-  console.error('[Dialoggo] fatal startup error', error);
+function reportFatalError(error) {
   try {
-    getDialoggoBridge().log.error('Renderer fatal startup error', {
+    const bridge = getDialoggoBridge();
+    const details = {
       name: error.name,
       message: error.message,
       stack: error.stack,
+    };
+    bridge.log.error('Renderer fatal startup error', details);
+    bridge.app.notifyReady({
+      ok: false,
+      error: details,
     });
   } catch { }
+}
+
+function renderFatalStartupError(rawError) {
+  const error = normalizeError(rawError);
+  console.error('[Dialoggo] fatal startup error', error);
+  reportFatalError(error);
 
   if (typeof document === 'undefined') return;
 
@@ -68,16 +78,4 @@ if (typeof window !== 'undefined') {
   });
 }
 
-function boot() {
-  startApp();
-}
-
-module.exports = {
-  startApp: boot
-};
-
-try {
-  boot();
-} catch (error) {
-  renderFatalStartupError(error);
-}
+startApp().catch(renderFatalStartupError);

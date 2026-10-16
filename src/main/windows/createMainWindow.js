@@ -1,40 +1,22 @@
 const {
   BrowserWindow,
-  shell
+  shell,
 } = require('electron');
 const {
-  resolveAppPaths
-} = require('../paths/resolveAppPaths');
+  APP_PROTOCOL,
+} = require('../../shared/appMetadata');
 const {
-  sanitizeExternalUrl
-} = require('../security/safeExternalUrl');
+  sanitizeExternalUrl,
+} = require('../security/externalUrl');
 
-function createMainWindow() {
-  const paths = resolveAppPaths();
+const MAIN_WINDOW_URL = `${APP_PROTOCOL.origin}/index.html`;
 
-  const window = new BrowserWindow({
-    width: 800,
-    height: 800,
-    minWidth: 800,
-    minHeight: 800,
-    backgroundColor: '#0a0c16',
-    icon: paths.iconPath,
-    webPreferences: {
-      preload: paths.preloadPath,
-      nodeIntegration: false,
-      contextIsolation: true,
-      sandbox: false,
-    },
-    frame: false,
-    resizable: false,
-    maximizable: false,
-    fullscreenable: false,
-    show: false,
-  });
+function openExternalSafely(url) {
+  const safeUrl = sanitizeExternalUrl(url);
+  if (safeUrl) void shell.openExternal(safeUrl);
+}
 
-  window.removeMenu();
-  window.loadFile(paths.indexHtmlPath);
-
+function registerDeveloperShortcuts(window) {
   window.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
 
@@ -56,14 +38,15 @@ function createMainWindow() {
       window.webContents.reloadIgnoringCache();
     }
   });
+}
 
+function registerNavigationGuards(window) {
   window.webContents.setWindowOpenHandler(({
-    url
+    url,
   }) => {
-    const safeUrl = sanitizeExternalUrl(url);
-    if (safeUrl) shell.openExternal(safeUrl);
+    openExternalSafely(url);
     return {
-      action: 'deny'
+      action: 'deny',
     };
   });
 
@@ -71,17 +54,54 @@ function createMainWindow() {
     if (url === window.webContents.getURL()) return;
 
     event.preventDefault();
-    const safeUrl = sanitizeExternalUrl(url);
-    if (safeUrl) shell.openExternal(safeUrl);
+    openExternalSafely(url);
   });
+
+  window.webContents.on('will-attach-webview', (event) => {
+    event.preventDefault();
+  });
+}
+
+function createMainWindow({
+  paths,
+  environment,
+}) {
+  const window = new BrowserWindow({
+    width: 800,
+    height: 800,
+    minWidth: 800,
+    minHeight: 800,
+    backgroundColor: '#0a0c16',
+    icon: paths.iconPath,
+    title: environment.productName,
+    webPreferences: {
+      preload: paths.preloadPath,
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      webSecurity: true,
+      spellcheck: false,
+    },
+    frame: false,
+    resizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    show: false,
+  });
+
+  window.removeMenu();
+  registerNavigationGuards(window);
+  if (environment.isDevelopment) registerDeveloperShortcuts(window);
 
   window.once('ready-to-show', () => {
     window.show();
   });
 
+  void window.loadURL(MAIN_WINDOW_URL);
   return window;
 }
 
 module.exports = {
-  createMainWindow
+  MAIN_WINDOW_URL,
+  createMainWindow,
 };

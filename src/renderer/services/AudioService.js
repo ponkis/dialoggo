@@ -1,26 +1,18 @@
-function createAudioService(model) {
-  const {
-    env,
-    constants
-  } = model;
-  const MAX_AUDIO_CACHE_ENTRIES = 18;
-  const MAX_AUDIO_FILE_BYTES = 8 * 1024 * 1024;
+const MAX_AUDIO_CACHE_ENTRIES = 18;
+const MAX_AUDIO_FILE_BYTES = 8 * 1024 * 1024;
+
+/**
+ * Web Audio playback for interface sounds and voice clips. Clips are fetched
+ * from the app's asset protocol, decoded once, and kept in a small LRU cache.
+ */
+function createAudioService({
+  uiSounds = {},
+  fetchImpl = (...args) => globalThis.fetch(...args),
+} = {}) {
   const audioBufferCache = new Map();
   let audioCtx = null;
   let audioUnlockBound = false;
   let audioResumePromise = null;
-
-  const menuSoundPaths = {
-    click: env.path.join(env.sndDir, 'gui', '1.wav'),
-    select: env.path.join(env.sndDir, 'gui', '2.wav'),
-    arrowRight: env.path.join(env.sndDir, 'gui', '3.wav'),
-    arrowLeft: env.path.join(env.sndDir, 'gui', '4.wav'),
-    forbidden: env.path.join(env.sndDir, 'gui', '5.wav'),
-    settingsOpen: env.path.join(env.sndDir, 'gui', '3.wav'),
-    settingsClose: env.path.join(env.sndDir, 'gui', '4.wav'),
-    favoriteAdd: env.path.join(env.sndDir, 'gui', '10.wav'),
-    favoriteRemove: env.path.join(env.sndDir, 'gui', '9.wav'),
-  };
 
   function getAudioContextClass() {
     return window.AudioContext || window.webkitAudioContext || null;
@@ -36,6 +28,11 @@ function createAudioService(model) {
       audioCtx = new AudioContextClass();
     }
 
+    return audioCtx;
+  }
+
+  /** Returns the audio context only if it has already been created. */
+  function peekAudioContext() {
     return audioCtx;
   }
 
@@ -70,12 +67,12 @@ function createAudioService(model) {
     });
   }
 
-  function rememberAudioBuffer(filePath, audioBuffer) {
-    if (audioBufferCache.has(filePath)) {
-      audioBufferCache.delete(filePath);
+  function rememberAudioBuffer(url, audioBuffer) {
+    if (audioBufferCache.has(url)) {
+      audioBufferCache.delete(url);
     }
 
-    audioBufferCache.set(filePath, audioBuffer);
+    audioBufferCache.set(url, audioBuffer);
 
     while (audioBufferCache.size > MAX_AUDIO_CACHE_ENTRIES) {
       const oldestKey = audioBufferCache.keys().next().value;
@@ -84,20 +81,37 @@ function createAudioService(model) {
     }
   }
 
-  async function loadAudioBuffer(filePath) {
-    if (audioBufferCache.has(filePath)) {
-      const cachedBuffer = audioBufferCache.get(filePath);
-      rememberAudioBuffer(filePath, cachedBuffer);
+  async function fetchAudioData(url) {
+    const response = await fetchImpl(url);
+    if (!response.ok) {
+      throw new Error(`Audio asset request failed (${response.status}): ${url}`);
+    }
+
+    const declaredLength = Number(response.headers.get('content-length'));
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_AUDIO_FILE_BYTES) {
+      throw new Error(`Audio asset exceeds the ${MAX_AUDIO_FILE_BYTES}-byte limit: ${url}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    if (arrayBuffer.byteLength > MAX_AUDIO_FILE_BYTES) {
+      throw new Error(`Audio asset exceeds the ${MAX_AUDIO_FILE_BYTES}-byte limit: ${url}`);
+    }
+
+    return arrayBuffer;
+  }
+
+  async function loadAudioBuffer(url) {
+    if (audioBufferCache.has(url)) {
+      const cachedBuffer = audioBufferCache.get(url);
+      rememberAudioBuffer(url, cachedBuffer);
       return cachedBuffer;
     }
 
     const ctx = getAudioContext();
-    const arrayBuffer = env.fs.readBinaryFile(filePath, {
-      maxBytes: MAX_AUDIO_FILE_BYTES,
-    });
-    const audioBuffer = await ctx.decodeAudioData(arrayBuffer.slice(0));
+    const arrayBuffer = await fetchAudioData(url);
+    const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
 
-    rememberAudioBuffer(filePath, audioBuffer);
+    rememberAudioBuffer(url, audioBuffer);
     return audioBuffer;
   }
 
@@ -160,11 +174,11 @@ function createAudioService(model) {
     };
   }
 
-  async function playSoundFile(filePath) {
-    const buffer = await loadAudioBuffer(filePath);
+  async function playSoundFile(url) {
+    const buffer = await loadAudioBuffer(url);
     const {
       source,
-      duration
+      duration,
     } = playAudioBuffer(buffer);
 
     return new Promise((resolve) => {
@@ -173,11 +187,15 @@ function createAudioService(model) {
     });
   }
 
-  function playMenuSound(key) {
-    const filePath = menuSoundPaths[key];
-    if (!filePath || !env.fs.existsSync(filePath)) return;
+  function getUiSoundUrl(key) {
+    return uiSounds[key] || null;
+  }
 
-    loadAudioBuffer(filePath)
+  function playMenuSound(key) {
+    const url = getUiSoundUrl(key);
+    if (!url) return;
+
+    loadAudioBuffer(url)
       .then((buffer) => playAudioBuffer(buffer))
       .catch(() => { });
   }
@@ -188,248 +206,19 @@ function createAudioService(model) {
 
   bindAudioUnlockListeners();
 
-  class SpeechSoundLoop {
-    constructor(spriteRenderer) {
-      this.spriteRenderer = spriteRenderer;
-      this.sounds = [];
-      this.character = null;
-      this.running = false;
-      this.paused = false;
-      this.fastForward = false;
-      this.currentBasePlaybackRate = 1;
-      this.currentSource = null;
-      this.currentGainNode = null;
-      this._loopPromise = null;
-      this._abortController = null;
-      this._clipResolve = null;
-      this._burstClipsRemaining = 0;
-      this._burstStrength = 0;
-      this._burstCooldownClips = 0;
-      this._burstPendingCooldownClips = 0;
-    }
-
-    start(soundFiles, character = null) {
-      this.stop();
-      this.sounds = soundFiles;
-      this.character = character;
-      this.running = true;
-      this.paused = false;
-      this._resetBurstCadence();
-      this._abortController = new AbortController();
-      this._loopPromise = this._loop();
-    }
-
-    pause() {
-      this.paused = true;
-    }
-
-    resume() {
-      this.paused = false;
-    }
-
-    setFastForward(enabled) {
-      this.fastForward = enabled;
-      if (!this.currentSource || !audioCtx) return;
-
-      try {
-        this.currentSource.playbackRate.setTargetAtTime(
-          this.currentBasePlaybackRate * (enabled ? constants.FAST_FORWARD_AUDIO_RATE : 1),
-          audioCtx.currentTime,
-          0.02,
-        );
-      } catch { }
-    }
-
-    stop() {
-      this.running = false;
-      this.paused = false;
-      this.currentBasePlaybackRate = 1;
-      this._resetBurstCadence();
-      this._killCurrentAudio();
-      this._resolveWait();
-
-      if (this._abortController) {
-        this._abortController.abort();
-        this._abortController = null;
-      }
-    }
-
-    async gracefulStop() {
-      this.running = false;
-      this.paused = false;
-      this._resetBurstCadence();
-      this._killCurrentAudio();
-      this._resolveWait();
-
-      if (this._abortController) {
-        this._abortController.abort();
-        this._abortController = null;
-      }
-
-      await this.spriteRenderer.smoothCloseAndIdle();
-    }
-
-    _killCurrentAudio() {
-      if (!this.currentSource) return;
-
-      if (this.currentGainNode && audioCtx) {
-        try {
-          const gainNode = this.currentGainNode;
-          gainNode.gain.setValueAtTime(gainNode.gain.value, audioCtx.currentTime);
-          gainNode.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-
-          const source = this.currentSource;
-          setTimeout(() => {
-            try {
-              source.stop();
-            } catch { }
-          }, 60);
-        } catch { }
-      } else {
-        try {
-          this.currentSource.stop();
-        } catch { }
-      }
-
-      this.currentSource = null;
-      this.currentGainNode = null;
-    }
-
-    _resolveWait() {
-      if (!this._clipResolve) return;
-      this._clipResolve();
-      this._clipResolve = null;
-    }
-
-    _resetBurstCadence() {
-      this._burstClipsRemaining = 0;
-      this._burstStrength = 0;
-      this._burstCooldownClips = 0;
-      this._burstPendingCooldownClips = 0;
-    }
-
-    _getSpeechCadence(bufferDuration) {
-      if (this._burstClipsRemaining > 0) {
-        const burstStrength = this._burstStrength;
-        this._burstClipsRemaining = Math.max(0, this._burstClipsRemaining - 1);
-
-        if (this._burstClipsRemaining === 0) {
-          this._burstStrength = 0;
-          this._burstCooldownClips = this._burstPendingCooldownClips;
-          this._burstPendingCooldownClips = 0;
-        }
-
-        return {
-          burstStrength,
-        };
-      }
-
-      if (this._burstCooldownClips > 0) {
-        this._burstCooldownClips = Math.max(0, this._burstCooldownClips - 1);
-        return null;
-      }
-
-      const burstProfile = model.getSpeechBurstProfile(bufferDuration, this.fastForward, this.character);
-      if (!burstProfile.shouldStart) return null;
-
-      this._burstClipsRemaining = burstProfile.clipCount;
-      this._burstStrength = burstProfile.burstStrength;
-      this._burstPendingCooldownClips = burstProfile.cooldownClips;
-
-      return this._getSpeechCadence(bufferDuration);
-    }
-
-    async _loop() {
-      while (this.running) {
-        if (this.paused) {
-          await model.sleep(50);
-          continue;
-        }
-
-        if (this.sounds.length === 0) {
-          await model.sleep(50);
-          continue;
-        }
-
-        const soundFile = model.pick(this.sounds);
-
-        try {
-          const buffer = await loadAudioBuffer(soundFile);
-          if (!this.running) break;
-          if (this.paused) continue;
-
-          const cadence = this._getSpeechCadence(buffer.duration);
-          const targetDuration = model.getSpeechCutTargetDuration(
-            buffer.duration,
-            this.fastForward,
-            cadence,
-            this.character,
-          );
-          const playbackConfig = model.getCharacterPlaybackConfig(
-            buffer.duration,
-            this.character,
-            targetDuration,
-            this.fastForward,
-          );
-
-          this.currentBasePlaybackRate = playbackConfig.basePlaybackRate;
-
-          const {
-            source,
-            gainNode,
-            duration
-          } = playAudioBuffer(buffer, {
-            playbackRate: playbackConfig.playbackRate,
-            offset: 0,
-            duration: playbackConfig.sourceDuration,
-            fadeInMs: 12,
-            fadeOutMs: this.fastForward ? 16 : 22,
-          });
-
-          this.currentSource = source;
-          this.currentGainNode = gainNode;
-
-          const durationMs = duration * 1000;
-          this.spriteRenderer.startSpeaking(durationMs);
-
-          await new Promise((resolve) => {
-            this._clipResolve = resolve;
-            source.onended = resolve;
-            setTimeout(resolve, durationMs + 50);
-          });
-
-          this._clipResolve = null;
-
-          if (!this.running) break;
-
-          this.currentSource = null;
-          this.currentGainNode = null;
-          this.currentBasePlaybackRate = 1;
-        } catch {
-          this._clipResolve = null;
-          this.currentSource = null;
-          this.currentGainNode = null;
-          this.currentBasePlaybackRate = 1;
-
-          if (!this.running) break;
-        }
-      }
-    }
-  }
-
   return {
     getAudioContext,
-    loadAudioBuffer,
-    playAudioBuffer,
-    playSoundFile,
-    playMenuSound,
     getMenuSoundVolumeGain,
-    createSpeechLoop(spriteRenderer) {
-      return new SpeechSoundLoop(spriteRenderer);
-    },
+    getUiSoundUrl,
+    loadAudioBuffer,
+    peekAudioContext,
+    playAudioBuffer,
+    playMenuSound,
+    playSoundFile,
   };
 }
 
 module.exports = {
-  createAudioService
+  MAX_AUDIO_FILE_BYTES,
+  createAudioService,
 };

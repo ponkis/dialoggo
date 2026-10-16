@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Security fixes target the latest stable Dialoggo release. Development builds from `main` are not release artifacts.
+Security fixes target the latest stable Dialoggo release. Development builds from the `dev` branch are not release artifacts.
 
 ## Report a vulnerability
 
@@ -12,4 +12,4 @@ Include the affected Dialoggo version, operating system, steps to reproduce, and
 
 ## Scope
 
-Reports about Dialoggo's Electron process boundary, preload bridge, renderer, IPC, Content Security Policy, file-path or external-URL validation, and bundled dependency use are in scope. Vulnerabilities in Node.js, Electron, operating systems, or upstream dependencies should also be reported to the relevant upstream project.
+Reports about Dialoggo's Electron process boundary, sandboxed preload bridge, renderer, IPC sender validation, the `dialoggo://` asset protocol, Content Security Policy, file-path or external-URL validation, and bundled dependency use are in scope. Vulnerabilities in Node.js, Electron, operating systems, or upstream dependencies should also be reported to the relevant upstream project.

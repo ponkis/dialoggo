@@ -1,19 +1,12 @@
 const {
   clampNumber,
-} = require('./math');
+} = require('../../shared/math');
+const {
+  parseCharacterSkipFrequency,
+} = require('../../shared/catalog/soundConfig');
 
 const FAST_FORWARD_AUDIO_RATE = 1.3;
 const SPEECH_CUT_LONGNESS_WINDOW = 1.2;
-const DEFAULT_SKIP_FREQUENCY = 1;
-const MIN_SKIP_FREQUENCY = 0;
-const MAX_SKIP_FREQUENCY = 2.5;
-
-function parseCharacterSkipFrequency(value) {
-  const parsedValue = Number(value);
-  if (!Number.isFinite(parsedValue)) return DEFAULT_SKIP_FREQUENCY;
-  if (parsedValue <= 0) return 0;
-  return clampNumber(parsedValue, MIN_SKIP_FREQUENCY, MAX_SKIP_FREQUENCY);
-}
 
 function tonesToSemitoneOffset(value) {
   if (!Number.isFinite(value)) return 0;
