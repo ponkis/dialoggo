@@ -173,6 +173,16 @@ body.startup-intro-running .startup-intro {
   opacity: 1;
 }
 
+.shutdown-overlay {
+  position: fixed;
+  top: var(--bar-height);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 9999;
+  pointer-events: auto;
+}
+
 .startup-intro-canvas {
   width: 100%;
   height: 100%;
@@ -444,7 +454,7 @@ img {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
+  min-width: 44px;
   height: 36px;
 }
 
@@ -455,22 +465,20 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
   height: 100%;
 }
 
 .shortcut-keycap-cover {
   background-color: rgb(0, 0, 0);
-  height: 32px;
-  width: 40px;
+  min-width: 40px;
   border-radius: 8px;
   transform: rotateX(13deg);
-  position: absolute;
+  position: relative;
   z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-bottom: 5px;
+  padding: 0 2px 4px;
   box-shadow: 0px 1px 1px 1px rgba(255, 255, 255, 0.82);
 }
 
@@ -480,11 +488,13 @@ img {
   background-color: rgb(221, 221, 221);
   box-shadow: 0px 4px 0px 0.2px rgb(116, 116, 116);
   height: 28px;
-  width: 36px;
+  min-width: 36px;
+  padding: 0 7px;
+  box-sizing: border-box;
   border-radius: 6px;
   transform: rotateX(13deg);
   z-index: 2;
-  position: absolute;
+  position: relative;
   transition: 80ms;
   color: rgb(0 0 0 / 70%);
   font-size: 10px;
@@ -498,16 +508,8 @@ img {
   text-shadow: none;
 }
 
-.shortcut-keycap[data-key="space"] {
-  width: 72px;
-}
-
-.shortcut-keycap[data-key="space"] .shortcut-keycap-cover {
-  width: 68px;
-}
-
 .shortcut-keycap[data-key="space"] .shortcut-keycap-button {
-  width: 64px;
+  min-width: 64px;
 }
 
 .shortcut-visualizer-action {
@@ -1805,7 +1807,6 @@ img {
   overflow-x: auto;
   align-items: flex-start;
   padding: 40px 16px 60px;
-  margin-top: -30px;
   margin-bottom: -26px;
   width: 100%;
   transform: translateY(var(--background-pack-grid-offset, 0px));
@@ -1917,6 +1918,7 @@ img {
   flex-shrink: 0;
   padding: 7px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   gap: 7px;
   text-align: left;
@@ -2164,6 +2166,7 @@ img {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  min-width: 0;
   min-height: 0;
   padding: 0 1px 1px;
   align-items: flex-start;
@@ -2191,6 +2194,10 @@ img {
   letter-spacing: 0.8px;
   color: rgba(93, 80, 56, 0.76);
   text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 @keyframes background-card-click-ring {
@@ -2248,7 +2255,7 @@ img {
   }
 
   .shortcut-keycap {
-    width: 38px;
+    min-width: 38px;
     height: 31px;
   }
 
@@ -2257,26 +2264,18 @@ img {
   }
 
   .shortcut-keycap-cover {
-    width: 34px;
-    height: 27px;
-    padding-bottom: 5px;
+    min-width: 34px;
+    padding: 0 2px 4px;
   }
 
   .shortcut-keycap-button {
-    width: 30px;
+    min-width: 30px;
     height: 23px;
-  }
-
-  .shortcut-keycap[data-key="space"] {
-    width: 62px;
-  }
-
-  .shortcut-keycap[data-key="space"] .shortcut-keycap-cover {
-    width: 58px;
+    padding: 0 6px;
   }
 
   .shortcut-keycap[data-key="space"] .shortcut-keycap-button {
-    width: 54px;
+    min-width: 54px;
   }
 
   .shortcut-keycap-button,
@@ -2723,7 +2722,7 @@ img {
 }
 
 .guide-keycaps .guide-shortcut-keycap {
-  width: 34px;
+  min-width: 34px;
   height: 28px;
 }
 
@@ -2732,42 +2731,22 @@ img {
 }
 
 .guide-keycaps .guide-shortcut-keycap .shortcut-keycap-cover {
-  width: 31px;
-  height: 24px;
+  min-width: 31px;
   border-radius: 6px;
-  padding-bottom: 3px;
+  padding: 0 1.5px 3px;
 }
 
 .guide-keycaps .guide-shortcut-keycap .shortcut-keycap-button {
-  width: 28px;
+  min-width: 28px;
+  padding: 0 5px;
   height: 21px;
   border-radius: 4px;
   font-size: 7.5px;
   letter-spacing: 0.03em;
 }
 
-.guide-keycaps .guide-shortcut-keycap[data-key="space"] {
-  width: 57px;
-}
-
-.guide-keycaps .guide-shortcut-keycap[data-key="space"] .shortcut-keycap-cover {
-  width: 53px;
-}
-
 .guide-keycaps .guide-shortcut-keycap[data-key="space"] .shortcut-keycap-button {
-  width: 49px;
-}
-
-.guide-keycaps .guide-shortcut-keycap[data-key="shift"] {
-  width: 41px;
-}
-
-.guide-keycaps .guide-shortcut-keycap[data-key="shift"] .shortcut-keycap-cover {
-  width: 38px;
-}
-
-.guide-keycaps .guide-shortcut-keycap[data-key="shift"] .shortcut-keycap-button {
-  width: 35px;
+  min-width: 49px;
 }
 
 .guide-key-plus {
@@ -2787,7 +2766,7 @@ img {
 }
 
 .guide-inline-keycaps .guide-shortcut-keycap {
-  width: 30px;
+  min-width: 30px;
   height: 24px;
 }
 
@@ -2796,14 +2775,14 @@ img {
 }
 
 .guide-inline-keycaps .guide-shortcut-keycap .shortcut-keycap-cover {
-  width: 27px;
-  height: 21px;
+  min-width: 27px;
   border-radius: 6px;
-  padding-bottom: 3px;
+  padding: 0 1.5px 3px;
 }
 
 .guide-inline-keycaps .guide-shortcut-keycap .shortcut-keycap-button {
-  width: 24px;
+  min-width: 24px;
+  padding: 0 4px;
   height: 18px;
   border-radius: 4px;
   font-size: 7.5px;

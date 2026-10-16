@@ -1,0 +1,64 @@
+name: Dev Build
+
+# Packages side-by-side "Dialoggo Development" builds from the dev branch and
+# keeps them as workflow artifacts. Nothing is published as a release.
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dev-build-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  DIALOGGO_ENV: development
+
+jobs:
+  package:
+    name: Package development build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Package development build
+        env:
+          DIALOGGO_VERSION_SUFFIX: ${{ github.run_number }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run package:dev
+
+      - name: Upload development artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dialoggo-dev-${{ runner.os }}-${{ github.run_number }}
+          path: |
+            release/*.exe
+            release/*.zip
+            release/*.dmg
+            release/*.AppImage
+            release/*.tar.gz
+          if-no-files-found: error
+          retention-days: 14

@@ -7,8 +7,9 @@
 A retro dialogue scene editor inspired by Banjo-Kazooie and Banjo-Tooie.
 
 [![CI status](https://github.com/ponkis/dialoggo/actions/workflows/ci.yml/badge.svg)](https://github.com/ponkis/dialoggo/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/ponkis/dialoggo?color=8b72e8)](https://github.com/ponkis/dialoggo/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-8b72e8.svg)](LICENSE)
-![Node.js 20.11+](https://img.shields.io/badge/Node.js-20.11%2B-43853d.svg)
+![Electron 41](https://img.shields.io/badge/Electron-41-47848f.svg)
 
 </div>
 
@@ -19,17 +20,17 @@ Choose a character and backdrop, write a line, then preview it with animated spr
 - Write and format dialogue with emphasis, italics, and strikethrough.
 - Choose animated characters and scene backgrounds from the included packs.
 - Preview speech playback with character-specific voice clips and playback controls.
-- Add custom character sprites and keep favorites close at hand.
+- Keep favorites close at hand, and hide characters or backgrounds you don't use.
 - Adjust the scene with mirror and low-resolution N64-style display modes.
-- Capture a finished scene from the built-in export panel.
+- Drive playback from the keyboard, with an optional on-screen shortcut visualizer.
 
-## Requirements
+## Download
 
-- Node.js 20.11 or newer
-- npm (included with Node.js)
-- Windows, macOS, or Linux with a desktop environment
+Installers for Windows, macOS, and Linux are attached to each [GitHub release](https://github.com/ponkis/dialoggo/releases). Every release includes a `SHA256SUMS.txt` file for verifying downloads. Builds are not code-signed yet, so Windows SmartScreen and macOS Gatekeeper may ask for confirmation the first time you open the app.
 
-## Get started
+## Run from source
+
+Requires Node.js 22.12 or newer.
 
 ```bash
 git clone https://github.com/ponkis/dialoggo.git
@@ -38,46 +39,59 @@ npm ci
 npm start
 ```
 
-## Development commands
+`npm start` runs a **Development** build (`Dialoggo Development`), which keeps its settings and logs separate from an installed copy of Dialoggo. Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>I</kbd> for DevTools and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> to reload.
+
+## Commands
 
 | Command | Purpose |
 | --- | --- |
-| `npm start` | Run Dialoggo from source. |
-| `npm test` | Check project metadata and repository hygiene. |
-| `npm run build` | Create the runnable Electron bundle in `dist/`. |
-| `npm run start:dist` | Launch the generated bundle. |
-| `npm run verify` | Run metadata checks, build the app, and audit dependency licenses. |
-| `npm run audit:deps` | Check npm dependencies for known advisories. |
-| `npm run audit:licenses` | Check dependency licenses against the project policy. |
+| `npm start` | Build development bundles and launch the app. |
+| `npm run lint` | Lint the codebase with ESLint. |
+| `npm test` | Run unit and integration tests. |
+| `npm run test:smoke` | Launch the built app and check that it starts cleanly. |
+| `npm run build` | Build the production app into `dist/`. |
+| `npm run package` | Build installers for the current OS into `release/`. |
+| `npm run package:dev` | Build a side-by-side "Dialoggo Development" installer. |
+| `npm run verify` | Lint, validate, test, build, and audit licenses (what CI runs). |
+| `npm run promote` | Merge `dev` into `main` and push. |
+| `npm run promote:release` | Promote and tag `v<version>` to publish a release. |
 
-The build creates app files; it does not create a platform installer. `dist/` is generated locally and is ignored by Git.
+## Branches and releases
+
+```text
+work on dev -> CI + dev builds -> npm run promote:release -> vX.Y.Z tag on main -> GitHub Release
+```
+
+- **`dev`** is where work happens. Every push runs CI, and pushes to `dev` also produce downloadable development builds as workflow artifacts.
+- **`main`** only receives merges from `dev`. Version tags on `main` trigger the release workflow, which packages Windows, macOS, and Linux builds, writes checksums, and publishes the GitHub release.
+
+See [Release process](docs/RELEASE.md) for the full checklist.
 
 ## Architecture
 
 ```text
 src/
-├── main/                 Electron lifecycle, window, IPC, paths, and logging
-├── renderer/
-│   ├── controllers/      User input and application flows
-│   ├── domain/           Dialogue formatting and speech timing
-│   ├── models/           Dialogue state and asset catalogues
-│   ├── runtime/          Preload bridge access
-│   ├── services/         Audio loading and playback
-│   └── views/            DOM, canvas, panels, and animation
-└── shared/               Product metadata and security helpers
+├── main/        Electron main process: lifecycle, window, IPC handlers,
+│                dialoggo:// asset protocol, and the asset catalog service
+├── preload/     Sandboxed bridge exposing a narrow window.dialoggo API
+├── renderer/    UI page: composition root, features (views + controllers),
+│                state, services, and pure domain logic
+└── shared/      Code used by more than one process (metadata, IPC channels)
 
-public/                   HTML shell, visual assets, data, sounds, and fonts
-scripts/                  Build, metadata validation, and license audits
-docs/                     Architecture, development, and release guides
+public/          Static assets copied into the app: art, sounds, fonts, CSS
+build/           Packaging resources (app icon)
+scripts/         Build, dev launcher, packaging, smoke test, promotion
+test/            Node test runner suites (unit + integration)
 ```
 
-The Electron preload exposes a small `window.dialoggo` API for asset access, logging, and window controls. See [Architecture](docs/ARCHITECTURE.md) for the process flow and security boundary.
+The renderer runs sandboxed with no Node.js access. It loads from a custom `dialoggo://` protocol, and asset discovery happens in the main process. See [Architecture](docs/ARCHITECTURE.md) for the process model and security boundary.
 
 ## Project guides
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Development setup](docs/DEVELOPMENT.md)
 - [Release process](docs/RELEASE.md)
+- [Smoke test checklist](SMOKE_TEST.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security reporting](SECURITY.md)
 - [Support](SUPPORT.md)

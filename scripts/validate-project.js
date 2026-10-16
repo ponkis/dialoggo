@@ -1,3 +1,5 @@
+// Repository and metadata checks that complement the unit tests: package
+// metadata, renderer security posture, branding, and required repo files.
 const fs = require('fs');
 const path = require('path');
 
@@ -29,27 +31,38 @@ function validatePackageMetadata() {
   assert(pkg.author === 'ponkis', 'package.json author must be ponkis.');
   assert(pkg.license === 'MIT', 'package.json license must be MIT.');
   assert(pkg.private === true, 'package.json should stay private while bundled assets need distribution review.');
-  assert(pkg.scripts?.build === 'node scripts/build-dist.js', 'package.json must expose the production build script.');
-  assert(pkg.scripts?.test === 'node scripts/validate-project.js', 'package.json must expose the validation script as test.');
+  assert(!pkg.dependencies || Object.keys(pkg.dependencies).length === 0, 'Runtime code is bundled by Webpack; keep packages in devDependencies so the installer ships no node_modules.');
+  ['start', 'build', 'package', 'test', 'test:smoke', 'lint', 'verify'].forEach((script) => {
+    assert(pkg.scripts?.[script], `package.json must define the ${script} script.`);
+  });
   assert(rootPackage.name === pkg.name, 'package-lock root package name must match package.json.');
   assert(rootPackage.version === pkg.version, 'package-lock root package version must match package.json.');
 }
 
+function validateRendererSecurity() {
+  const html = readText('src/renderer/index.html');
+  const preload = readText('src/preload/index.js');
+  const mainWindow = readText('src/main/windows/createMainWindow.js');
+
+  assert(html.includes('Content-Security-Policy'), 'src/renderer/index.html must define a Content Security Policy.');
+  assert(!/file:/.test(html.match(/Content-Security-Policy"[\s\S]*?content="([^"]+)"/)?.[1] || ''), 'The CSP must not allow file: URLs.');
+  assert(html.includes('<script src="./assets/js/app.js" defer></script>'), 'src/renderer/index.html must load the renderer bundle.');
+  assert(/sandbox:\s*true/.test(mainWindow), 'The main window must run with a sandboxed renderer.');
+  assert(/contextIsolation:\s*true/.test(mainWindow), 'The main window must enable contextIsolation.');
+  assert(/nodeIntegration:\s*false/.test(mainWindow), 'The main window must disable nodeIntegration.');
+  assert(!/require\((?!'electron'|'\.\.\/shared\/)/.test(preload), 'The sandboxed preload may only require electron and shared modules.');
+}
+
 function validatePublicBranding() {
-  const html = readText('public/index.html');
+  const html = readText('src/renderer/index.html');
   const manifest = readJson('public/site.webmanifest');
   const css = readText('public/assets/css/main.css');
-  const preload = readText('src/main/preload.js');
 
-  assert(html.includes('<title>Dialoggo</title>'), 'public/index.html must set the Dialoggo title.');
-  assert(html.includes('Content-Security-Policy'), 'public/index.html must define a Content Security Policy.');
-  assert(html.includes('<script src="./assets/js/app.js" defer></script>'), 'public/index.html must load the separate renderer bundle.');
-  assert(!preload.includes("require('../renderer/index.js')"), 'The preload must not execute the renderer app.');
-  assert(html.includes('id="version-label"'), 'public/index.html must include a version label.');
-  assert(html.includes('id="brand-link"'), 'public/index.html must include the branded author link.');
-  assert(html.includes('https://ponkis.xyz/assets/img/global/logo.png'), 'public/index.html must use the ponkis brand logo.');
+  assert(html.includes('<title>Dialoggo</title>'), 'src/renderer/index.html must set the Dialoggo title.');
+  assert(html.includes('id="version-label"'), 'src/renderer/index.html must include a version label.');
+  assert(html.includes('id="brand-link"'), 'src/renderer/index.html must include the branded author link.');
+  assert(html.includes('https://ponkis.xyz/assets/img/global/logo.png'), 'src/renderer/index.html must use the ponkis brand logo.');
   assert(css.includes('https://fonts.googleapis.com/css2?family=Outfit'), 'CSS must import the Outfit brand font.');
-  assert(css.includes('https://fonts.googleapis.com/css2?family=Over+the+Rainbow'), 'CSS must import the handwritten brand font.');
   assert(manifest.name === 'Dialoggo', 'site.webmanifest name must be Dialoggo.');
   assert(manifest.description?.includes('ponkis'), 'site.webmanifest must include ponkis branding.');
 }
@@ -60,10 +73,12 @@ function validateRepoHygiene() {
     .map((line) => line.trim())
     .filter((line) => line && !line.startsWith('#'));
 
-  assert(gitignore.includes('node_modules/'), '.gitignore must ignore node_modules/.');
-  assert(gitignore.includes('dist/'), '.gitignore must ignore dist/.');
-  assert(gitignore.includes('public/assets/js/app.js'), '.gitignore must ignore the generated development renderer bundle.');
-  assert(!gitignore.includes('package-lock.json'), '.gitignore must not ignore package-lock.json for this app.');
+  ['node_modules/', 'dist/', 'release/'].forEach((entry) => {
+    assert(gitignore.includes(entry), `.gitignore must ignore ${entry}`);
+  });
+  assert(!gitignore.includes('package-lock.json'), '.gitignore must not ignore package-lock.json.');
+  assert(!gitignore.includes('build/'), '.gitignore must not ignore build/ (electron-builder resources).');
+
   [
     'README.md',
     'CHANGELOG.md',
@@ -73,15 +88,17 @@ function validateRepoHygiene() {
     'CODE_OF_CONDUCT.md',
     'SECURITY.md',
     'SUPPORT.md',
-    'public/web-app-manifest-512x512.png',
+    'SMOKE_TEST.md',
+    'build/icon.png',
+    'electron-builder.config.js',
+    'eslint.config.js',
     'docs/ARCHITECTURE.md',
     'docs/DEVELOPMENT.md',
     'docs/RELEASE.md',
-    'scripts/start-dev.js',
-    'src/renderer/domain/dialogueText.js',
-    'src/renderer/domain/math.js',
-    'src/renderer/domain/speechPlayback.js',
+    'scripts/promote-dev-to-main.js',
     '.github/workflows/ci.yml',
+    '.github/workflows/dev-build.yml',
+    '.github/workflows/release.yml',
     '.github/dependabot.yml',
     '.github/ISSUE_TEMPLATE/bug_report.md',
     '.github/ISSUE_TEMPLATE/feature_request.md',
@@ -93,9 +110,10 @@ function validateRepoHygiene() {
 
 function main() {
   validatePackageMetadata();
+  validateRendererSecurity();
   validatePublicBranding();
   validateRepoHygiene();
-  console.log('[validate] Project metadata and production hygiene checks passed.');
+  console.log('[validate] Project metadata, security posture, and repository checks passed.');
 }
 
 try {

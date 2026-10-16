@@ -1,15 +1,30 @@
 version: 2
 updates:
+  # Updates land on dev and reach main through the normal promotion flow.
   - package-ecosystem: npm
     directory: /
+    target-branch: dev
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
     commit-message:
       prefix: chore(deps)
+    groups:
+      electron:
+        patterns:
+          - electron
+          - electron-builder
+      tooling:
+        patterns:
+          - eslint
+          - "@eslint/*"
+          - globals
+          - webpack
+          - webpack-obfuscator
 
   - package-ecosystem: github-actions
     directory: /
+    target-branch: dev
     schedule:
       interval: monthly
     open-pull-requests-limit: 3

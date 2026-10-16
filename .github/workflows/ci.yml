@@ -2,6 +2,8 @@ name: CI
 
 on:
   push:
+    branches:
+      - "**"
   pull_request:
   workflow_dispatch:
 
@@ -9,12 +11,15 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ci-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
 
 jobs:
   verify:
-    name: Verify on ${{ matrix.os }}
+    name: Lint, test, and build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -22,17 +27,42 @@ jobs:
         os: [ubuntu-latest, windows-latest]
 
     steps:
-      - name: Check out repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
 
       - name: Install locked dependencies
         run: npm ci
 
-      - name: Validate metadata, build, and audit licenses
-        run: npm run verify
+      - name: Lint
+        run: npm run lint
+
+      - name: Validate project metadata
+        run: npm run validate
+
+      - name: Unit and integration tests
+        run: npm test
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Smoke test (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum npm run test:smoke
+
+      - name: Smoke test (Windows)
+        if: runner.os == 'Windows'
+        run: npm run test:smoke
+
+      - name: Audit dependency licenses
+        if: runner.os == 'Linux'
+        run: npm run audit:licenses
+
+      - name: Audit shipped dependencies
+        if: runner.os == 'Linux'
+        run: npm run audit:deps

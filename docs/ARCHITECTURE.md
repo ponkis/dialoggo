@@ -1,60 +1,121 @@
 # Architecture
 
-Dialoggo is an Electron desktop app. The main process owns the window and operating-system integrations; a preload bridge limits the APIs available to the renderer; the UI is organized around a model, controller, view, audio service, and focused domain modules.
+Dialoggo is an Electron desktop app split along Electron's process model. The **main process** owns the operating system, files, and windows. A **sandboxed preload** exposes a small, typed bridge. The **renderer** is an ordinary web page with no Node.js access, organized into feature modules.
 
 ## Process flow
 
 ```mermaid
 flowchart LR
-  Main[Electron main process] -->|creates window| Window[BrowserWindow]
-  Window -->|loads| Shell[public/index.html]
-  Window -->|loads| Preload[src/main/preload.js]
-  Shell -->|runs bundled page script| UI[Renderer app]
-  Preload -->|contextBridge exposes window.dialoggo| Bridge[Limited preload API]
-  UI -->|uses| Bridge
-  UI --> Controller[AppController]
-  Controller --> Model[AppModel]
-  Controller --> View[AppView]
-  Controller --> Audio[AudioService]
-  Model -->|catalogue and asset reads| Bridge
-  Audio -->|sound asset reads| Bridge
-  Bridge -->|window controls and logging IPC| Main
+  subgraph Main[Main process]
+    App[Application lifecycle]
+    Protocol[dialoggo:// protocol handler]
+    Catalog[CatalogService]
+    IPC[IPC handlers]
+  end
+  subgraph Preload[Preload, sandboxed]
+    Bridge[window.dialoggo]
+  end
+  subgraph Renderer[Renderer page]
+    Root[startApp composition root]
+    Features[Feature views and controllers]
+  end
+
+  App -->|creates| Window[BrowserWindow]
+  Window -->|loads dialoggo://app/index.html| Renderer
+  Renderer -->|images, audio, CSS| Protocol
+  Protocol -->|reads| Files[(dist/renderer)]
+  Root -->|app.getInfo, catalog.load| Bridge
+  Bridge -->|invoke / send| IPC
+  IPC --> Catalog
+  Catalog -->|scans| Files
+  Root --> Features
 ```
 
-## Responsibilities
+## Source layout
 
-| Area | Owns |
+| Path | Owns |
 | --- | --- |
-| `src/main/index.js` | Electron lifecycle, crash reporting, app metadata, and window startup. |
-| `src/main/windows/` | BrowserWindow configuration, navigation restrictions, and external links. |
-| `src/main/ipc/` | Window controls and renderer-to-main logging. |
-| `src/main/preload.js` | The `window.dialoggo` API and bounded access to public assets. |
-| `src/renderer/domain/` | Dialogue markup, line wrapping, numeric helpers, pitch, and speech cadence. |
-| `src/renderer/models/AppModel.js` | Asset catalogue discovery, dialogue state, configuration, and model helpers. |
-| `src/renderer/controllers/AppController.js` | Input handling, playback flow, settings, and coordination between model, view, and audio. |
-| `src/renderer/views/AppView.js` | DOM and canvas updates, panels, sprites, layout, and animation. |
-| `src/renderer/services/AudioService.js` | Audio loading, menu sounds, and dialogue playback. |
-| `src/shared/` | Product metadata and security helpers shared by the Electron entry points. |
-| `public/assets/` | Bundled characters, backgrounds, audio, fonts, styles, and configuration data. |
+| `src/main/index.js` | Entry point: environment, scheme privileges, crash reporter, then `Application.start()`. |
+| `src/main/Application.js` | Lifecycle: single-instance lock, protocol and IPC registration, main window, smoke-test exits. |
+| `src/main/config/` | Build environment (development/production) and runtime paths of the bundled layout. |
+| `src/main/protocol/assetProtocol.js` | The privileged `dialoggo://app/` scheme that serves `dist/renderer` with path containment. |
+| `src/main/services/catalog/` | Discovers characters, backgrounds, and interface assets and returns them as `dialoggo://` URLs. |
+| `src/main/ipc/` | IPC handlers by area, plus sender validation shared by all of them. |
+| `src/main/windows/` | BrowserWindow options, navigation guards, external-link handling, developer shortcuts. |
+| `src/main/security/` | URL, JSON, and path validation helpers. |
+| `src/preload/index.js` | The `window.dialoggo` bridge: `app`, `catalog`, `window`, and `log`. |
+| `src/shared/` | Metadata, the IPC channel registry, and pure helpers used by both sides. |
+| `src/renderer/app/startApp.js` | Composition root: builds services, views, and controllers, binds events, restores the session. |
+| `src/renderer/features/<feature>/` | One folder per UI area. `*View.js` renders DOM, `*Controller.js` handles input and flow. |
+| `src/renderer/state/` | Session state, persisted preferences, and favorites/recent/hidden collections. |
+| `src/renderer/services/` | Web Audio playback, the speech sound loop, and the image cache. |
+| `src/renderer/domain/` | Pure logic: dialogue markup and wrapping, speech cadence, input formatting, id lists. |
+| `src/renderer/core/` | Bridge access, DOM registry, event bus, and timing helpers. |
 
-## Renderer startup and bundling
+### Renderer features
 
-`public/index.html` loads `assets/js/app.js`. That page script is built from `src/renderer/index.js` and runs in the renderer's isolated main world. It creates the model, view, audio service, and controller flow. The preload does not import or execute renderer code.
+| Feature | Responsibility |
+| --- | --- |
+| `playback` | The dialogue sequence: open, type, scroll, pause/resume/stop, fast forward, close. Owns the control buttons. |
+| `dialogue` | The dialogue box, the input with its markup highlight and toolbar, line layout, and N64 text rendering. |
+| `characters` | The character reel, card animations, selection, search, favorites, hidden, recents. |
+| `backgrounds` | The backgrounds sleeve, pack navigation, selection, favorites, hidden, recents. |
+| `stage` | The preview: sprite renderer, background cross-fade, title banner, loading placeholder. |
+| `panels` | The flip card and sleeve tabs, plus collapsing the preview for tall panels. |
+| `shortcuts` | Keyboard shortcuts and the on-screen visualizer and alerts. |
+| `settings` | Settings toggles and restoring them from preferences. |
+| `startup` | Boot loading animation, asset prewarm, iris reveal, and the shutdown outro. |
+| `contextMenu`, `guide`, `chrome` | Right-click menu, guide screenshot viewer, title bar and global UI sounds. |
 
-`npm start` first builds an unminified development renderer bundle to the ignored `public/assets/js/app.js`, then launches Electron with the source main and preload files. `npm run build` copies the static `public/` tree and Webpack writes the production main, preload, and renderer bundles into `dist/`. The generated `dist/package.json` points Electron to the bundled main entry. `npm run start:dist` launches that bundle with the installed Electron runtime.
+## Design rules
 
-## Preload boundary
+- **Explicit dependencies.** Every view and controller is a factory that receives what it uses. Only `startApp.js` knows how the pieces fit together.
+- **Views render; controllers decide.** Views own DOM and canvas updates and expose small methods. Controllers handle events, update state, and call views and services.
+- **Pure logic stays pure.** Anything testable without a DOM (markup parsing, wrapping, speech cadence, id-list rules) lives in `domain/` or `shared/` and has unit tests.
+- **One event, one direction.** The `EventBus` is only for cross-cutting notifications that would otherwise create cycles. Today that is `playback:ui-synced`, which refreshes the shortcut overlay.
+- **Persisted keys are a data format.** `PreferencesStore` keys must not be renamed without a migration.
 
-The BrowserWindow enables `contextIsolation` and disables `nodeIntegration`. Renderer code runs as a page script and receives only the API exposed with `contextBridge`: product runtime metadata, path helpers, existence and directory checks, JSON and bounded binary reads rooted under the packaged `public/` directory, safe `file:` URL creation, logging, and minimize/close controls.
+## Security boundary
 
-Keep filesystem access inside the preload bridge. Validate paths against the public asset root, cap data reads, and avoid exposing general-purpose Node modules or unrestricted IPC to the UI. The preload currently uses Node APIs directly, so its Electron `sandbox` option is disabled; any future move to a sandboxed preload must first replace those direct filesystem operations with an appropriate constrained API. The renderer page itself has no Node integration.
+The BrowserWindow runs with `sandbox: true`, `contextIsolation: true`, and `nodeIntegration: false`. The renderer has no filesystem access:
 
-The window denies new windows and routes only validated external HTTP(S) links to the operating system. Keep the Content Security Policy in `public/index.html` aligned with resources that the app actually loads.
+- Static files load through the `dialoggo://app/` protocol. The handler maps each URL to a file under `dist/renderer`. It rejects traversal, backslashes, NUL bytes, and foreign hosts.
+- The asset catalog is built in the main process and returned over IPC as plain data with `dialoggo://` URLs.
+- IPC handlers accept messages only from frames served by `dialoggo://app`.
+- The Content Security Policy in `src/renderer/index.html` allows only `'self'`, `data:` images, the ponkis logo, and Google Fonts stylesheets. It does not allow `file:`.
+- New windows are denied. Only validated `http(s)` links open, and they go to the system browser. Webviews are blocked.
 
-## Product metadata and releases
+When the UI needs a new privileged capability, add a channel to `src/shared/ipcChannels.js`, a handler under `src/main/ipc/handlers/` that validates the sender and its input, and a narrow method on the preload bridge.
 
-`package.json` is the source of truth for version, product name, author, homepage, and license metadata. Shared Electron-specific values live in `src/shared/appMetadata.js`; the preload supplies the runtime version and product values to the UI. Update `package.json`, the lockfile root metadata, and `CHANGELOG.md` together for a release. Follow the [release checklist](RELEASE.md).
+## Environments
+
+The build environment is fixed at bundle time through Webpack's `DefinePlugin` (`process.env.DIALOGGO_ENV`):
+
+| | Development | Production |
+| --- | --- | --- |
+| Produced by | `npm start`, `npm run build:dev`, `npm run package:dev` | `npm run build`, `npm run package` |
+| App name / id | `Dialoggo Development` / `xyz.ponkis.dialoggo.dev` | `Dialoggo` / `xyz.ponkis.dialoggo` |
+| Version | `X.Y.Z-dev` (CI: `X.Y.Z-dev.<run>`) | `X.Y.Z` |
+| Settings and logs | `%APPDATA%/Dialoggo Development` | `%APPDATA%/Dialoggo` |
+| DevTools / reload shortcuts | Enabled | Disabled |
+
+## Build pipeline
+
+`scripts/lib/buildPipeline.js` produces the same layout for every build:
+
+```text
+dist/
+├── package.json          generated, points Electron at main/index.js
+├── main/index.js         main process bundle
+├── preload/index.js      preload bundle
+└── renderer/
+    ├── index.html        from src/renderer/index.html
+    ├── assets/js/app.js  renderer bundle
+    └── ...               everything in public/
+```
+
+Production bundles are minified and obfuscated. electron-builder packages `dist/` as-is (`directories.app = dist`), so installers contain no `node_modules`. All npm packages are dev dependencies because Webpack inlines what the app uses.
 
 ## Asset and license boundary
 
-The build copies `public/` assets into `dist/`, so anything in that folder ships with the app. Review [NOTICE.md](../NOTICE.md) before adding, redistributing, or reusing media. The repository's MIT license applies to application code and does not grant rights to third-party artwork, sounds, fonts, or franchise marks.
+Everything in `public/` ships with the app. Review [NOTICE.md](../NOTICE.md) before adding, redistributing, or reusing media. The repository's MIT license covers application code. It does not grant rights to third-party artwork, sounds, fonts, or franchise marks.
