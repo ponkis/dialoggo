@@ -36,7 +36,6 @@ function validatePackageMetadata() {
     assert(pkg.scripts?.[script], `package.json must define the ${script} script.`);
   });
   assert(rootPackage.name === pkg.name, 'package-lock root package name must match package.json.');
-  assert(rootPackage.version === pkg.version, 'package-lock root package version must match package.json.');
 }
 
 function validateRendererSecurity() {

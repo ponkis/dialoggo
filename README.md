@@ -23,10 +23,11 @@ Choose a character and backdrop, write a line, then preview it with animated spr
 - Keep favorites close at hand, and hide characters or backgrounds you don't use.
 - Adjust the scene with mirror and low-resolution N64-style display modes.
 - Drive playback from the keyboard, with an optional on-screen shortcut visualizer.
+- Stay current with a built-in update checker that downloads and installs new releases.
 
 ## Download
 
-Installers for Windows, macOS, and Linux are attached to each [GitHub release](https://github.com/ponkis/dialoggo/releases). Every release includes a `SHA256SUMS.txt` file for verifying downloads. Builds are not code-signed yet, so Windows SmartScreen and macOS Gatekeeper may ask for confirmation the first time you open the app.
+Installers for Windows, macOS, and Linux are attached to each [GitHub release](https://github.com/ponkis/dialoggo/releases). Every release includes a `SHA256SUMS.txt` file for verifying downloads. Once installed, Dialoggo checks for new releases at startup (you can turn this off in **Settings → Updates**) and can download and install them for you. Builds are not code-signed yet, so Windows SmartScreen and macOS Gatekeeper may ask for confirmation the first time you open the app.
 
 ## Run from source
 
@@ -99,4 +100,8 @@ The renderer runs sandboxed with no Node.js access. It loads from a custom `dial
 
 ## Licensing and bundled media
 
-The application code is licensed under [MIT](LICENSE). That license does not grant rights to third-party images, sounds, fonts, or franchise marks bundled with the app. Read [NOTICE.md](NOTICE.md) before redistributing or reusing any bundled media.
+The application code is licensed under [MIT](LICENSE). The license covers only the code, not the media bundled with the app.
+
+Dialoggo is an unofficial fan project and is not affiliated with or endorsed by Rare, Microsoft, or Nintendo. Banjo-Kazooie and Banjo-Tooie characters, artwork, audio, and names belong to their respective owners, including Rare Ltd. and Microsoft. Custom characters and backgrounds belong to their own creators and rights holders, and they may come from other works. The project claims no ownership of any bundled asset.
+
+See [NOTICE.md](NOTICE.md) for details, redistribution guidance, and how rights holders can request removal.

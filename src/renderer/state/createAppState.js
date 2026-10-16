@@ -36,6 +36,7 @@ function createAppState() {
     activePanel: 'controls',
     panelTransitionLock: false,
     pauseResolve: null,
+    modalOpen: false,
   };
 }
 

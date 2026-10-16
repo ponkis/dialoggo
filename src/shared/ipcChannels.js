@@ -5,6 +5,11 @@ const IPC_CHANNELS = Object.freeze({
   appRendererReady: 'app:renderer-ready',
   catalogGet: 'catalog:get',
   log: 'log:write',
+  updatesCheck: 'updates:check',
+  updatesDownload: 'updates:download',
+  updatesCancelDownload: 'updates:cancel-download',
+  updatesInstall: 'updates:install',
+  updatesProgress: 'updates:progress',
   windowClose: 'window:close',
   windowMinimize: 'window:minimize',
 });

@@ -76,6 +76,10 @@ function collectDomRefs(doc = document) {
     inputShortcutVisualizer: byId('input-shortcut-visualizer'),
     inputHideBroken: byId('input-hide-broken-chars'),
     inputHideBrokenBackgrounds: byId('input-hide-broken-backgrounds'),
+    inputCheckUpdates: byId('input-check-updates'),
+    btnCheckUpdates: byId('btn-check-updates'),
+    updateVersionLabel: byId('update-version-label'),
+    updateStatusText: byId('update-status-text'),
   };
 }
 

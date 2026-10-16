@@ -40,6 +40,7 @@ flowchart LR
 | `src/main/config/` | Build environment (development/production) and runtime paths of the bundled layout. |
 | `src/main/protocol/assetProtocol.js` | The privileged `dialoggo://app/` scheme that serves `dist/renderer` with path containment. |
 | `src/main/services/catalog/` | Discovers characters, backgrounds, and interface assets and returns them as `dialoggo://` URLs. |
+| `src/main/services/updates/` | Checks GitHub releases, downloads and verifies installers, and records the last-run version. |
 | `src/main/ipc/` | IPC handlers by area, plus sender validation shared by all of them. |
 | `src/main/windows/` | BrowserWindow options, navigation guards, external-link handling, developer shortcuts. |
 | `src/main/security/` | URL, JSON, and path validation helpers. |
@@ -65,7 +66,8 @@ flowchart LR
 | `shortcuts` | Keyboard shortcuts and the on-screen visualizer and alerts. |
 | `settings` | Settings toggles and restoring them from preferences. |
 | `startup` | Boot loading animation, asset prewarm, iris reveal, and the shutdown outro. |
-| `contextMenu`, `guide`, `chrome` | Right-click menu, guide screenshot viewer, title bar and global UI sounds. |
+| `updates` | The startup and manual update checks, and the download and install prompts. |
+| `contextMenu`, `dialog`, `guide`, `chrome` | Right-click menu, in-app modal dialog, guide screenshot viewer, title bar and global UI sounds. |
 
 ## Design rules
 
@@ -87,6 +89,18 @@ The BrowserWindow runs with `sandbox: true`, `contextIsolation: true`, and `node
 
 When the UI needs a new privileged capability, add a channel to `src/shared/ipcChannels.js`, a handler under `src/main/ipc/handlers/` that validates the sender and its input, and a narrow method on the preload bridge.
 
+## Updates
+
+The updater follows the same flow as Mystral's:
+
+1. **Check.** At startup (unless turned off in Settings → Updates), or from **Check now**, the main process reads `https://api.github.com/repos/ponkis/dialoggo/releases/latest` and compares its tag with the running version using semver precedence.
+2. **Confirm.** If the release is newer, the renderer shows "Update available" with a "What's new?" compare link. Nothing downloads until the user confirms.
+3. **Download.** The platform asset (`-win-x64-setup.exe` on Windows, the matching `.dmg` on macOS) streams to the temp folder, with progress, cancel, a stall timeout, and retry on failure. Downloads are only accepted from `https://github.com/ponkis/dialoggo/releases/download/`, and each file must match its entry in the release's `SHA256SUMS.txt`.
+4. **Install.** On Windows, the installer is launched and the app closes. On macOS, the disk image opens. Linux, development builds, and unpackaged runs open the release page instead.
+5. **After updating.** The main process stores the last-run version in userData. On the first launch of a newer version, the app shows "Update installed" with a link to the changes.
+
+Leftover installers in the temp folder are deleted on the next launch.
+
 ## Environments
 
 The build environment is fixed at bundle time through Webpack's `DefinePlugin` (`process.env.DIALOGGO_ENV`):
@@ -98,6 +112,7 @@ The build environment is fixed at bundle time through Webpack's `DefinePlugin` (
 | Version | `X.Y.Z-dev` (CI: `X.Y.Z-dev.<run>`) | `X.Y.Z` |
 | Settings and logs | `%APPDATA%/Dialoggo Development` | `%APPDATA%/Dialoggo` |
 | DevTools / reload shortcuts | Enabled | Disabled |
+| Updates | Check only, then open the release page | Check, download, and install |
 
 ## Build pipeline
 

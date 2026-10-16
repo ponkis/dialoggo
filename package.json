@@ -1,7 +1,7 @@
 {
   "name": "dialoggo",
   "productName": "Dialoggo",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Retro dialogue generator for Banjo-Kazooie and Banjo-Tooie style scenes.",
   "author": "ponkis",

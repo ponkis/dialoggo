@@ -51,6 +51,9 @@ const {
   createContextMenuView,
 } = require('../features/contextMenu/ContextMenuView');
 const {
+  createAppDialogView,
+} = require('../features/dialog/AppDialogView');
+const {
   createDialogueBoxView,
 } = require('../features/dialogue/DialogueBoxView');
 const {
@@ -98,6 +101,9 @@ const {
 const {
   createStartupSequence,
 } = require('../features/startup/StartupSequence');
+const {
+  createUpdateController,
+} = require('../features/updates/UpdateController');
 
 /**
  * Composition root for the renderer. It loads the app info and asset catalog
@@ -224,6 +230,9 @@ async function startApp() {
     refs,
     state,
   });
+  const appDialog = createAppDialogView({
+    state,
+  });
   const startup = createStartupSequence({
     refs,
     constants,
@@ -319,6 +328,15 @@ async function startApp() {
     inputView,
     onInputChanged: () => playback.syncUiState(),
   });
+  const updates = createUpdateController({
+    refs,
+    appInfo,
+    bridge,
+    preferences,
+    dialog: appDialog,
+    audio,
+    startup,
+  });
   const chrome = createAppChromeController({
     refs,
     appInfo,
@@ -367,6 +385,7 @@ async function startApp() {
   });
   panels.bindEvents();
   settings.bindEvents();
+  updates.bindEvents();
 
   // Restore the saved session
   inputView.normalize();
@@ -389,8 +408,9 @@ async function startApp() {
   settings.restoreMirrored();
   settings.restoreHideBrokenCharacters();
   settings.restoreHideBrokenBackgrounds();
+  updates.initialize();
 
-  void startup.run();
+  void startup.run().then(() => updates.runStartupTasks());
 
   const summary = {
     ok: true,
