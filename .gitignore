@@ -35,8 +35,8 @@ Desktop.ini
 .DS_Store
 
 # Local scratch space
-stuff/
-state/
+/stuff/
+/state/
 
 # Private coding-agent docs (not for contributors)
 /AGENTS.md
